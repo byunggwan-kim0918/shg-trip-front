@@ -19,8 +19,7 @@ export default function Home() {
 
   return (
     <main style={{ padding: 24 }}>
-      <h1>shg-trip-front</h1>
-      <p>API Result: {result}</p>
+      <h1>shg-trip-front 서혜관 프로젝트</h1>
     </main>
   );
 }
