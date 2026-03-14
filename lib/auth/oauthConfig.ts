@@ -1,4 +1,4 @@
-export type Provider = 'KAKAO' | 'GOOGLE' | 'NAVER' | 'APPLE';
+export type Provider = 'KAKAO' | 'GOOGLE' | 'NAVER';
 
 interface OAuthProviderConfig {
   authUrl: string;
@@ -29,13 +29,6 @@ export const OAUTH_CONFIG: Record<Provider, OAuthProviderConfig> = {
     redirectUri: `${APP_URL}/callback/naver`,
     scope: '',
   },
-  APPLE: {
-    authUrl: 'https://appleid.apple.com/auth/authorize',
-    clientId: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || '',
-    redirectUri: `${APP_URL}/callback/apple`,
-    scope: 'name email',
-    responseType: 'code id_token',
-  },
 };
 
 export function getOAuthUrl(provider: Provider): string {
@@ -53,10 +46,6 @@ export function getOAuthUrl(provider: Provider): string {
 
   if (config.scope) {
     params.set('scope', config.scope);
-  }
-
-  if (provider === 'APPLE') {
-    params.set('response_mode', 'query');
   }
 
   return `${config.authUrl}?${params.toString()}`;

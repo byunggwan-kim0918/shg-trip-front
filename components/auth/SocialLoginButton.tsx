@@ -4,7 +4,6 @@ import { type Provider, getOAuthUrl } from '@/lib/auth/oauthConfig';
 import KakaoIcon from '@/components/icons/KakaoIcon';
 import GoogleIcon from '@/components/icons/GoogleIcon';
 import NaverIcon from '@/components/icons/NaverIcon';
-import AppleIcon from '@/components/icons/AppleIcon';
 
 const PROVIDER_STYLES: Record<Provider, {
   bg: string;
@@ -31,12 +30,6 @@ const PROVIDER_STYLES: Record<Provider, {
     text: 'text-white',
     label: '네이버로 시작하기',
     icon: NaverIcon,
-  },
-  APPLE: {
-    bg: 'bg-black hover:bg-gray-900',
-    text: 'text-white',
-    label: 'Apple로 시작하기',
-    icon: AppleIcon,
   },
 };
 

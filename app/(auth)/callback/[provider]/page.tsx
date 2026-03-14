@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -8,8 +8,12 @@ export default function OAuthCallbackPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const calledRef = useRef(false);
 
   useEffect(() => {
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     const provider = (params.provider as string).toUpperCase();
     const code = searchParams.get('code');
     const state = searchParams.get('state');
@@ -37,14 +41,18 @@ export default function OAuthCallbackPage() {
     fetch('/api/auth/oauth/callback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ provider, code }),
     })
       .then((res) => {
         if (!res.ok) throw new Error('auth_failed');
         return res.json();
       })
-      .then((data) => {
-        if (data.isNewUser) {
+      .then((response) => {
+        const { accessToken, isNewUser } = response.data;
+        sessionStorage.setItem('access_token', accessToken);
+
+        if (isNewUser) {
           router.replace('/onboarding');
         } else {
           router.replace('/main');
@@ -53,7 +61,7 @@ export default function OAuthCallbackPage() {
       .catch(() => {
         router.replace('/login?error=auth_failed');
       });
-  }, [params.provider, searchParams, router]);
+  }, []);
 
   return (
     <LoadingSpinner message="로그인 처리 중..." />

@@ -23,15 +23,20 @@ export default function OnboardingPage() {
     setError('');
 
     try {
+      const accessToken = sessionStorage.getItem('access_token');
       const res = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+        },
+        credentials: 'include',
         body: JSON.stringify({ nickname: nickname.trim() }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.message || '프로필 설정에 실패했습니다.');
+        setError(data.error?.message || '프로필 설정에 실패했습니다.');
         return;
       }
 

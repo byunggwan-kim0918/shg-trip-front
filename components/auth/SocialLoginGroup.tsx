@@ -1,7 +1,7 @@
 import SocialLoginButton from './SocialLoginButton';
 import type { Provider } from '@/lib/auth/oauthConfig';
 
-const PROVIDERS: Provider[] = ['KAKAO', 'GOOGLE', 'NAVER', 'APPLE'];
+const PROVIDERS: Provider[] = ['KAKAO', 'GOOGLE', 'NAVER'];
 
 export default function SocialLoginGroup() {
   return (
