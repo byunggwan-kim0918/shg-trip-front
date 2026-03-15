@@ -29,28 +29,19 @@ export default function OAuthCallbackPage() {
       return;
     }
 
-    // state 검증 (CSRF 방지)
-    const savedState = sessionStorage.getItem('oauth_state');
-    if (state !== savedState) {
-      router.replace('/login?error=invalid_state');
-      return;
-    }
-    sessionStorage.removeItem('oauth_state');
-
-    // 백엔드에 인가 코드 전달
-    fetch('/api/auth/oauth/callback', {
+    // BFF에 인가 코드 전달 (state 검증은 서버에서 처리)
+    fetch('/api/auth/callback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ provider, code }),
+      body: JSON.stringify({ provider, code, state }),
     })
       .then((res) => {
         if (!res.ok) throw new Error('auth_failed');
         return res.json();
       })
       .then((response) => {
-        const { accessToken, isNewUser } = response.data;
-        sessionStorage.setItem('access_token', accessToken);
+        const { isNewUser } = response.data;
 
         if (isNewUser) {
           router.replace('/onboarding');

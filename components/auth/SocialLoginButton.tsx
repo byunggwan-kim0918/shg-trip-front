@@ -41,8 +41,8 @@ export default function SocialLoginButton({ provider }: SocialLoginButtonProps) 
   const style = PROVIDER_STYLES[provider];
   const Icon = style.icon;
 
-  const handleClick = () => {
-    window.location.href = getOAuthUrl(provider);
+  const handleClick = async () => {
+    window.location.href = await getOAuthUrl(provider);
   };
 
   return (

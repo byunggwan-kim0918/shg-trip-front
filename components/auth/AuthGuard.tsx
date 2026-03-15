@@ -1,34 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getRefreshPromise, forceLogout } from '@/lib/api/fetchClient';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/stores';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [isVerified, setIsVerified] = useState(false);
+  const fetchSession = useAuthStore((s) => s.fetchSession);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    const verify = async () => {
-      const accessToken = sessionStorage.getItem('access_token');
+    fetchSession().then(() => setIsVerified(true));
+  }, [fetchSession]);
 
-      // access token이 있으면 통과 (API 호출 시 authFetch가 401 처리)
-      if (accessToken) {
-        setIsVerified(true);
-        return;
-      }
+  useEffect(() => {
+    if (isVerified && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isVerified, isAuthenticated, router]);
 
-      // access token 없으면 refresh 시도 (새 탭, 페이지 새로고침 등)
-      const newToken = await getRefreshPromise();
-      if (newToken) {
-        setIsVerified(true);
-      } else {
-        forceLogout();
-      }
-    };
-
-    verify();
-  }, []);
-
-  if (!isVerified) return null;
+  if (!isVerified || !isAuthenticated) return null;
 
   return <>{children}</>;
 }

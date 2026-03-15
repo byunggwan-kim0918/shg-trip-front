@@ -1,7 +1,6 @@
+import EmptyDashboard from '@/components/dashboard/EmptyDashboard';
+
 export default function MainPage() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-900">메인 페이지</h1>
-    </div>
-  );
+  // 향후: 일정 목록 조회 → 조건부 렌더링
+  return <EmptyDashboard />;
 }

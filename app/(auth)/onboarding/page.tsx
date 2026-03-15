@@ -23,12 +23,10 @@ export default function OnboardingPage() {
     setError('');
 
     try {
-      const accessToken = sessionStorage.getItem('access_token');
-      const res = await fetch('/api/users/profile', {
+      const res = await fetch('/api/proxy/users/profile', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         },
         credentials: 'include',
         body: JSON.stringify({ nickname: nickname.trim() }),
@@ -57,8 +55,8 @@ export default function OnboardingPage() {
           </svg>
         </div>
         <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-900">환영합니다!</h1>
-          <p className="mt-1 text-sm text-gray-400">사용할 닉네임을 설정해주세요</p>
+          <h1 className="text-xl font-bold text-foreground">환영합니다!</h1>
+          <p className="mt-1 text-sm text-muted">사용할 닉네임을 설정해주세요</p>
         </div>
       </div>
 
@@ -73,7 +71,7 @@ export default function OnboardingPage() {
             }}
             placeholder="닉네임 (2~20자)"
             maxLength={20}
-            className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 text-sm transition-all bg-white text-gray-900 placeholder:text-gray-300"
+            className="w-full px-4 py-3.5 rounded-xl border border-sidebar-border focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 text-sm transition-all bg-card-bg text-foreground placeholder:text-muted/50"
           />
           {error && (
             <p className="mt-2 text-xs text-red-500">{error}</p>
@@ -83,7 +81,7 @@ export default function OnboardingPage() {
         <button
           type="submit"
           disabled={!isValid || isSubmitting}
-          className="w-full py-3.5 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors cursor-pointer"
+          className="w-full py-3.5 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-muted/30 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors cursor-pointer"
         >
           {isSubmitting ? '설정 중...' : '시작하기'}
         </button>

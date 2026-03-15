@@ -31,11 +31,16 @@ export const OAUTH_CONFIG: Record<Provider, OAuthProviderConfig> = {
   },
 };
 
-export function getOAuthUrl(provider: Provider): string {
+export async function getOAuthUrl(provider: Provider): Promise<string> {
   const config = OAUTH_CONFIG[provider];
-  const state = crypto.randomUUID();
 
-  sessionStorage.setItem('oauth_state', state);
+  // BFF에서 state 생성 + HttpOnly 쿠키 설정
+  const stateRes = await fetch('/api/auth/oauth-state', {
+    method: 'POST',
+    credentials: 'include',
+  });
+  const { data } = await stateRes.json();
+  const state: string = data.state;
 
   const params = new URLSearchParams({
     client_id: config.clientId,

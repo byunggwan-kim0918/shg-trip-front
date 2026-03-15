@@ -1,84 +1,48 @@
 /**
- * 인증이 필요한 API 요청을 위한 공통 fetch 래퍼.
- * - access token을 Authorization 헤더에 자동 첨부
- * - 401 응답 시 refresh 시도 → 성공하면 재요청, 실패하면 /login으로 리다이렉트
- * - 동시 다발적 401에 대한 refresh 요청 중복 방지 (single-flight)
+ * BFF 프록시를 통한 인증 API 요청 래퍼.
+ * - 서버 측에서 JWT를 관리하므로 클라이언트는 Authorization 헤더를 다루지 않음
+ * - 쿠키 기반 인증 (credentials: 'include')
+ * - 401 응답 시 서버에서 refresh를 시도하므로 클라이언트에서 refresh 로직 불필요
  */
 
-let isRefreshing = false;
-let refreshPromise: Promise<string | null> | null = null;
+/**
+ * 인증이 필요한 API 호출 래퍼.
+ * /api/ 경로를 /api/proxy/로 변환하여 BFF를 거치도록 한다.
+ * (/api/auth/는 이미 BFF 핸들러이므로 변환하지 않음)
+ */
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const proxyUrl = toProxyUrl(url);
 
-async function refreshAccessToken(): Promise<string | null> {
-  try {
-    const res = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
-    });
+  const res = await fetch(proxyUrl, {
+    ...options,
+    credentials: 'include',
+  });
 
-    if (!res.ok) return null;
-
-    const { data } = await res.json();
-    sessionStorage.setItem('access_token', data.accessToken);
-    return data.accessToken;
-  } catch {
-    return null;
+  if (res.status === 401) {
+    forceLogout();
+    return new Promise(() => {});
   }
+
+  return res;
 }
 
-/** refresh 요청 중복 방지 (single-flight pattern) */
-export function getRefreshPromise(): Promise<string | null> {
-  if (!isRefreshing) {
-    isRefreshing = true;
-    refreshPromise = refreshAccessToken().finally(() => {
-      isRefreshing = false;
-      refreshPromise = null;
-    });
-  }
-  return refreshPromise!;
-}
-
+/** BFF 로그아웃 → 쿠키 삭제 → 로그인 페이지 이동 */
 export function forceLogout() {
-  sessionStorage.removeItem('access_token');
-
-  // 백엔드에 로그아웃 요청 (쿠키 삭제는 서버가 처리)
   fetch('/api/auth/logout', {
     method: 'POST',
     credentials: 'include',
   }).finally(() => {
-    // force=true → middleware에서 쿠키 강제 삭제
-    window.location.href = '/login?force=true';
+    window.location.href = '/login';
   });
 }
 
-/** 인증 API 호출 래퍼. 401 시 자동 refresh → 재요청 → 실패 시 forceLogout */
-export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const accessToken = sessionStorage.getItem('access_token');
-
-  const res = await fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      ...options.headers,
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-  });
-
-  if (res.status !== 401) return res;
-
-  // 401 → refresh 시도
-  const newToken = await getRefreshPromise();
-  if (!newToken) {
-    forceLogout();
-    return res;
-  }
-
-  // 새 토큰으로 재요청
-  return fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${newToken}`,
-    },
-  });
+/**
+ * /api/... → /api/proxy/... 변환.
+ * /api/auth/는 BFF 핸들러이므로 변환하지 않는다.
+ */
+function toProxyUrl(url: string): string {
+  if (!url.startsWith('/')) return url;
+  if (url.startsWith('/api/auth/')) return url;
+  if (url.startsWith('/api/')) return url.replace(/^\/api\//, '/api/proxy/');
+  return url;
 }
