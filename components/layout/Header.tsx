@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useAppStore, useAuthStore } from '@/lib/stores';
 
 export default function Header() {
@@ -19,11 +20,11 @@ export default function Header() {
         {/* 사이드바 닫혀있을 때: 로고 + 사이드바 열기 버튼 표시 */}
         {!sidebarOpen && (
           <>
-            <div className="w-7 h-7 bg-gradient-to-br from-teal-400 to-blue-500 rounded-lg flex items-center justify-center shrink-0">
+            <Link href="/main" aria-label="홈으로 이동" className="w-7 h-7 bg-gradient-to-br from-teal-400 to-blue-500 rounded-lg flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-            </div>
+            </Link>
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-1.5 rounded-lg text-muted hover:bg-surface-hover transition-colors"

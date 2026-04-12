@@ -9,18 +9,23 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isVerified, setIsVerified] = useState(false);
   const fetchSession = useAuthStore((s) => s.fetchSession);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
   useEffect(() => {
+    if (isDemo) {
+      setIsVerified(true);
+      return;
+    }
     fetchSession().then(() => setIsVerified(true));
-  }, [fetchSession]);
+  }, [fetchSession, isDemo]);
 
   useEffect(() => {
-    if (isVerified && !isAuthenticated) {
+    if (isVerified && !isAuthenticated && !isDemo) {
       router.replace('/login');
     }
-  }, [isVerified, isAuthenticated, router]);
+  }, [isVerified, isAuthenticated, isDemo, router]);
 
-  if (!isVerified || !isAuthenticated) return null;
+  if (!isVerified || (!isAuthenticated && !isDemo)) return null;
 
   return <>{children}</>;
 }

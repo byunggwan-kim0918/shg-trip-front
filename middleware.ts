@@ -5,6 +5,8 @@ const PROTECTED_PAGES = ['/main', '/onboarding'];
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  // NEXT_PUBLIC_ 변수는 빌드 타임 인라인 — Edge Runtime에서 런타임 변경 불가.
+  // 미들웨어 레벨 DEMO 우회는 제거하고 클라이언트(AuthGuard)에서만 처리.
   const hasSession = request.cookies.has('__session');
 
   // force=true: 세션 만료 → 쿠키 강제 삭제 후 /login으로

@@ -39,9 +39,19 @@ shg-trip-front/
 │   │   ├── onboarding/page.tsx        # 닉네임 설정
 │   │   └── callback/[provider]/page.tsx # OAuth 콜백 처리
 │   │
+│   ├── api/                           # BFF Route Handlers ✅
+│   │   ├── auth/
+│   │   │   ├── callback/route.ts      # OAuth 콜백 → __session 쿠키 발급
+│   │   │   ├── refresh/route.ts       # 토큰 갱신
+│   │   │   ├── logout/route.ts        # 로그아웃 (쿠키 삭제)
+│   │   │   ├── session/route.ts       # 세션 조회 (프로필 + 인증 상태)
+│   │   │   └── oauth-state/route.ts   # OAuth state 쿠키 발급
+│   │   └── proxy/
+│   │       └── [...path]/route.ts     # 범용 인증 API 프록시
+│   │
 │   ├── main/                          # 메인 라우트 (AuthGuard 보호) ✅
 │   │   ├── layout.tsx                 # 'use client' - Sidebar + Header + main
-│   │   └── page.tsx                   # 대시보드 (placeholder)
+│   │   └── page.tsx                   # 대시보드
 │   │
 │   ├── layout.tsx                     # 루트 레이아웃 (ThemeInitializer, metadata)
 │   ├── page.tsx                       # 랜딩 페이지
@@ -50,36 +60,42 @@ shg-trip-front/
 │
 ├── components/
 │   ├── auth/                          # ✅ 구현 완료
-│   │   ├── AuthGuard.tsx              # 인증 상태 확인 + 리다이렉트
+│   │   ├── AuthGuard.tsx              # 세션 검증 + 미인증 시 /login 리다이렉트
 │   │   ├── SocialLoginButton.tsx
 │   │   └── SocialLoginGroup.tsx
 │   ├── common/
 │   │   └── LoadingSpinner.tsx
+│   ├── dashboard/                     # ✅ 구현 완료
+│   │   ├── EmptyDashboard.tsx
+│   │   └── CreateTripCard.tsx
 │   ├── icons/                         # ✅ 구현 완료
 │   │   ├── GoogleIcon.tsx
 │   │   ├── KakaoIcon.tsx
-│   │   └── NaverIcon.tsx
+│   │   ├── NaverIcon.tsx
+│   │   └── TripIcons.tsx
 │   └── layout/                        # ✅ 구현 완료
-│       ├── Sidebar.tsx                # 280px open / 64px collapsed, 모바일 오버레이
+│       ├── Sidebar.tsx                # 260px open, 모바일 오버레이, 로그아웃 버튼
 │       ├── Header.tsx                 # 모바일 햄버거, 테마 토글, 유저 아바타
 │       └── ThemeInitializer.tsx       # 시스템 다크모드 감지, localStorage 지속
 │
 ├── lib/
 │   ├── api/
-│   │   └── fetchClient.ts            # ✅ 인증 fetch 래퍼
-│   │                                  #   - Authorization 헤더 자동 첨부
-│   │                                  #   - 401 시 refresh → 재요청
-│   │                                  #   - single-flight 패턴 (중복 refresh 방지)
-│   │                                  #   - forceLogout (실패 시 /login 리다이렉트)
+│   │   └── fetchClient.ts            # ✅ BFF 프록시 기반 fetch 래퍼
+│   │                                  #   - /api/ → /api/proxy/ 변환 (BFF 경유)
+│   │                                  #   - 쿠키 기반 인증 (credentials: 'include')
+│   │                                  #   - 401 시 forceLogout
 │   ├── auth/
 │   │   └── oauthConfig.ts            # OAuth 프로바이더 설정
+│   ├── server/                        # ✅ 서버 전용 유틸
+│   │   ├── session.ts                 # AES-256-GCM __session 쿠키 암복호화
+│   │   └── backendFetch.ts            # Spring API 호출 (JWT 첨부, 401 refresh)
 │   └── stores/
 │       ├── index.ts                   # barrel export
-│       ├── useAuthStore.ts            # 인증 상태 (user, accessToken, isAuthenticated)
+│       ├── useAuthStore.ts            # 인증 상태 (user, isAuthenticated, fetchSession)
 │       └── useAppStore.ts             # 앱 상태 (theme, sidebarOpen)
 │
 ├── middleware.ts                       # ✅ 인증 라우팅
-│                                       #   - refresh_token 쿠키 기반
+│                                       #   - __session 쿠키 기반
 │                                       #   - 로그인 유저 → /main 리다이렉트
 │                                       #   - 비로그인 유저 → /login 리다이렉트
 │                                       #   - force=true → 쿠키 삭제
@@ -92,7 +108,7 @@ shg-trip-front/
 ├── next.config.ts
 ├── eslint.config.mjs
 ├── postcss.config.mjs
-└── .env.local
+└── .env.local                         # SESSION_SECRET (AES-256-GCM 키)
 ```
 
 ---
@@ -131,23 +147,42 @@ shg-trip-front/
 
 ---
 
-## 🔐 인증 구조
+## 🔐 인증 구조 (BFF 패턴)
+
+### 아키텍처
+- 브라우저 → Next.js Route Handler (BFF) → Spring Boot
+- JWT는 브라우저에 노출되지 않음 (XSS 방어)
 
 ### 토큰 관리
-- Access Token: `sessionStorage` (authFetch가 자동 첨부)
-- Refresh Token: `httpOnly 쿠키` (서버가 관리)
-- 토큰 갱신: `fetchClient.ts`의 `getRefreshPromise()` (single-flight)
+- Access Token: `__session` HttpOnly 쿠키 (AES-256-GCM 암호화, `lib/server/session.ts`)
+- Refresh Token: `refresh_token` HttpOnly 쿠키 (Spring이 관리)
+- 토큰 갱신: 서버 측에서 투명하게 처리 (`lib/server/backendFetch.ts`)
+
+### BFF Route Handlers
+```
+POST /api/auth/callback      → OAuth 인증 후 __session 쿠키 발급
+POST /api/auth/refresh        → 토큰 갱신
+POST /api/auth/logout         → 쿠키 삭제
+GET  /api/auth/session        → 세션 검증 + 프로필 조회
+POST /api/auth/oauth-state    → OAuth state 쿠키 발급
+ANY  /api/proxy/[...path]     → 범용 인증 API 프록시
+```
 
 ### 라우팅 보호
 ```
 middleware.ts:
-  / , /login, /callback/* → 로그인 시 /main으로 리다이렉트
+  / , /login           → 로그인(__session 있음) 시 /main으로 리다이렉트
   /main/*, /onboarding/*  → 비로그인 시 /login으로 리다이렉트
 
 AuthGuard (컴포넌트):
   main/layout.tsx에서 사용
-  access_token 없으면 refresh 시도 → 실패 시 /login
+  fetchSession() 호출 → 미인증 시 /login 리다이렉트
 ```
+
+### Set-Cookie 주의사항
+- Route Handler에서 `response.cookies` API와 `response.headers.append('Set-Cookie', ...)`를 혼용하면 안됨
+- Next.js의 `response.cookies`가 수동 추가한 Set-Cookie 헤더를 덮어쓰는 버그 있음
+- 여러 쿠키를 설정하는 Route Handler에서는 `response.headers.append`만 사용할 것
 
 ---
 
@@ -186,7 +221,7 @@ export const useXxxStore = create<XxxState>((set) => ({
 ```tsx
 import { authFetch } from '@/lib/api/fetchClient';
 
-// 인증 필요한 API
+// 인증 필요한 API (자동으로 /api/proxy/xxx로 변환되어 BFF 경유)
 const res = await authFetch('/api/xxx');
 const { data } = await res.json();
 
@@ -211,7 +246,8 @@ const res = await fetch('/api/xxx');
 ```bash
 npm run dev
 # http://localhost:3000
-# /main 접근 시 refresh_token 쿠키 필요 (소셜 로그인 후 자동 설정)
+# /main 접근 시 __session 쿠키 필요 (소셜 로그인 후 BFF가 자동 설정)
+# SESSION_SECRET 환경변수 필요 (.env.local)
 ```
 
 ---

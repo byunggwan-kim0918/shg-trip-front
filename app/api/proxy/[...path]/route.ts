@@ -32,11 +32,32 @@ async function handleProxy(
   );
 
   // Spring 응답을 그대로 전달
-  const responseBody = await springRes.text();
+  // SSE(text/event-stream)는 body를 버퍼링하지 않고 스트리밍으로 전달
+  // 이미지 등 바이너리 응답은 arrayBuffer로 전달 (text 변환 시 깨짐 방지)
+  const resContentType = springRes.headers.get('content-type') || 'application/json';
+  const isSSE = resContentType.includes('text/event-stream');
+  const isBinary = resContentType.startsWith('image/') || resContentType === 'application/octet-stream';
+
+  let responseBody: ReadableStream<Uint8Array> | ArrayBuffer | string | null;
+  if (isSSE) {
+    responseBody = springRes.body;
+  } else if (isBinary) {
+    responseBody = await springRes.arrayBuffer();
+  } else {
+    responseBody = await springRes.text();
+  }
+
   const response = new NextResponse(responseBody, {
     status: springRes.status,
     headers: {
-      'Content-Type': springRes.headers.get('content-type') || 'application/json',
+      'Content-Type': resContentType,
+      ...(isSSE && {
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',  // nginx 버퍼링 비활성화
+      }),
+      ...(isBinary && {
+        'Cache-Control': 'public, max-age=86400',  // 이미지 1일 캐싱
+      }),
     },
   });
 
