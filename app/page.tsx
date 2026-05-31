@@ -8,7 +8,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-header-bg backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -32,10 +31,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero */}
       <main className="flex-1 px-5 sm:px-8 pt-24 pb-16">
         <div className="max-w-5xl mx-auto">
-          {/* Hero Section */}
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-soft rounded-full mb-6">
               <span className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
@@ -67,7 +64,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Feature Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
             <div className="p-6 rounded-2xl border border-sidebar-border bg-card-bg hover:shadow-md transition-shadow">
               <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-blue-500 rounded-xl flex items-center justify-center mb-4">
@@ -115,7 +111,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="py-8 text-center">
         <p className="text-xs text-muted/50">&copy; 2026 SHG trip</p>
       </footer>

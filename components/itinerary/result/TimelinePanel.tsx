@@ -71,9 +71,8 @@ export default function TimelinePanel({
   const dayGroups: DayGroup[] = groupStepsByDay(itinerary.steps);
   const currentGroup = dayGroups.find((g) => g.dayNumber === selectedDay) ?? dayGroups[0];
 
-  // DnD는 현재 UI 전용 (순서 변경 서버 저장은 PUT /api/itineraries/{id} 필요 — 추후 구현)
   const handleDragEnd = (_event: DragEndEvent) => {
-    // TODO: 순서 변경 후 PUT /api/itineraries/{id} 호출
+    // 순서 변경 서버 저장 미구현
   };
 
   if (!currentGroup) return null;
