@@ -27,10 +27,10 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest
 
       - name: Deploy via SSM
-        run: |
-          aws ssm send-command \
-            --region ${{ secrets.AWS_REGION }} \
-            --document-name "AWS-RunShellScript" \
-            --targets '[{"Key":"tag:Role","Values":["web"]}]' \
-            --parameters '{"commands":["aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}","sudo docker pull ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest","sudo docker stop shgtrip-web || true","sudo docker rm shgtrip-web || true","sudo docker run -d --name shgtrip-web --restart always -p 3000:3000 -e BACKEND_URL=${{ secrets.BACKEND_URL }} -e SESSION_SECRET=${{ secrets.SESSION_SECRET }} ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest"]}' \
-            --timeout-seconds 300
+        run: >-
+          aws ssm send-command
+          --region "${{ secrets.AWS_REGION }}"
+          --document-name "AWS-RunShellScript"
+          --targets '[{"Key":"tag:Role","Values":["web"]}]'
+          --parameters '{"commands":["aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}","sudo docker pull ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest","sudo docker stop shgtrip-web || true","sudo docker rm shgtrip-web || true","sudo docker run -d --name shgtrip-web --restart always -p 3000:3000 -e BACKEND_URL=${{ secrets.BACKEND_URL }} -e SESSION_SECRET=${{ secrets.SESSION_SECRET }} ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest"]}'
+          --timeout-seconds 300
