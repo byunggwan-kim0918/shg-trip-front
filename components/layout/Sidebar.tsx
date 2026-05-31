@@ -155,12 +155,21 @@ export default function Sidebar() {
         {/* 사용자 프로필 */}
         <div className="border-t border-sidebar-border p-3">
           <div className="flex items-center gap-3 px-2">
-            <div
-              className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white text-xs font-medium shrink-0"
-              aria-hidden="true"
-            >
-              {user?.nickname?.charAt(0) ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
-            </div>
+            {user?.profileImage ? (
+              <img
+                src={user.profileImage}
+                alt=""
+                className="w-7 h-7 rounded-full object-cover shrink-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div
+                className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white text-xs font-medium shrink-0"
+                aria-hidden="true"
+              >
+                {user?.nickname?.charAt(0) ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground truncate">
                 {user?.nickname ?? '사용자'}

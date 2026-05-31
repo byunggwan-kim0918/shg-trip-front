@@ -12,11 +12,11 @@ import BudgetDateStep from '@/components/itinerary/wizard/steps/BudgetDateStep';
 import DescriptionStep from '@/components/itinerary/wizard/steps/DescriptionStep';
 import PlaceSelectStep from '@/components/itinerary/wizard/steps/PlaceSelectStep';
 import SummaryStep from '@/components/itinerary/wizard/steps/SummaryStep';
-import type { TripMode } from '@/lib/types/itinerary';
+import type { WizardData } from '@/lib/types/itinerary';
 
 export default function PlanNewPage() {
   const searchParams = useSearchParams();
-  const mode = (searchParams.get('mode') as TripMode) || 'auto';
+  const mode = (searchParams.get('mode') as WizardData['mode']) || 'auto';
   const { updateData, reset, data } = useWizardStore();
 
   useEffect(() => {

@@ -1,13 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/stores';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const fetchSession = useAuthStore((s) => s.fetchSession);
+
+  // 세션 로드 후 이미 닉네임이 있으면 /main으로 리다이렉트
+  useEffect(() => {
+    fetchSession();
+  }, [fetchSession]);
+
+  useEffect(() => {
+    if (user?.nickname) {
+      router.replace('/main');
+    }
+  }, [user, router]);
 
   const isValid = nickname.trim().length >= 2 && nickname.trim().length <= 20;
 
