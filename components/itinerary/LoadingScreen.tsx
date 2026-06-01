@@ -14,22 +14,18 @@ const STAGES: { key: string; label: string; icon: string }[] = [
   { key: 'SAVING', label: '맞춤 일정 저장', icon: '💾' },
 ];
 
+const SESSION_KEY = 'shg_active_job_id';
+
 function getStageIndex(stage: string): number {
   const idx = STAGES.findIndex((s) => s.key === stage);
   return idx === -1 ? 0 : idx;
 }
 
 const VEHICLES = ['✈️', '🚗', '🚂', '⛵', '🚌', '🛵', '🚁', '🛳️', '🚕', '🏍️'];
-
 function getRandomVehicle(): string {
   return VEHICLES[Math.floor(Math.random() * VEHICLES.length)];
 }
 
-/**
- * SSE에서 실제 진행률이 오면 그 값을 목표로 설정하고,
- * 목표까지 부드럽게 올라가되, 목표 직전에서 감속하여 자연스럽게 대기.
- * AI 호출 중 멈춰 보이지 않도록 중간에 천천히 올라감.
- */
 function useSmoothedProgress() {
   const [display, setDisplay] = useState(0);
   const targetRef = useRef(0);
@@ -41,20 +37,17 @@ function useSmoothedProgress() {
     const current = displayRef.current;
 
     if (current < target) {
-      // 목표까지 남은 거리에 비례해서 속도 조절 (가까울수록 느리게)
       const remaining = target - current;
       const step = Math.max(0.15, remaining * 0.03);
       const next = Math.min(current + step, target);
       displayRef.current = next;
       setDisplay(Math.round(next));
     } else if (target < 100) {
-      // 목표에 도달했지만 아직 다음 SSE 안 옴 → 아주 천천히 올라감 (다음 목표의 80%까지만)
       const nextTarget = getNextTarget(target);
       const ceiling = target + (nextTarget - target) * 0.8;
       if (current < ceiling) {
-        const next = current + 0.05;
-        displayRef.current = next;
-        setDisplay(Math.round(next));
+        displayRef.current = current + 0.05;
+        setDisplay(Math.round(current + 0.05));
       }
     }
 
@@ -73,7 +66,6 @@ function useSmoothedProgress() {
   return { display, setTarget };
 }
 
-/** 현재 목표 다음에 올 SSE 목표값 추정 */
 function getNextTarget(current: number): number {
   const targets = [20, 50, 70, 90, 100];
   for (const t of targets) {
@@ -94,6 +86,8 @@ export default function LoadingScreen() {
   const [fadeOut, setFadeOut] = useState(false);
   const startedRef = useRef(false);
   const esRef = useRef<EventSource | null>(null);
+  // complete 이벤트 수신 후 onerror 오발화 방지 플래그
+  const completedRef = useRef(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -111,6 +105,23 @@ export default function LoadingScreen() {
     startedRef.current = true;
 
     const run = async () => {
+      // wizard 데이터 없이 직접 접근한 경우 — 새로고침 시 jobId 재사용 시도
+      const hasWizardData = data.destination.trim().length > 0 && !!data.startDate && !!data.endDate;
+      const savedJobId = sessionStorage.getItem(SESSION_KEY);
+
+      // 새로고침 케이스: wizard 데이터는 없지만 진행 중인 jobId가 있음
+      if (!hasWizardData && savedJobId) {
+        reconnectToJob(savedJobId);
+        return;
+      }
+
+      // wizard 데이터도 없고 jobId도 없으면 → 플랜 페이지로
+      if (!hasWizardData) {
+        router.replace('/main/plan/new');
+        return;
+      }
+
+      // 정상 플로우: 새 생성 요청
       const req: ItineraryGenerateRequest = {
         mode: data.mode === 'manual' ? 'MANUAL' : 'AUTO',
         destination: data.destination,
@@ -134,55 +145,106 @@ export default function LoadingScreen() {
         return;
       }
 
-      const sseUrl = `/api/proxy/itineraries/generate/${jobId}/stream`;
-      const eventSource = new EventSource(sseUrl, { withCredentials: true });
-      esRef.current = eventSource;
-
-      eventSource.addEventListener('progress', (e) => {
-        const payload = JSON.parse(e.data) as { percentage: number; message: string; stage: string };
-        setTarget(payload.percentage);
-        setStage(payload.stage);
-      });
-
-      eventSource.addEventListener('complete', async (e) => {
-        eventSource.close();
-        setTarget(100);
-        setStage('COMPLETE');
-        try {
-          // itineraryId는 SSE에 포함되지 않음 — 인증된 result API로 조회
-          const res = await fetch(`/api/proxy/itineraries/generate/${jobId}/result`, {
-            credentials: 'include',
-          });
-          if (!res.ok) throw new Error('결과 조회 실패');
-          const body = await res.json() as { success: boolean; data: number };
-          const itineraryId = body.data;
-          const itinerary = await fetchItinerary(itineraryId);
-          setCurrentItinerary(itinerary);
-          reset();
-          setFadeOut(true);
-          setTimeout(() => router.push(`/main/itinerary/${itineraryId}`), 600);
-        } catch {
-          setError('일정을 불러오는데 실패했습니다.');
-        }
-      });
-
-      eventSource.addEventListener('error', (e) => {
-        eventSource.close();
-        const payload = (e as MessageEvent).data
-          ? (JSON.parse((e as MessageEvent).data) as { message: string })
-          : null;
-        setError(payload?.message ?? 'AI 일정 생성 중 오류가 발생했습니다.');
-      });
-
-      eventSource.onerror = () => {
-        eventSource.close();
-        setError('서버 연결이 끊어졌습니다. 다시 시도해주세요.');
-      };
+      // jobId를 sessionStorage에 저장 — 새로고침 시 재연결에 사용
+      sessionStorage.setItem(SESSION_KEY, jobId);
+      connectToJob(jobId);
     };
 
     run();
     return () => { esRef.current?.close(); };
-  }, [data, setCurrentItinerary, reset, router, setTarget]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 새로고침 후 기존 jobId로 SSE 재연결 */
+  function reconnectToJob(jobId: string) {
+    // 이미 완료된 작업인지 먼저 result API로 확인
+    fetch(`/api/proxy/itineraries/generate/${jobId}/result`, { credentials: 'include' })
+      .then(async (res) => {
+        if (res.ok) {
+          const body = await res.json() as { success: boolean; data: number };
+          if (body.success) {
+            // 이미 완료됨 — 바로 결과 처리
+            await handleComplete(jobId, body.data);
+            return;
+          }
+        }
+        // 404(아직 진행 중이거나 result 없음) → SSE 재연결 시도
+        // SSE 연결 자체가 실패하면 onerror에서 에러 처리됨
+        connectToJob(jobId);
+      })
+      .catch(() => {
+        // 네트워크 오류 → SSE 재연결 시도 (result가 아직 없을 수 있음)
+        connectToJob(jobId);
+      });
+  }
+
+  /** SSE 연결 및 이벤트 핸들러 등록 */
+  function connectToJob(jobId: string) {
+    completedRef.current = false;
+    const sseUrl = `/api/proxy/itineraries/generate/${jobId}/stream`;
+    const eventSource = new EventSource(sseUrl, { withCredentials: true });
+    esRef.current = eventSource;
+
+    eventSource.addEventListener('progress', (e) => {
+      const payload = JSON.parse(e.data) as { percentage: number; message: string; stage: string };
+      setTarget(payload.percentage);
+      setStage(payload.stage);
+    });
+
+    eventSource.addEventListener('complete', async () => {
+      completedRef.current = true;
+      eventSource.close();
+      setTarget(100);
+      setStage('COMPLETE');
+
+      const res = await fetch(`/api/proxy/itineraries/generate/${jobId}/result`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        setError('일정을 불러오는데 실패했습니다.');
+        return;
+      }
+      const body = await res.json() as { success: boolean; data: number };
+      if (!body.success) {
+        setError('일정을 불러오는데 실패했습니다.');
+        return;
+      }
+      await handleComplete(jobId, body.data);
+    });
+
+    eventSource.addEventListener('error', (e) => {
+      completedRef.current = true;
+      eventSource.close();
+      const payload = (e as MessageEvent).data
+        ? (JSON.parse((e as MessageEvent).data) as { message: string })
+        : null;
+      setError(payload?.message ?? 'AI 일정 생성 중 오류가 발생했습니다.');
+      sessionStorage.removeItem(SESSION_KEY);
+    });
+
+    // onerror: 서버 complete 후 브라우저가 재연결 시도할 때도 발화함
+    // completedRef로 정상 완료 후 발화는 무시
+    eventSource.onerror = () => {
+      if (completedRef.current) return;
+      eventSource.close();
+      setError('서버 연결이 끊어졌습니다. 다시 시도해주세요.');
+      sessionStorage.removeItem(SESSION_KEY);
+    };
+  }
+
+  /** 완료 처리 공통 로직 */
+  async function handleComplete(jobId: string, itineraryId: number) {
+    try {
+      const itinerary = await fetchItinerary(itineraryId);
+      setCurrentItinerary(itinerary);
+      reset();
+      sessionStorage.removeItem(SESSION_KEY);
+      setFadeOut(true);
+      setTimeout(() => router.push(`/main/itinerary/${itineraryId}`), 600);
+    } catch {
+      setError('일정을 불러오는데 실패했습니다.');
+    }
+  }
 
   if (error) {
     return (
@@ -205,7 +267,6 @@ export default function LoadingScreen() {
   const clampedProgress = Math.min(progress, 100);
   const currentStageIdx = getStageIndex(stage);
 
-  /** 현재 단계에 맞는 메시지 */
   const stageMessages: Record<string, string> = {
     ENRICHING: '여행지 정보를 분석하고 있어요',
     GENERATING: 'AI가 최적의 장소를 찾고 있어요',
