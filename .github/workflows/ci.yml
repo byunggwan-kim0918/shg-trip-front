@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,5 +20,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build check
+      # 타입 에러 조기 감지
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # 코드 스타일/품질
+      - name: Lint
+        run: npm run lint
+
+      # 빌드 실패 감지
+      - name: Build
         run: npm run build
