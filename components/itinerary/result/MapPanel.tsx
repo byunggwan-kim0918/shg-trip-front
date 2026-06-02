@@ -15,11 +15,12 @@ const MapPanelInner = dynamic(() => import('./MapPanelInner'), {
 
 interface MapPanelProps {
   steps: ItineraryStep[];
+  selectedDay?: number;
   selectedStepId: number | null;
   onMarkerClick: (stepId: number) => void;
 }
 
-export default function MapPanel({ steps, selectedStepId, onMarkerClick }: MapPanelProps) {
+export default function MapPanel({ steps, selectedDay, selectedStepId, onMarkerClick }: MapPanelProps) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -35,7 +36,11 @@ export default function MapPanel({ steps, selectedStepId, onMarkerClick }: MapPa
       && s.place.latitude !== 0 && s.place.longitude !== 0,
   );
 
-  if (mappableSteps.length === 0) {
+  const filteredSteps = selectedDay
+    ? mappableSteps.filter((s) => s.dayNumber === selectedDay)
+    : mappableSteps;
+
+  if (filteredSteps.length === 0) {
     return (
       <div className="w-full h-full min-h-[300px] flex items-center justify-center bg-surface text-muted text-sm">
         <div className="text-center">
@@ -49,7 +54,7 @@ export default function MapPanel({ steps, selectedStepId, onMarkerClick }: MapPa
   return (
     <div className="w-full h-full min-h-[300px]">
       <MapPanelInner
-        steps={mappableSteps}
+        steps={filteredSteps}
         selectedStepId={selectedStepId}
         onMarkerClick={onMarkerClick}
         isDark={isDark}

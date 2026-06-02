@@ -94,8 +94,8 @@ export default function ResultLayout() {
           style={{ minHeight: showMap ? '300px' : undefined }}
         >
           <MapPanel
-            key={selectedDay}
-            steps={currentGroup?.steps ?? []}
+            steps={currentItinerary.steps}
+            selectedDay={selectedDay}
             selectedStepId={selectedStepId}
             onMarkerClick={setSelectedStep}
           />
