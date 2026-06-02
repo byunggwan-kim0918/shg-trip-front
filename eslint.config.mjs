@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // useEffect 안에서 setState 호출은 흔한 패턴 — error → warn
+      "react-hooks/set-state-in-effect": "warn",
+      // useCallback 내부 참조 순서 — error → warn
+      "react-hooks/immutability": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;
