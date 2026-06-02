@@ -61,14 +61,26 @@ export default function Header() {
           )}
         </button>
 
-        <div
-          className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white text-xs font-medium cursor-pointer"
-          role="button"
-          tabIndex={0}
-          aria-label="사용자 메뉴"
-        >
-          {user?.nickname?.charAt(0) ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
-        </div>
+        {user?.profileImage ? (
+          <img
+            src={user.profileImage}
+            alt=""
+            className="w-7 h-7 rounded-full object-cover cursor-pointer"
+            role="button"
+            tabIndex={0}
+            aria-label="사용자 메뉴"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div
+            className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex items-center justify-center text-white text-xs font-medium cursor-pointer"
+            role="button"
+            tabIndex={0}
+            aria-label="사용자 메뉴"
+          >
+            {user?.nickname?.charAt(0) ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
+          </div>
+        )}
       </div>
     </header>
   );
