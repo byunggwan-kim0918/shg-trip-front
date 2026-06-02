@@ -1,60 +1,54 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import {
+  APIProvider,
+  Map as GoogleMap,
+  AdvancedMarker,
+} from '@vis.gl/react-google-maps';
 import type { WizardPlace } from '@/lib/types/itinerary';
 
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
-
-function createNumberedIcon(index: number) {
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:24px;height:24px;background:#3b82f6;border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,0.3)">${index + 1}</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-}
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
 interface PlaceMapProps {
   places: WizardPlace[];
 }
 
-const SEOUL_CENTER: [number, number] = [37.5665, 126.9780];
+const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 
 export default function PlaceMap({ places }: PlaceMapProps) {
-  const center: [number, number] = places.length > 0
-    ? [places[0].latitude, places[0].longitude]
+  const center = places.length > 0
+    ? { lat: places[0].latitude, lng: places[0].longitude }
     : SEOUL_CENTER;
 
   return (
-    <MapContainer
-      center={center}
-      zoom={places.length > 0 ? 13 : 11}
-      style={{ width: '100%', height: '100%' }}
-      scrollWheelZoom={false}
-    >
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-      />
-      {places.map((place, i) => (
-        <Marker
-          key={place.id}
-          position={[place.latitude, place.longitude]}
-          icon={createNumberedIcon(i)}
-        >
-          <Popup>
-            <p className="text-sm font-semibold">{place.name}</p>
-            <p className="text-xs text-gray-500">{place.address}</p>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+      <GoogleMap
+        defaultCenter={center}
+        defaultZoom={places.length > 0 ? 13 : 11}
+        style={{ width: '100%', height: '100%' }}
+        gestureHandling="greedy"
+        mapTypeControl={false}
+        streetViewControl={false}
+        fullscreenControl={false}
+      >
+        {places.map((place, i) => (
+          <AdvancedMarker
+            key={place.id}
+            position={{ lat: place.latitude, lng: place.longitude }}
+          >
+            <div
+              className="flex items-center justify-center rounded-full text-white text-xs font-bold shadow-md border-2 border-white"
+              style={{
+                width: 28,
+                height: 28,
+                backgroundColor: '#3b82f6',
+              }}
+            >
+              {i + 1}
+            </div>
+          </AdvancedMarker>
+        ))}
+      </GoogleMap>
+    </APIProvider>
   );
 }

@@ -39,7 +39,7 @@ export default function ChipSelect({ options, selected, onChange, minSelect = 1 
               inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium
               transition-all duration-150 min-h-[44px]
               ${isSelected
-                ? 'bg-accent text-white shadow-sm'
+                ? 'bg-accent text-white shadow-sm border border-transparent'
                 : 'bg-surface text-foreground border border-card-border hover:bg-surface-hover'
               }
             `}

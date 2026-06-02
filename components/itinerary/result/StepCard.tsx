@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
 import AlternativeList from './AlternativeList';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
@@ -21,7 +20,6 @@ interface StepCardProps {
   onToggleExpand: () => void;
   onClick: () => void;
   onSelectAlternative?: (alternative: AlternativeOption) => void;
-  dragListeners?: SyntheticListenerMap;
 }
 
 export default function StepCard({
@@ -31,7 +29,6 @@ export default function StepCard({
   onToggleExpand,
   onClick,
   onSelectAlternative,
-  dragListeners,
 }: StepCardProps) {
   const place = step.place;
   const [imgError, setImgError] = useState(false);
@@ -47,7 +44,6 @@ export default function StepCard({
     >
       <div className="flex items-start gap-3">
         <div className="flex flex-col items-center gap-1 pt-0.5">
-          <span className="text-xs text-muted cursor-grab" aria-label="드래그 핸들" {...dragListeners}>⠿</span>
           <span className="w-6 h-6 rounded-full bg-accent text-white text-xs flex items-center justify-center font-semibold">
             {index + 1}
           </span>

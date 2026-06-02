@@ -1,8 +1,5 @@
 'use client';
 
-import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import type { AlternativeOption, DayGroup, Itinerary, ItineraryStep } from '@/lib/types/itinerary';
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
@@ -16,66 +13,22 @@ interface TimelinePanelProps {
   onStepClick: (stepId: number) => void;
 }
 
-function SortableStepCard({
-  step,
-  index,
-  itineraryId,
-  onStepClick,
-}: {
-  step: ItineraryStep;
-  index: number;
-  itineraryId: number;
-  onStepClick: (stepId: number) => void;
-}) {
-  const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative, alternativeError, clearAlternativeError } = useItineraryStore();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: step.id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : 0,
-  };
-
-  const handleSelectAlternative = async (alt: AlternativeOption) => {
-    clearAlternativeError();
-    await selectAlternativeStep(itineraryId, step.id, alt.id);
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes}>
-      <StepCard
-        step={step}
-        index={index}
-        isExpanded={expandedStepId === step.id}
-        onToggleExpand={() => toggleExpandStep(step.id)}
-        onClick={() => onStepClick(step.id)}
-        onSelectAlternative={isSelectingAlternative ? undefined : handleSelectAlternative}
-        dragListeners={listeners}
-      />
-      {alternativeError && expandedStepId === step.id && (
-        <p className="text-xs text-red-500 mt-1 px-3">{alternativeError}</p>
-      )}
-    </div>
-  );
-}
-
 export default function TimelinePanel({
   itinerary,
   selectedDay,
   onDayChange,
   onStepClick,
 }: TimelinePanelProps) {
+  const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative, alternativeError, clearAlternativeError } = useItineraryStore();
   const dayGroups: DayGroup[] = groupStepsByDay(itinerary.steps);
   const currentGroup = dayGroups.find((g) => g.dayNumber === selectedDay) ?? dayGroups[0];
 
-  const handleDragEnd = (_event: DragEndEvent) => {
-    // 순서 변경 서버 저장 미구현
-  };
-
   if (!currentGroup) return null;
+
+  const handleSelectAlternative = async (step: ItineraryStep, alt: AlternativeOption) => {
+    clearAlternativeError();
+    await selectAlternativeStep(itinerary.id, step.id, alt.id);
+  };
 
   return (
     <div className="p-4">
@@ -100,37 +53,35 @@ export default function TimelinePanel({
         ))}
       </div>
 
-      {/* Steps with DnD — key로 day 전환 시 즉시 리마운트 */}
-      <DndContext key={currentGroup.dayNumber} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext
-          items={currentGroup.steps.map((s) => s.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-1">
-            {currentGroup.steps.map((step, idx) => (
-              <div key={step.id}>
-                <SortableStepCard
-                  step={step}
-                  index={idx}
-                  itineraryId={itinerary.id}
-                  onStepClick={onStepClick}
+      {/* Steps */}
+      <div className="space-y-1">
+        {currentGroup.steps.map((step, idx) => (
+          <div key={step.id}>
+            <StepCard
+              step={step}
+              index={idx}
+              isExpanded={expandedStepId === step.id}
+              onToggleExpand={() => toggleExpandStep(step.id)}
+              onClick={() => onStepClick(step.id)}
+              onSelectAlternative={isSelectingAlternative ? undefined : (alt) => handleSelectAlternative(step, alt)}
+            />
+            {alternativeError && expandedStepId === step.id && (
+              <p className="text-xs text-red-500 mt-1 px-3">{alternativeError}</p>
+            )}
+            {/* 다음 step의 교통 정보 표시 */}
+            {idx < currentGroup.steps.length - 1 && (() => {
+              const next = currentGroup.steps[idx + 1];
+              return next.transportationMode ? (
+                <TransitInfo
+                  mode={next.transportationMode}
+                  duration={next.transportationDuration}
+                  distance={next.transportationDistance}
                 />
-                {/* 다음 step의 교통 정보 표시 */}
-                {idx < currentGroup.steps.length - 1 && (() => {
-                  const next = currentGroup.steps[idx + 1];
-                  return next.transportationMode ? (
-                    <TransitInfo
-                      mode={next.transportationMode}
-                      duration={next.transportationDuration}
-                      distance={next.transportationDistance}
-                    />
-                  ) : null;
-                })()}
-              </div>
-            ))}
+              ) : null;
+            })()}
           </div>
-        </SortableContext>
-      </DndContext>
+        ))}
+      </div>
     </div>
   );
 }
