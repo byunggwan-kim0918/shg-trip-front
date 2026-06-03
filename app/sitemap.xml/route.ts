@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
+export async function GET() {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://shg-trip.cloud</loc>
@@ -12,4 +13,11 @@
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
-</urlset>
+</urlset>`;
+
+  return new Response(xml, {
+    headers: {
+      'Content-Type': 'application/xml',
+    },
+  });
+}
