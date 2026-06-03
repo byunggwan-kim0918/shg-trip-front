@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /main/
+Disallow: /onboarding/
+Disallow: /callback/
+
+Sitemap: https://shg-trip.cloud/sitemap.xml
