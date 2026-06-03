@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- 랜딩 페이지 (AI 여행 플래너 소개) -->
   <url>
     <loc>https://shg-trip.cloud</loc>
     <lastmod>2026-06-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-
-  <!-- 로그인 페이지 -->
   <url>
     <loc>https://shg-trip.cloud/login</loc>
     <lastmod>2026-06-03</lastmod>
