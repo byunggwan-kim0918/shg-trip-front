@@ -2,35 +2,72 @@ name: Deploy Frontend
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: shgtrip/web
+  ECS_CLUSTER: shgtrip-cluster
+  ECS_SERVICE: shgtrip-web
+  CONTAINER_NAME: web
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/shgtrip-github-deploy-front
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to ECR
+      - name: Login to Amazon ECR
+        id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push to ECR
+      - name: Build and push Docker image
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest .
-          docker push ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Deploy via SSM
-        run: >-
-          aws ssm send-command
-          --region "${{ secrets.AWS_REGION }}"
-          --document-name "AWS-RunShellScript"
-          --targets '[{"Key":"tag:Role","Values":["web"]}]'
-          --parameters '{"commands":["aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}","sudo docker pull ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest","sudo docker stop shgtrip-web || true","sudo docker rm shgtrip-web || true","sudo docker run -d --name shgtrip-web --restart always -p 3000:3000 -e BACKEND_URL=${{ secrets.BACKEND_URL }} -e SESSION_SECRET=${{ secrets.SESSION_SECRET }} ${{ secrets.ECR_REGISTRY }}/shgtrip/web:latest"]}'
-          --timeout-seconds 300
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_SERVICE }} \
+            --query taskDefinition \
+            > task-def.json
+
+      - name: Render new task definition with updated image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-def.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build.outputs.image }}
+
+      - name: Deploy to ECS Service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
