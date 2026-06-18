@@ -80,17 +80,19 @@ export default function StepCard({
         </div>
 
         {/* 장소 썸네일 */}
-        {imageUrl && !imgError && (
-          <div className="flex-shrink-0">
+        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+          {imageUrl && !imgError ? (
             <img
               src={imageUrl}
               alt={place?.name ?? '장소 사진'}
-              className="w-16 h-16 rounded-lg object-cover"
+              className="w-full h-full object-cover"
               loading="lazy"
               onError={() => setImgError(true)}
             />
-          </div>
-        )}
+          ) : (
+            <span className="text-xs text-gray-400 text-center px-1">사진을 찾는 중이에요</span>
+          )}
+        </div>
       </div>
 
       {isExpanded && onSelectAlternative && (

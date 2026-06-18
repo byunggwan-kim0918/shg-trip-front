@@ -212,14 +212,18 @@ export default function MapPanelInner({
                     pixelOffset={[0, -40]}
                   >
                     <div className="text-sm min-w-[180px] max-w-[220px]">
-                      {step.place.imageUrl && (
-                        <img
-                          src={proxyImageUrl(step.place.imageUrl)!}
-                          alt={step.place.name}
-                          className="w-full h-24 object-cover rounded-md mb-2"
-                          loading="lazy"
-                        />
-                      )}
+                      <div className="w-full h-24 rounded-md mb-2 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+                        {step.place.imageUrl ? (
+                          <img
+                            src={proxyImageUrl(step.place.imageUrl)!}
+                            alt={step.place.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-400 text-center px-2">사진을 찾는 중이에요</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1.5 mb-1">
                         <span
                           className="inline-block w-3 h-3 rounded-full"
