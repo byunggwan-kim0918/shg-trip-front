@@ -1,12 +1,13 @@
 'use client';
 
+import { Zap, Footprints, Coffee, LucideIcon } from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
 import type { TripPace } from '@/lib/types/itinerary';
 
-const PACE_OPTIONS: { id: TripPace; label: string; icon: string; desc: string }[] = [
-  { id: 'tight', label: '알차게', icon: '⚡', desc: '하루 5~7곳, 빈틈없이 돌아다니기' },
-  { id: 'normal', label: '보통', icon: '🚶', desc: '하루 4~5곳, 적당한 여유와 관광' },
-  { id: 'relaxed', label: '여유롭게', icon: '☕', desc: '하루 2~3곳, 느긋하게 즐기기' },
+const PACE_OPTIONS: { id: TripPace; label: string; icon: LucideIcon; desc: string }[] = [
+  { id: 'tight', label: '알차게', icon: Zap, desc: '하루 5~7곳, 빈틈없이 돌아다니기' },
+  { id: 'normal', label: '보통', icon: Footprints, desc: '하루 4~5곳, 적당한 여유와 관광' },
+  { id: 'relaxed', label: '여유롭게', icon: Coffee, desc: '하루 2~3곳, 느긋하게 즐기기' },
 ];
 
 export default function PaceStep() {
@@ -34,7 +35,7 @@ export default function PaceStep() {
               `}
               aria-pressed={isSelected}
             >
-              <span className="text-3xl">{p.icon}</span>
+              <p.icon size={28} aria-hidden="true" />
               <span className="font-semibold">{p.label}</span>
               <span className="text-xs text-muted text-center">{p.desc}</span>
             </button>

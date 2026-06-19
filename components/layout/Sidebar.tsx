@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { Sparkles, Pen, MapPin } from 'lucide-react';
 import { useAppStore, useAuthStore } from '@/lib/stores';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { forceLogout } from '@/lib/api/fetchClient';
@@ -97,18 +98,24 @@ export default function Sidebar() {
             <div className="absolute left-3 right-3 top-full mt-1 bg-card-bg border border-card-border rounded-lg shadow-lg z-50 overflow-hidden">
               <button
                 onClick={() => navigateNewTrip('auto')}
-                className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors"
+                className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors flex items-center gap-2"
               >
-                <p className="text-sm font-medium text-foreground">🤖 AI 추천</p>
-                <p className="text-xs text-muted mt-0.5">AI가 장소 선택부터 동선까지 완성</p>
+                <Sparkles size={14} className="text-blue-500 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">AI 추천</p>
+                  <p className="text-xs text-muted mt-0.5">AI가 장소 선택부터 동선까지 완성</p>
+                </div>
               </button>
               <div className="border-t border-card-border" />
               <button
                 onClick={() => navigateNewTrip('manual')}
-                className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors"
+                className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors flex items-center gap-2"
               >
-                <p className="text-sm font-medium text-foreground">✋ AI 맞춤 설계</p>
-                <p className="text-xs text-muted mt-0.5">장소를 고르면 AI가 동선을 짜줌</p>
+                <Pen size={14} className="text-purple-500 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">AI 맞춤 설계</p>
+                  <p className="text-xs text-muted mt-0.5">장소를 고르면 AI가 동선을 짜줌</p>
+                </div>
               </button>
             </div>
           )}
@@ -138,7 +145,7 @@ export default function Sidebar() {
                         : 'text-foreground hover:bg-surface-hover'
                     }`}
                   >
-                    <span className="text-base" aria-hidden="true">📍</span>
+                    <MapPin size={12} className="shrink-0" aria-hidden="true" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate">{item.title ?? item.destination}</p>
                       <p className="text-[11px] text-muted truncate">
