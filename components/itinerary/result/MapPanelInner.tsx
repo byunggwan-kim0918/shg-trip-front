@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useState, useMemo } from 'react';
+import { Star } from 'lucide-react';
 import {
   APIProvider,
   Map as GoogleMap,
@@ -237,7 +238,10 @@ export default function MapPanelInner({
                         {step.place.category}
                       </p>
                       {step.place.rating != null && (
-                        <p className="text-yellow-500 text-xs mt-0.5">⭐ {step.place.rating}</p>
+                        <div className="flex items-center gap-1 text-xs mt-0.5 text-amber-400">
+                          <Star size={12} className="fill-amber-400" aria-hidden="true" />
+                          <span>{step.place.rating}</span>
+                        </div>
                       )}
                       {step.startTime && step.endTime && (
                         <p className="text-gray-400 text-xs mt-0.5">

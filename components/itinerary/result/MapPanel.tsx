@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { MapPin } from 'lucide-react';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 
 const MapPanelInner = dynamic(() => import('./MapPanelInner'), {
@@ -44,7 +45,7 @@ export default function MapPanel({ steps, selectedDay, selectedStepId, onMarkerC
     return (
       <div className="w-full h-full min-h-[300px] flex items-center justify-center bg-surface text-muted text-sm">
         <div className="text-center">
-          <p className="text-lg mb-1">📍</p>
+          <MapPin size={24} className="mx-auto mb-2" aria-hidden="true" />
           <p>장소 좌표 정보가 없어 지도를 표시할 수 없습니다.</p>
         </div>
       </div>

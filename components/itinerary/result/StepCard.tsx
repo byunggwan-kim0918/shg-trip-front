@@ -1,17 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
+import { getCategoryIcon } from '@/lib/constants/placeIcons';
 import AlternativeList from './AlternativeList';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
-
-const CATEGORY_ICONS: Record<string, string> = {
-  attraction: '🏛️', restaurant: '🍽️', cafe: '☕',
-  accommodation: '🏨', experience: '🎯', shopping: '🛍️',
-  // 백엔드 한국어 카테고리 매핑
-  '관광': '🏛️', '맛집': '🍽️', '카페': '☕',
-  '숙소': '🏨', '액티비티': '🎯', '쇼핑': '🛍️',
-};
 
 interface StepCardProps {
   step: ItineraryStep;
@@ -33,6 +26,7 @@ export default function StepCard({
   const place = step.place;
   const [imgError, setImgError] = useState(false);
   const imageUrl = proxyImageUrl(place?.imageUrl);
+  const IconComponent = place ? getCategoryIcon(place.category) : null;
 
   return (
     <div
@@ -51,7 +45,7 @@ export default function StepCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            {place && <span>{CATEGORY_ICONS[place.category] ?? '📍'}</span>}
+            {IconComponent && React.createElement(IconComponent, { size: 16, 'aria-hidden': 'true' })}
             <h3 className="text-sm font-semibold text-foreground truncate">
               {place?.name ?? '장소 정보 없음'}
             </h3>

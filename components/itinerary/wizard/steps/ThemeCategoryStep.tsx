@@ -1,17 +1,26 @@
 'use client';
 
 import { useEffect } from 'react';
+import {
+  Leaf,
+  Zap,
+  Utensils,
+  Landmark,
+  ShoppingBag,
+  TreePine,
+  LucideIcon,
+} from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
 import ChipSelect from '@/components/itinerary/wizard/ChipSelect';
 import type { Theme, Category } from '@/lib/types/itinerary';
 
-const THEME_OPTIONS: { id: Theme; label: string; icon: string }[] = [
-  { id: 'healing', label: '힐링', icon: '🧘' },
-  { id: 'activity', label: '액티비티', icon: '🏄' },
-  { id: 'food', label: '맛집 탐방', icon: '🍽️' },
-  { id: 'culture', label: '문화/역사', icon: '🏛️' },
-  { id: 'shopping', label: '쇼핑', icon: '🛍️' },
-  { id: 'nature', label: '자연/풍경', icon: '🌿' },
+const THEME_OPTIONS: { id: Theme; label: string; icon: LucideIcon }[] = [
+  { id: 'healing', label: '힐링', icon: Leaf },
+  { id: 'activity', label: '액티비티', icon: Zap },
+  { id: 'food', label: '맛집 탐방', icon: Utensils },
+  { id: 'culture', label: '문화/역사', icon: Landmark },
+  { id: 'shopping', label: '쇼핑', icon: ShoppingBag },
+  { id: 'nature', label: '자연/풍경', icon: TreePine },
 ];
 
 const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
@@ -58,7 +67,7 @@ export default function ThemeCategoryStep() {
                 `}
                 aria-pressed={isSelected}
               >
-                <span className="text-2xl">{t.icon}</span>
+                <t.icon size={24} aria-hidden="true" />
                 {t.label}
               </button>
             );

@@ -1,17 +1,31 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Search,
+  MapPin,
+  CheckCircle2,
+  Save,
+  AlertCircle,
+  Plane,
+  Car,
+  Train,
+  Ship,
+  Bus,
+  Bike,
+  LucideIcon,
+} from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { startItineraryGeneration, fetchItinerary } from '@/lib/data/itineraryService';
 import type { ItineraryGenerateRequest } from '@/lib/types/itinerary';
 
-const STAGES: { key: string; label: string; icon: string }[] = [
-  { key: 'ENRICHING', label: '여행 정보 분석', icon: '🔍' },
-  { key: 'GENERATING', label: '최적 동선 계산', icon: '🗺️' },
-  { key: 'VALIDATING', label: '일정 품질 검증', icon: '✅' },
-  { key: 'SAVING', label: '맞춤 일정 저장', icon: '💾' },
+const STAGES: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: 'ENRICHING', label: '여행 정보 분석', icon: Search },
+  { key: 'GENERATING', label: '최적 동선 계산', icon: MapPin },
+  { key: 'VALIDATING', label: '일정 품질 검증', icon: CheckCircle2 },
+  { key: 'SAVING', label: '맞춤 일정 저장', icon: Save },
 ];
 
 const SESSION_KEY = 'shg_active_job_id';
@@ -21,8 +35,8 @@ function getStageIndex(stage: string): number {
   return idx === -1 ? 0 : idx;
 }
 
-const VEHICLES = ['✈️', '🚗', '🚂', '⛵', '🚌', '🛵', '🚁', '🛳️', '🚕', '🏍️'];
-function getRandomVehicle(): string {
+const VEHICLES: LucideIcon[] = [Plane, Car, Train, Ship, Bus, Bike];
+function getRandomVehicle(): LucideIcon {
   return VEHICLES[Math.floor(Math.random() * VEHICLES.length)];
 }
 
@@ -81,7 +95,7 @@ export default function LoadingScreen() {
   const { display: progress, setTarget } = useSmoothedProgress();
   const [stage, setStage] = useState('ENRICHING');
   const [error, setError] = useState<string | null>(null);
-  const [vehicle, setVehicle] = useState('✈️');
+  const [vehicle, setVehicle] = useState<LucideIcon>(Plane);
   const [visible, setVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const startedRef = useRef(false);
@@ -250,7 +264,7 @@ export default function LoadingScreen() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[65vh] px-4 gap-4">
         <div className="glass-card rounded-2xl p-8 text-center max-w-sm">
-          <p className="text-4xl mb-4">😥</p>
+          <AlertCircle size={48} className="mx-auto mb-4 text-danger" aria-hidden="true" />
           <p className="text-danger text-sm mb-4">{error}</p>
           <button
             type="button"
@@ -284,7 +298,7 @@ export default function LoadingScreen() {
       <div className="glass-card rounded-3xl p-8 sm:p-10 w-full max-w-md relative overflow-hidden">
         <div className="absolute inset-0 loading-shimmer pointer-events-none" />
 
-        {/* 이모지 트랙 */}
+        {/* 아이콘 트랙 */}
         <div className="relative w-full h-14 mb-8">
           <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2">
             <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
@@ -295,10 +309,10 @@ export default function LoadingScreen() {
             <div className="absolute top-1/2 right-0 w-1.5 h-1.5 rounded-full bg-accent/40 -translate-y-1/2" />
           </div>
           <div
-            className="loading-vehicle absolute text-3xl top-1/2 -translate-y-1/2"
+            className="loading-vehicle absolute top-1/2 -translate-y-1/2"
             style={{ left: `${Math.min(clampedProgress, 95)}%`, transition: 'left 1s ease-out' }}
           >
-            {vehicle}
+            {React.createElement(vehicle, { size: 28, 'aria-hidden': 'true', className: 'text-accent' })}
           </div>
         </div>
 
@@ -328,7 +342,7 @@ export default function LoadingScreen() {
                       : 'bg-surface/60 scale-95 opacity-40'
                 }`}
               >
-                {s.icon}
+                <s.icon size={16} aria-hidden="true" />
               </div>
               <span
                 className={`text-[10px] leading-tight text-center transition-colors duration-300 ${
