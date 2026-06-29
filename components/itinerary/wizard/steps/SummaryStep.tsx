@@ -30,13 +30,13 @@ export default function SummaryStep() {
     { label: '여행지', value: data.destination, step: 0 },
     { label: '테마', value: data.themes.map((t) => THEME_LABELS[t] || t).join(', '), step: 1 },
     { label: '카테고리', value: data.categories.map((c) => CATEGORY_LABELS[c] || c).join(', '), step: 2 },
-    { label: '예산', value: data.budget ? `${formatBudget(data.budget)}원` : '미설정', step: 4 },
+    { label: '예산', value: data.budget ? `${formatBudget(data.budget)}원` : '미설정', step: 5 },
     {
       label: '기간',
       value: data.startDate && data.endDate
         ? `${data.startDate} ~ ${data.endDate} (${getDuration(data.startDate, data.endDate)})`
         : '미설정',
-      step: 4,
+      step: 5,
     },
   ];
 
@@ -45,20 +45,20 @@ export default function SummaryStep() {
       items.push({
         label: '선택 장소',
         value: data.selectedPlaces.map((p) => p.name).join(', '),
-        step: 5,
+        step: 6,
       });
     }
     items.push({
       label: '부가 설명',
       value: data.description || '없음',
-      step: 6,
+      step: 7,
     });
   }
 
   const handleGenerate = () => {
-    // startDate/endDate 검증 (step 4에서 이미 검증되지만 방어적으로 확인)
+    // startDate/endDate 검증 (step 5에서 이미 검증되지만 방어적으로 확인)
     if (!data.startDate || !data.endDate) {
-      setStep(4);
+      setStep(5);
       return;
     }
     router.push('/main/itinerary/loading');

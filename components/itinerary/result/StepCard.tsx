@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
 import { getCategoryIcon } from '@/lib/constants/placeIcons';
+import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import AlternativeList from './AlternativeList';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 
@@ -27,6 +28,8 @@ export default function StepCard({
   const [imgError, setImgError] = useState(false);
   const imageUrl = proxyImageUrl(place?.imageUrl);
   const IconComponent = place ? getCategoryIcon(place.category) : null;
+  const storyPending = useItineraryStore((s) => s.storyPending);
+  const hasStory = !!step.notes && step.notes.trim().length > 0;
 
   return (
     <div
@@ -55,9 +58,13 @@ export default function StepCard({
               {step.startTime ?? ''}{step.startTime && step.endTime ? ' - ' : ''}{step.endTime ?? ''}
             </p>
           )}
-          {step.notes && (
+          {hasStory ? (
             <p className="text-xs text-muted line-clamp-2">{step.notes}</p>
-          )}
+          ) : storyPending ? (
+            <p className="text-xs text-muted/70 italic flex items-center gap-1.5 animate-pulse">
+              <span aria-hidden="true">✨</span> 가이드 스토리를 작성하고 있어요…
+            </p>
+          ) : null}
           {step.estimatedCost != null && (
             <p className="text-xs text-muted mt-1">예상 비용: {step.estimatedCost.toLocaleString()}원</p>
           )}

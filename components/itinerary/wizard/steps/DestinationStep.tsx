@@ -3,7 +3,7 @@
 import { useWizardStore } from '@/lib/stores/useWizardStore';
 
 export default function DestinationStep() {
-  const { data, updateData } = useWizardStore();
+  const { data, updateData, nextStep } = useWizardStore();
   const value = data.destination;
   const showError = value.length > 0 && value.trim() === '';
 
@@ -15,6 +15,7 @@ export default function DestinationStep() {
         type="text"
         value={value}
         onChange={(e) => updateData({ destination: e.target.value })}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); nextStep(); } }}
         placeholder="어디로 떠나시나요?"
         className="w-full px-4 py-3 rounded-lg border border-card-border bg-card-bg text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent min-h-[44px]"
         autoFocus

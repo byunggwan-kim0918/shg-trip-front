@@ -13,7 +13,7 @@ function getDurationText(start: string, end: string): string {
 }
 
 export default function BudgetDateStep() {
-  const { data, updateData } = useWizardStore();
+  const { data, updateData, nextStep } = useWizardStore();
 
   const budgetDisplay = data.budget ? formatBudget(data.budget) : '';
   const startDate = data.startDate ? new Date(data.startDate) : null;
@@ -53,6 +53,7 @@ export default function BudgetDateStep() {
             inputMode="numeric"
             value={budgetDisplay}
             onChange={(e) => handleBudgetChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); nextStep(); } }}
             placeholder="0"
             className="w-full px-4 py-3 pr-10 rounded-lg border border-card-border bg-card-bg text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent min-h-[44px]"
           />
