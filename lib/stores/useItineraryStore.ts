@@ -3,6 +3,7 @@ import type { Itinerary, ItinerarySummary } from '@/lib/types/itinerary';
 import {
   fetchMyItineraries,
   selectAlternative,
+  deleteItinerary,
 } from '@/lib/data/itineraryService';
 
 interface ItineraryState {
@@ -12,6 +13,7 @@ interface ItineraryState {
   selectedStepId: number | null;
   expandedStepId: number | null;
   isLoading: boolean;
+  isDeleting: boolean;
   isSelectingAlternative: boolean;
   alternativeError: string | null;
   loadingProgress: number; // 0-100
@@ -33,6 +35,8 @@ interface ItineraryActions {
   setLoadingProgress: (progress: number) => void;
   setStoryPending: (pending: boolean) => void;
   loadItineraries: () => Promise<void>;
+  /** 일정 삭제 — 서버 soft delete 후 목록 재조회. 중복 클릭은 isDeleting으로 무시 */
+  removeItinerary: (id: number) => Promise<void>;
 }
 
 export const useItineraryStore = create<ItineraryState & ItineraryActions>((set) => ({
@@ -42,6 +46,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   selectedStepId: null,
   expandedStepId: null,
   isLoading: false,
+  isDeleting: false,
   isSelectingAlternative: false,
   alternativeError: null,
   loadingProgress: 0,
@@ -87,5 +92,25 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   loadItineraries: async () => {
     const page = await fetchMyItineraries();
     set({ itineraries: page.content });
+  },
+
+  removeItinerary: async (id) => {
+    // 중복 클릭 방지: 이미 삭제 처리 중이면 무시
+    if (useItineraryStore.getState().isDeleting) return;
+    set({ isDeleting: true });
+    try {
+      await deleteItinerary(id);
+      // 삭제 성공 → 즉시 로컬 목록에서 제거 (재조회 실패와 무관하게 반영)
+      set((state) => ({ itineraries: state.itineraries.filter((it) => it.id !== id) }));
+      // 재조회는 best-effort — 실패해도 삭제 성공을 되돌리지 않는다
+      try {
+        const page = await fetchMyItineraries();
+        set({ itineraries: page.content });
+      } catch {
+        /* 목록 정합성은 다음 로드에서 회복 */
+      }
+    } finally {
+      set({ isDeleting: false });
+    }
   },
 }));
