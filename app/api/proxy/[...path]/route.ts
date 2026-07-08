@@ -47,7 +47,10 @@ async function handleProxy(
     responseBody = await springRes.text();
   }
 
-  const response = new NextResponse(responseBody, {
+  // 204/205/304는 스펙상 body를 가질 수 없음 — 전달 시 Response 생성자가 예외를 던진다
+  const isNoBodyStatus = springRes.status === 204 || springRes.status === 205 || springRes.status === 304;
+
+  const response = new NextResponse(isNoBodyStatus ? null : responseBody, {
     status: springRes.status,
     headers: {
       'Content-Type': resContentType,
