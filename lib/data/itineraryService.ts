@@ -54,6 +54,12 @@ export async function fetchMyItineraries(page = 0, size = 20): Promise<PageRespo
   return parseJson<PageResponse<ItinerarySummary>>(res);
 }
 
+/** DELETE /api/itineraries/{id} — soft delete. 204 No Content이므로 본문 파싱하지 않는다. */
+export async function deleteItinerary(id: number): Promise<void> {
+  const res = await authFetch(`/api/itineraries/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('일정 삭제에 실패했습니다.');
+}
+
 /** PATCH /api/itineraries/{id}/steps/{stepId}/select-alternative */
 export async function selectAlternative(
   itineraryId: number,
@@ -86,15 +92,36 @@ export async function updateItinerary(
   return parseJson<Itinerary>(res);
 }
 
-/** GET /api/places/search?keyword=&lat=&lng=&radius= */
+/** 백엔드 PlaceResponse (검색 결과 항목) */
+interface PlaceSearchItem {
+  id: number;
+  name: string;
+  address: string;
+  latitude: number;   // BigDecimal → JSON number
+  longitude: number;
+  category: string;    // Foursquare 원시 계층 문자열 — 표시/분기용으로 신뢰 금지
+  region: string | null;
+}
+
+/** GET /api/places/search?keyword=&lat=&lng=&radius=
+ *  백엔드는 ApiResponse<PageResponse<PlaceResponse>> 를 반환하므로 content를 꺼내 매핑한다. */
 export async function searchPlaces(keyword: string): Promise<WizardPlace[]> {
   if (!keyword.trim()) return [];
   const res = await authFetch(
     `/api/places/search?keyword=${encodeURIComponent(keyword)}`,
   );
   if (!res.ok) return [];
-  const data = await parseJson<WizardPlace[]>(res);
-  return data;
+  const page = await parseJson<PageResponse<PlaceSearchItem>>(res);
+  return page.content.map((p) => ({
+    id: p.id,
+    name: p.name,
+    address: p.address,
+    latitude: Number(p.latitude),
+    longitude: Number(p.longitude),
+    // category는 "Dining and Drinking > ..." 형태의 원시 taxonomy — 프론트 Category enum과 불일치, 표시/분기 금지
+    category: p.category,
+    region: p.region ?? undefined,
+  }));
 }
 
 /** POST /api/itineraries/{id}/finalize — 일정 확정 */

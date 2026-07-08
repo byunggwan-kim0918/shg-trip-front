@@ -66,6 +66,13 @@ export default function PlaceSelectStep() {
   const hasNoResults = !isSearching && query.trim().length > 0 && results.length === 0;
   const mappablePlaces = data.selectedPlaces.filter((p) => p.latitude !== 0 && p.longitude !== 0);
 
+  // 선택 장소들이 서로 다른 지역에 걸쳐 있으면 경고 (region이 있는 장소만 대상).
+  // 여행지-장소 최종 검증은 백엔드(enrich regions 기준)가 담당하고, 여기선 즉각적인 힌트만 제공.
+  const selectedRegions = Array.from(
+    new Set(data.selectedPlaces.map((p) => p.region).filter((r): r is string => !!r)),
+  );
+  const hasMixedRegions = selectedRegions.length > 1;
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-foreground">장소 선택</h2>
@@ -113,7 +120,14 @@ export default function PlaceSelectStep() {
                   onClick={() => addPlace(place)}
                   className="w-full text-left px-4 py-3 hover:bg-surface-hover transition-colors min-h-[44px]"
                 >
-                  <p className="text-sm font-medium text-foreground">{place.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">{place.name}</p>
+                    {place.region && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent-soft text-accent shrink-0">
+                        {place.region}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted">{place.address}</p>
                 </button>
               </li>
@@ -128,6 +142,12 @@ export default function PlaceSelectStep() {
         )}
       </div>
 
+      {hasMixedRegions && (
+        <p className="text-xs text-danger">
+          ⚠️ 선택한 장소가 여러 지역({selectedRegions.join(', ')})에 걸쳐 있습니다. 여행지와 다른 지역의 장소는 일정 생성 시 거부될 수 있습니다.
+        </p>
+      )}
+
       {data.selectedPlaces.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {data.selectedPlaces.map((place) => (
@@ -136,6 +156,7 @@ export default function PlaceSelectStep() {
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-accent-soft text-accent text-sm"
             >
               {place.name}
+              {place.region && <span className="text-xs opacity-60">· {place.region}</span>}
               {place.latitude === 0 && <span className="text-xs opacity-60">(직접입력)</span>}
               <button
                 type="button"

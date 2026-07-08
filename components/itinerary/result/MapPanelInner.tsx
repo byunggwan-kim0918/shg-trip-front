@@ -213,7 +213,7 @@ export default function MapPanelInner({
                     pixelOffset={[0, -40]}
                   >
                     <div className="text-sm min-w-[180px] max-w-[220px]">
-                      <div className="w-full h-24 rounded-md mb-2 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+                      <div className="w-full h-24 rounded-md mb-2 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
                         {step.place.imageUrl ? (
                           <img
                             src={proxyImageUrl(step.place.imageUrl)!}
@@ -222,7 +222,8 @@ export default function MapPanelInner({
                             loading="lazy"
                           />
                         ) : (
-                          <span className="text-xs text-gray-400 text-center px-2">사진을 찾는 중이에요</span>
+                          // imageUrl 아직 없음(비동기 업로드 대기) → skeleton
+                          <div className="w-full h-full animate-pulse bg-gray-200/70" />
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 mb-1">
