@@ -8,12 +8,6 @@ import {
   CheckCircle2,
   Save,
   AlertCircle,
-  Plane,
-  Car,
-  Train,
-  Ship,
-  Bus,
-  Bike,
   LucideIcon,
 } from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
@@ -30,14 +24,26 @@ const STAGES: { key: string; label: string; icon: LucideIcon }[] = [
 
 const SESSION_KEY = 'shg_active_job_id';
 
-function getStageIndex(stage: string): number {
-  const idx = STAGES.findIndex((s) => s.key === stage);
-  return idx === -1 ? 0 : idx;
-}
+// 백엔드는 최적화 경로(OptimizedGenerationExecutor)와 fallback 경로
+// (ItineraryGenerationExecutor)에서 서로 다른 stage 문자열을 보낸다.
+// STAGES에 없는 값(SEARCHING/FALLBACK/SYNCING/SELECTING/OPTIMIZING)이 오면
+// 기존 코드는 무조건 0번(여행 정보 분석)으로 떨어져 퍼센트만 올라가고
+// 단계 표시는 멈춘 것처럼 보였다 — 모든 backend stage를 4단계로 매핑한다.
+const STAGE_BUCKET: Record<string, number> = {
+  ENRICHING: 0,
+  SEARCHING: 1,
+  FALLBACK: 1,
+  GENERATING: 1,
+  SYNCING: 1,
+  SELECTING: 1,
+  OPTIMIZING: 1,
+  VALIDATING: 2,
+  SAVING: 3,
+  COMPLETE: 3,
+};
 
-const VEHICLES: LucideIcon[] = [Plane, Car, Train, Ship, Bus, Bike];
-function getRandomVehicle(): LucideIcon {
-  return VEHICLES[Math.floor(Math.random() * VEHICLES.length)];
+function getStageIndex(stage: string): number {
+  return STAGE_BUCKET[stage] ?? 0;
 }
 
 function useSmoothedProgress() {
@@ -80,9 +86,12 @@ function useSmoothedProgress() {
   return { display, setTarget };
 }
 
+// 백엔드가 실제로 전송하는 퍼센트 값들 (최적화 경로 + fallback 경로 합집합).
+// 여기 없는 값은 다음 목표 추정 시 더 일찍 정체된 것처럼 보이게 만든다.
+const KNOWN_PERCENTAGES = [10, 20, 30, 35, 50, 65, 70, 80, 90, 100];
+
 function getNextTarget(current: number): number {
-  const targets = [20, 50, 70, 90, 100];
-  for (const t of targets) {
+  for (const t of KNOWN_PERCENTAGES) {
     if (t > current) return t;
   }
   return 100;
@@ -95,7 +104,6 @@ export default function LoadingScreen() {
   const { display: progress, setTarget } = useSmoothedProgress();
   const [stage, setStage] = useState('ENRICHING');
   const [error, setError] = useState<string | null>(null);
-  const [vehicle, setVehicle] = useState<LucideIcon>(Plane);
   const [visible, setVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const startedRef = useRef(false);
@@ -106,12 +114,6 @@ export default function LoadingScreen() {
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    setVehicle(getRandomVehicle());
-    const interval = setInterval(() => setVehicle(getRandomVehicle()), 3000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -142,6 +144,7 @@ export default function LoadingScreen() {
         themes: data.themes,
         categories: data.categories,
         pace: data.pace,
+        transportPref: data.transportPref,
         budget: data.budget,
         startDate: data.startDate!,
         endDate: data.endDate!,
@@ -205,9 +208,12 @@ export default function LoadingScreen() {
       setStage(payload.stage);
     });
 
+    // complete: 구조(day·순서·시간·동선) 일정이 확정된 시점. story(가이드북 문장)는 아직
+    // 비동기로 채워지는 중이므로 여기서 곧바로 결과 화면으로 이동한다 — 이게 체감 속도를
+    // 줄이는 지점. 백엔드는 story-ready/story-failed까지 같은 SSE 연결을 유지하지만,
+    // 화면 전환(unmount)으로 연결이 자연히 정리되며 백엔드는 이를 정상 처리한다.
     eventSource.addEventListener('complete', async () => {
       completedRef.current = true;
-      eventSource.close();
       setTarget(100);
       setStage('COMPLETE');
 
@@ -224,6 +230,15 @@ export default function LoadingScreen() {
         return;
       }
       await handleComplete(jobId, body.data);
+    });
+
+    // story-ready/story-failed: 화면 전환 전에 먼저 도착하는 경우를 대비한 정리용 리스너.
+    // (구조 일정은 이미 complete에서 처리됐으므로 추가 동작 없음)
+    eventSource.addEventListener('story-ready', () => {
+      eventSource.close();
+    });
+    eventSource.addEventListener('story-failed', () => {
+      eventSource.close();
     });
 
     eventSource.addEventListener('error', (e) => {
@@ -280,14 +295,24 @@ export default function LoadingScreen() {
 
   const clampedProgress = Math.min(progress, 100);
   const currentStageIdx = getStageIndex(stage);
+  const CurrentIcon = STAGES[currentStageIdx].icon;
 
   const stageMessages: Record<string, string> = {
     ENRICHING: '여행지 정보를 분석하고 있어요',
+    SEARCHING: '어울리는 장소를 찾고 있어요',
+    FALLBACK: '다른 방식으로 장소를 다시 찾고 있어요',
     GENERATING: 'AI가 최적의 장소를 찾고 있어요',
+    SYNCING: '최신 장소 정보를 확인하고 있어요',
+    SELECTING: '일자별로 장소를 배치하고 있어요',
+    OPTIMIZING: '동선과 이동 시간을 다듬고 있어요',
     VALIDATING: '동선과 일정을 검증하고 있어요',
     SAVING: '맞춤 일정을 저장하고 있어요',
     COMPLETE: '일정이 완성됐어요!',
   };
+
+  const radius = 64;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference * (1 - clampedProgress / 100);
 
   return (
     <div
@@ -298,51 +323,48 @@ export default function LoadingScreen() {
       <div className="glass-card rounded-3xl p-8 sm:p-10 w-full max-w-md relative overflow-hidden">
         <div className="absolute inset-0 loading-shimmer pointer-events-none" />
 
-        {/* 아이콘 트랙 */}
-        <div className="relative w-full h-14 mb-8">
-          <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2">
-            <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-            <div className="absolute top-1/2 left-0 w-1.5 h-1.5 rounded-full bg-accent/40 -translate-y-1/2" />
-            <div className="absolute top-1/2 left-1/4 w-1.5 h-1.5 rounded-full bg-accent/40 -translate-y-1/2" />
-            <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full bg-accent/40 -translate-y-1/2" />
-            <div className="absolute top-1/2 left-3/4 w-1.5 h-1.5 rounded-full bg-accent/40 -translate-y-1/2" />
-            <div className="absolute top-1/2 right-0 w-1.5 h-1.5 rounded-full bg-accent/40 -translate-y-1/2" />
-          </div>
-          <div
-            className="loading-vehicle absolute top-1/2 -translate-y-1/2"
-            style={{ left: `${Math.min(clampedProgress, 95)}%`, transition: 'left 1s ease-out' }}
-          >
-            {React.createElement(vehicle, { size: 28, 'aria-hidden': 'true', className: 'text-accent' })}
-          </div>
-        </div>
-
-        {/* 퍼센트 + 프로그레스 */}
-        <div className="text-center mb-6">
-          <p className="text-5xl font-extrabold text-foreground tabular-nums tracking-tight mb-3">
-            {clampedProgress}<span className="text-2xl text-muted font-bold">%</span>
-          </p>
-          <div className="w-full h-2.5 bg-surface/80 rounded-full overflow-hidden backdrop-blur-sm">
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out loading-bar-gradient"
-              style={{ width: `${clampedProgress}%` }}
+        {/* 원형 진행률 */}
+        <div className="relative w-40 h-40 mx-auto mb-8">
+          <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
+            <circle
+              cx="80" cy="80" r={radius}
+              fill="none" stroke="currentColor" strokeWidth="10"
+              className="text-surface/70"
             />
+            <circle
+              cx="80" cy="80" r={radius}
+              fill="none" strokeWidth="10" strokeLinecap="round"
+              className="loading-ring"
+              strokeDasharray={circumference}
+              strokeDashoffset={dashOffset}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <CurrentIcon size={22} aria-hidden="true" className="text-accent mb-1 loading-icon-pulse" />
+            <p className="text-3xl font-extrabold text-foreground tabular-nums tracking-tight">
+              {clampedProgress}<span className="text-base text-muted font-bold">%</span>
+            </p>
           </div>
         </div>
 
         {/* 단계 스테퍼 */}
-        <div className="grid grid-cols-4 gap-1 mb-4">
+        <div className="grid grid-cols-4 gap-1 mb-5">
           {STAGES.map((s, i) => (
             <div key={s.key} className="flex flex-col items-center gap-1.5">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-base transition-all duration-500 ${
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-base transition-all duration-500 ${
                   i < currentStageIdx
-                    ? 'bg-accent/15 scale-100'
+                    ? 'bg-accent text-white scale-100'
                     : i === currentStageIdx
-                      ? 'bg-accent/20 scale-110 loading-stage-pulse'
-                      : 'bg-surface/60 scale-95 opacity-40'
+                      ? 'bg-accent/15 text-accent scale-110 loading-stage-pulse'
+                      : 'bg-surface/60 text-muted/50 scale-95'
                 }`}
               >
-                <s.icon size={16} aria-hidden="true" />
+                {i < currentStageIdx ? (
+                  <CheckCircle2 size={16} aria-hidden="true" />
+                ) : (
+                  <s.icon size={16} aria-hidden="true" />
+                )}
               </div>
               <span
                 className={`text-[10px] leading-tight text-center transition-colors duration-300 ${
@@ -362,8 +384,10 @@ export default function LoadingScreen() {
       </div>
 
       <style jsx>{`
-        .loading-vehicle {
-          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+        .loading-ring {
+          stroke: var(--accent);
+          transition: stroke-dashoffset 0.6s ease-out;
+          filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 50%, transparent));
         }
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
@@ -383,16 +407,19 @@ export default function LoadingScreen() {
           );
           animation: shimmer 2.5s ease-in-out infinite;
         }
-        .loading-bar-gradient {
-          background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
-          box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
-        }
         @keyframes stage-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
           50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
         }
         .loading-stage-pulse {
           animation: stage-pulse 2s ease-in-out infinite;
+        }
+        @keyframes icon-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(0.92); }
+        }
+        .loading-icon-pulse {
+          animation: icon-pulse 1.8s ease-in-out infinite;
         }
       `}</style>
     </div>

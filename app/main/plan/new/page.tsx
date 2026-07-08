@@ -8,6 +8,7 @@ import DestinationStep from '@/components/itinerary/wizard/steps/DestinationStep
 import ThemeStep from '@/components/itinerary/wizard/steps/ThemeStep';
 import CategoryStep from '@/components/itinerary/wizard/steps/CategoryStep';
 import PaceStep from '@/components/itinerary/wizard/steps/PaceStep';
+import TransportPrefStep from '@/components/itinerary/wizard/steps/TransportPrefStep';
 import BudgetDateStep from '@/components/itinerary/wizard/steps/BudgetDateStep';
 import DescriptionStep from '@/components/itinerary/wizard/steps/DescriptionStep';
 import PlaceSelectStep from '@/components/itinerary/wizard/steps/PlaceSelectStep';
@@ -31,6 +32,7 @@ export default function PlanNewPage() {
     <ThemeStep key="theme" />,
     <CategoryStep key="category" />,
     <PaceStep key="pace" />,
+    <TransportPrefStep key="transport" />,
     <BudgetDateStep key="budget" />,
     ...(mode === 'manual'
       ? [<PlaceSelectStep key="place" />, <DescriptionStep key="desc" />]

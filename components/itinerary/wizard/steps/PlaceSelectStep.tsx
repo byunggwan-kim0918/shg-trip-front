@@ -15,7 +15,7 @@ const PlaceMap = dynamic<{ places: WizardPlace[] }>(
 );
 
 export default function PlaceSelectStep() {
-  const { data, updateData } = useWizardStore();
+  const { data, updateData, nextStep } = useWizardStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WizardPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -87,7 +87,12 @@ export default function PlaceSelectStep() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && hasNoResults) addCustomPlace(); }}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              if (hasNoResults) addCustomPlace();
+              else if (!query.trim()) nextStep();
+            }}
             placeholder="장소 검색 또는 직접 입력..."
             className="flex-1 px-4 py-3 rounded-lg border border-card-border bg-card-bg text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent min-h-[44px]"
           />

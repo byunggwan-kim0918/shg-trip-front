@@ -9,6 +9,8 @@ export type Category = 'attraction' | 'restaurant' | 'cafe' | 'accommodation' | 
 
 export type TripPace = 'tight' | 'normal' | 'relaxed';
 
+export type TransportPref = 'walk' | 'car' | 'any';
+
 /** 백엔드 TransportationMode enum 값 */
 export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI' | 'BIKE' | 'FLIGHT';
 
@@ -92,6 +94,7 @@ export interface WizardData {
   themes: Theme[];
   categories: Category[];
   pace: TripPace;
+  transportPref: TransportPref;
   budget: number | null;
   startDate: string | null;
   endDate: string | null;
@@ -116,6 +119,7 @@ export interface ItineraryGenerateRequest {
   themes: string[];
   categories: string[];
   pace: string;
+  transportPref: string;
   budget: number | null;
   startDate: string;
   endDate: string;
@@ -127,6 +131,17 @@ export interface ItineraryGenerateRequest {
 export interface DayGroup {
   dayNumber: number;
   steps: ItineraryStep[];
+}
+
+/**
+ * story(가이드북 문장 = step.notes)가 아직 비동기로 채워지는 중인지 판정.
+ * 새 파이프라인은 구조 일정을 먼저 저장(notes=null)하고 Haiku가 비동기로 notes를 채운다.
+ * DRAFT 상태에서 notes가 비어있는 step이 하나라도 있으면 생성 중으로 본다
+ * (FINALIZED/fallback 경로는 이미 notes가 채워져 있어 false).
+ */
+export function hasPendingStory(itin: Itinerary): boolean {
+  if (itin.status !== 'DRAFT') return false;
+  return itin.steps.some((s) => !s.notes || s.notes.trim().length === 0);
 }
 
 /** steps[]를 dayNumber 기준으로 그룹핑 */

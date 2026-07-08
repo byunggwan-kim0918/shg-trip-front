@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import type { WizardData } from '@/lib/types/itinerary';
 // WizardData.selectedPlaces는 WizardPlace[] (id: number 기반)
 
-const STEPS_AUTO = 6;   // 여행지 → 테마 → 카테고리 → 페이스 → 예산/기간 → 요약
-const STEPS_MANUAL = 8; // 여행지 → 테마 → 카테고리 → 페이스 → 예산/기간 → 장소선택 → 부가설명 → 요약
+const STEPS_AUTO = 7;   // 여행지 → 테마 → 카테고리 → 페이스 → 이동방법 → 예산/기간 → 요약
+const STEPS_MANUAL = 9; // 여행지 → 테마 → 카테고리 → 페이스 → 이동방법 → 예산/기간 → 장소선택 → 부가설명 → 요약
 
 const initialData: WizardData = {
   mode: 'auto',
@@ -11,6 +11,7 @@ const initialData: WizardData = {
   themes: [],
   categories: [],
   pace: 'normal',
+  transportPref: 'any',
   budget: null,
   startDate: null,
   endDate: null,
@@ -25,15 +26,16 @@ export function computeStepValid(step: number, data: WizardData): boolean {
     case 1: return data.themes.length >= 1;
     case 2: return data.categories.length >= 1;
     case 3: return true; // 페이스 (기본값 있으므로 항상 유효)
-    case 4: return !!data.startDate && !!data.endDate;
-    case 5:
+    case 4: return true; // 이동방법 (기본값 있으므로 항상 유효)
+    case 5: return !!data.startDate && !!data.endDate;
+    case 6:
       // auto: 요약(항상 유효), manual: 장소선택
       if (data.mode === 'manual') return data.selectedPlaces.length >= 1;
       return true;
-    case 6:
+    case 7:
       // manual: 부가설명(선택)
       return true;
-    case 7:
+    case 8:
       return true; // manual 요약
     default:
       return true;

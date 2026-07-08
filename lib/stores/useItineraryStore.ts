@@ -15,10 +15,14 @@ interface ItineraryState {
   isSelectingAlternative: boolean;
   alternativeError: string | null;
   loadingProgress: number; // 0-100
+  /** story(가이드북 문장)가 비동기로 채워지는 중인지 — 상세 페이지 폴링이 제어 */
+  storyPending: boolean;
 }
 
 interface ItineraryActions {
   setCurrentItinerary: (itinerary: Itinerary) => void;
+  /** 폴링 갱신용 — 현재 보고 있는 day/확장 상태를 유지한 채 일정 데이터만 교체 */
+  refreshCurrentItinerary: (itinerary: Itinerary) => void;
   setSelectedDay: (day: number) => void;
   setSelectedStep: (stepId: number | null) => void;
   toggleExpandStep: (stepId: number) => void;
@@ -27,6 +31,7 @@ interface ItineraryActions {
   clearAlternativeError: () => void;
   setLoading: (loading: boolean) => void;
   setLoadingProgress: (progress: number) => void;
+  setStoryPending: (pending: boolean) => void;
   loadItineraries: () => Promise<void>;
 }
 
@@ -40,8 +45,11 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   isSelectingAlternative: false,
   alternativeError: null,
   loadingProgress: 0,
+  storyPending: false,
 
   setCurrentItinerary: (itinerary) => set({ currentItinerary: itinerary, selectedDay: 1 }),
+
+  refreshCurrentItinerary: (itinerary) => set({ currentItinerary: itinerary }),
 
   setSelectedDay: (day) => set({ selectedDay: day, selectedStepId: null }),
 
@@ -73,6 +81,8 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   clearAlternativeError: () => set({ alternativeError: null }),
 
   setLoadingProgress: (progress) => set({ loadingProgress: Math.max(0, Math.min(100, progress)) }),
+
+  setStoryPending: (pending) => set({ storyPending: pending }),
 
   loadItineraries: async () => {
     const page = await fetchMyItineraries();
