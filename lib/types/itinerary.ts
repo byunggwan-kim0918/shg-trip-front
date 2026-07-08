@@ -110,6 +110,8 @@ export interface WizardPlace {
   latitude: number;
   longitude: number;
   category: string;
+  /** 표준 지역명(예: "Seoul", "Jeju"). 여행지-장소 지역 일치 경고에 사용. 자유입력 장소는 undefined */
+  region?: string;
 }
 
 /** 백엔드 ItineraryGenerateRequest */
@@ -142,6 +144,17 @@ export interface DayGroup {
 export function hasPendingStory(itin: Itinerary): boolean {
   if (itin.status !== 'DRAFT') return false;
   return itin.steps.some((s) => !s.notes || s.notes.trim().length === 0);
+}
+
+/**
+ * 장소 사진(place.imageUrl)이 아직 비동기로 채워지는 중인지 판정.
+ * 백엔드는 일정 저장 시 imageUrl=null로 두고 Google/S3 이미지를 비동기로 업로드한다.
+ * DRAFT 상태에서 place가 있는데 imageUrl이 비어있는 step이 하나라도 있으면 채워지는 중으로 본다.
+ * (일부 장소는 매칭 실패로 끝내 null일 수 있어 폴링은 max attempts로 종료된다.)
+ */
+export function hasPendingImage(itin: Itinerary): boolean {
+  if (itin.status !== 'DRAFT') return false;
+  return itin.steps.some((s) => s.place != null && !s.place.imageUrl);
 }
 
 /** steps[]를 dayNumber 기준으로 그룹핑 */

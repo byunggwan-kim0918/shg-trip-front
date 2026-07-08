@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ItinerarySummary } from '@/lib/types/itinerary';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import { useItineraryStore } from '@/lib/stores/useItineraryStore';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   DRAFT: { text: '작성 중', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
@@ -59,18 +61,41 @@ interface Props {
 
 export default function ItineraryList({ itineraries }: Props) {
   const router = useRouter();
+  const { removeItinerary, isDeleting } = useItineraryStore();
   const [showModeMenu, setShowModeMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  /** 현재 ··· 메뉴가 열린 카드 id */
+  const [openCardMenuId, setOpenCardMenuId] = useState<number | null>(null);
+  const cardMenuRef = useRef<HTMLDivElement>(null);
+  /** 삭제 확인 모달 대상 */
+  const [deleteTarget, setDeleteTarget] = useState<ItinerarySummary | null>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setShowModeMenu(false);
       }
+      if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+        setOpenCardMenuId(null);
+      }
     }
-    if (showModeMenu) document.addEventListener('mousedown', handleClick);
+    if (showModeMenu || openCardMenuId !== null) {
+      document.addEventListener('mousedown', handleClick);
+    }
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showModeMenu]);
+  }, [showModeMenu, openCardMenuId]);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    try {
+      await removeItinerary(id);
+      setDeleteTarget(null);
+    } catch {
+      // 실패 시 모달 유지 + 알림
+      alert('일정 삭제에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
 
   return (
     <div className="px-4 py-6 max-w-4xl mx-auto">
@@ -145,6 +170,42 @@ export default function ItineraryList({ itineraries }: Props) {
                 <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
                   {status.text}
                 </span>
+
+                {/* ··· 삭제 메뉴 */}
+                <div
+                  className="absolute top-2 left-2"
+                  ref={openCardMenuId === item.id ? cardMenuRef : undefined}
+                >
+                  <button
+                    type="button"
+                    aria-label="일정 메뉴"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenCardMenuId((prev) => (prev === item.id ? null : item.id));
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
+                  >
+                    <span className="text-lg leading-none">⋯</span>
+                  </button>
+                  {openCardMenuId === item.id && (
+                    <div
+                      className="absolute left-0 top-full mt-1 w-32 bg-card-bg border border-card-border rounded-lg shadow-lg overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenCardMenuId(null);
+                          setDeleteTarget(item);
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-surface-hover transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* 하단 정보 */}
@@ -159,6 +220,17 @@ export default function ItineraryList({ itineraries }: Props) {
           );
         })}
       </div>
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="일정을 삭제할까요?"
+        message={`'${deleteTarget?.title ?? deleteTarget?.destination ?? ''}' 일정을 삭제합니다. 이 작업은 되돌릴 수 없습니다.`}
+        confirmLabel="삭제"
+        danger
+        busy={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

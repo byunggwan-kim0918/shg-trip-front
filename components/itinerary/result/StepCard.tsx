@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import { MapPinOff } from 'lucide-react';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
-import { getCategoryIcon } from '@/lib/constants/placeIcons';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
+import { getCategoryIcon } from '@/lib/constants/placeIcons';
 import AlternativeList from './AlternativeList';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 
@@ -26,10 +27,14 @@ export default function StepCard({
 }: StepCardProps) {
   const place = step.place;
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const imageUrl = proxyImageUrl(place?.imageUrl);
   const IconComponent = place ? getCategoryIcon(place.category) : null;
   const storyPending = useItineraryStore((s) => s.storyPending);
   const hasStory = !!step.notes && step.notes.trim().length > 0;
+  // 좌표가 없거나 (0,0)이면 지도에 표시되지 않는다 (fallback 장소 등)
+  const missingCoords = !!place && (place.latitude == null || place.longitude == null
+    || (place.latitude === 0 && place.longitude === 0));
 
   return (
     <div
@@ -68,6 +73,15 @@ export default function StepCard({
           {step.estimatedCost != null && (
             <p className="text-xs text-muted mt-1">예상 비용: {step.estimatedCost.toLocaleString()}원</p>
           )}
+          {step.userNotes && step.userNotes.trim().length > 0 && (
+            <p className="text-xs text-foreground/80 mt-1 bg-surface rounded px-2 py-1">📝 {step.userNotes}</p>
+          )}
+          {missingCoords && (
+            <span className="inline-flex items-center gap-1 mt-1 text-[11px] text-amber-600 dark:text-amber-500">
+              <MapPinOff size={11} aria-hidden="true" />
+              지도 표시 불가 (위치 정보 없음)
+            </span>
+          )}
 
           {step.alternatives.length > 0 && (
             <button
@@ -80,18 +94,27 @@ export default function StepCard({
           )}
         </div>
 
-        {/* 장소 썸네일 */}
-        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        {/* 장소 썸네일 — 로딩 중 skeleton, 도착 시 fade-in (progressive reveal) */}
+        <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
           {imageUrl && !imgError ? (
-            <img
-              src={imageUrl}
-              alt={place?.name ?? '장소 사진'}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              onError={() => setImgError(true)}
-            />
+            <>
+              {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-gray-200/70" />}
+              <img
+                src={imageUrl}
+                alt={place?.name ?? '장소 사진'}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                loading="lazy"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
+              />
+            </>
+          ) : imgError ? (
+            <div className="w-full h-full flex items-center justify-center text-gray-300">
+              <MapPinOff className="w-5 h-5" />
+            </div>
           ) : (
-            <span className="text-xs text-gray-400 text-center px-1">사진을 찾는 중이에요</span>
+            // imageUrl 아직 없음(비동기 업로드 대기) → skeleton
+            <div className="absolute inset-0 animate-pulse bg-gray-200/70" />
           )}
         </div>
       </div>
