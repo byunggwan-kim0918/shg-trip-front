@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MapPinOff } from 'lucide-react';
+import { Clock, MapPinOff } from 'lucide-react';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { getCategoryIcon } from '@/lib/constants/placeIcons';
@@ -72,6 +72,15 @@ export default function StepCard({
           ) : null}
           {step.estimatedCost != null && (
             <p className="text-xs text-muted mt-1">예상 비용: {step.estimatedCost.toLocaleString()}원</p>
+          )}
+          {place?.openingHours && (
+            <p
+              className="text-xs text-muted mt-1 line-clamp-1 flex items-center gap-1"
+              title={place.openingHours}
+            >
+              <Clock size={11} aria-hidden="true" className="flex-shrink-0" />
+              <span className="truncate">{place.openingHours}</span>
+            </p>
           )}
           {step.userNotes && step.userNotes.trim().length > 0 && (
             <p className="text-xs text-foreground/80 mt-1 bg-surface rounded px-2 py-1">📝 {step.userNotes}</p>

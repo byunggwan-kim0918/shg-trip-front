@@ -127,6 +127,8 @@ export interface ItineraryGenerateRequest {
   endDate: string;
   description: string | null;
   selectedPlaceIds: number[];
+  /** 자유입력 장소명 — 백엔드가 생성 시 Google Places(ko)로 실장소화 (최대 5개) */
+  customPlaceNames: string[];
 }
 
 /** steps[]를 dayNumber 기준으로 그룹핑한 뷰 전용 타입 */

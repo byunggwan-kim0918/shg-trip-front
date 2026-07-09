@@ -61,8 +61,10 @@ export default function ResultLayout() {
   const dayGroups = groupStepsByDay(currentItinerary.steps);
   const currentGroup = dayGroups.find((g) => g.dayNumber === selectedDay) ?? dayGroups[0];
 
-  // 예산 대비 추정 총액 (대안 선택 시 실시간 반영되도록 steps에서 합산)
-  const estimatedTotal = currentItinerary.steps.reduce((sum, s) => sum + (s.estimatedCost ?? 0), 0);
+  // 예산 대비 추정 총액 = 장소 비용 + 이동 비용 (대안 선택 시 실시간 반영되도록 steps에서 합산).
+  // 이동비를 빼면 렌터카/택시 여행의 실제 지출이 과소 표시돼 여행자가 예산을 오판한다.
+  const estimatedTotal = currentItinerary.steps.reduce(
+    (sum, s) => sum + (s.estimatedCost ?? 0) + (s.transportationCost ?? 0), 0);
   const budgetPct = totalBudget && totalBudget > 0
     ? Math.round((estimatedTotal / totalBudget) * 100)
     : null;

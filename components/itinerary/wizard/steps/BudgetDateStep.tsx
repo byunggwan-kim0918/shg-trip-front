@@ -12,6 +12,9 @@ function getDurationText(start: string, end: string): string {
   return `${nights}박 ${nights + 1}일`;
 }
 
+const MAX_BUDGET = 100_000_000; // 백엔드 @DecimalMax와 동일 — 1억원
+const MAX_TRIP_DAYS = 10;       // 백엔드 @ValidDateRange(maxDays=10)와 동일
+
 export default function BudgetDateStep() {
   const { data, updateData, nextStep } = useWizardStore();
 
@@ -25,7 +28,8 @@ export default function BudgetDateStep() {
 
   const handleBudgetChange = (raw: string) => {
     const digits = raw.replace(/[^0-9]/g, '');
-    updateData({ budget: digits ? parseBudget(digits) : null });
+    const parsed = digits ? parseBudget(digits) : null;
+    updateData({ budget: parsed !== null ? Math.min(parsed, MAX_BUDGET) : null });
   };
 
   const toLocalDateStr = (d: Date) => {
@@ -46,7 +50,7 @@ export default function BudgetDateStep() {
     <div className="space-y-8">
       <div className="space-y-3">
         <h2 className="text-xl font-bold text-foreground">예산</h2>
-        <p className="text-sm text-muted">여행 예산을 입력하세요 (선택)</p>
+        <p className="text-sm text-muted">여행 예산을 입력하세요 (선택, 최대 1억원)</p>
         <div className="relative">
           <input
             type="text"
@@ -63,8 +67,13 @@ export default function BudgetDateStep() {
 
       <div className="space-y-3">
         <h2 className="text-xl font-bold text-foreground">여행 기간</h2>
-        <p className="text-sm text-muted">시작일과 종료일을 선택하세요</p>
-        <CalendarPicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+        <p className="text-sm text-muted">시작일과 종료일을 선택하세요 (최대 {MAX_TRIP_DAYS}일)</p>
+        <CalendarPicker
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={handleDateChange}
+          maxRangeDays={MAX_TRIP_DAYS}
+        />
         {durationText && (
           <p className="text-sm font-medium text-accent">{durationText}</p>
         )}

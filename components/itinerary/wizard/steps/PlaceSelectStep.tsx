@@ -44,12 +44,16 @@ export default function PlaceSelectStep() {
     setResults([]);
   };
 
-  // 검색 결과 없을 때 이름만으로 직접 추가 (좌표 없음 — AI가 처리)
+  // 검색 결과 없을 때 이름만으로 직접 추가 — 생성 시 백엔드가 Google 검색으로 실제 장소로 변환
+  const MAX_CUSTOM_PLACES = 5;
+  const customPlaceCount = data.selectedPlaces.filter((p) => p.id < 0).length;
+
   const addCustomPlace = () => {
     const name = query.trim();
     if (!name) return;
+    if (customPlaceCount >= MAX_CUSTOM_PLACES) return; // 버튼 비활성화와 이중 방어
     const custom: WizardPlace = {
-      id: -(Date.now()),  // 음수 임시 ID (서버 저장 안 됨, selectedPlaceIds 변환 시 필터링)
+      id: -(Date.now()),  // 음수 임시 ID — 생성 요청 시 customPlaceNames(이름)로 전달됨
       name,
       address: '',
       latitude: 0,
@@ -107,7 +111,8 @@ export default function PlaceSelectStep() {
             <button
               type="button"
               onClick={addCustomPlace}
-              className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors min-h-[44px] whitespace-nowrap"
+              disabled={customPlaceCount >= MAX_CUSTOM_PLACES}
+              className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-hover transition-colors min-h-[44px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               직접 추가
             </button>
@@ -115,6 +120,13 @@ export default function PlaceSelectStep() {
         </div>
 
         {isSearching && <p className="mt-1 text-xs text-muted">검색 중...</p>}
+        {hasNoResults && (
+          <p className="mt-1 text-xs text-muted">
+            {customPlaceCount >= MAX_CUSTOM_PLACES
+              ? `직접 입력은 최대 ${MAX_CUSTOM_PLACES}개까지 가능합니다`
+              : '직접 입력한 장소는 일정 생성 시 실제 장소로 검색됩니다'}
+          </p>
+        )}
 
         {results.length > 0 && (
           <ul className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-card-border bg-card-bg shadow-lg">

@@ -7,6 +7,8 @@ interface CalendarPickerProps {
   endDate: Date | null;
   onDateChange: (start: Date | null, end: Date | null) => void;
   minDate?: Date;
+  /** 최대 선택 가능 기간(일, 당일 포함). 시작일 선택 후 이 범위를 넘는 종료일은 비활성화. */
+  maxRangeDays?: number;
 }
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -19,7 +21,7 @@ function stripTime(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-export default function CalendarPicker({ startDate, endDate, onDateChange, minDate }: CalendarPickerProps) {
+export default function CalendarPicker({ startDate, endDate, onDateChange, minDate, maxRangeDays }: CalendarPickerProps) {
   const today = stripTime(new Date());
   const effectiveMin = minDate ? stripTime(minDate) : today;
   const normalizedStart = startDate ? stripTime(startDate) : null;
@@ -54,6 +56,12 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
     const d = date.getTime();
     if (d < effectiveMin.getTime()) return true;
     if (normalizedStart && !normalizedEnd && d < normalizedStart.getTime()) return true;
+    // 종료일 선택 중: 시작일 + (maxRangeDays-1)일을 넘는 날짜는 비활성 (백엔드 상한과 동일)
+    if (maxRangeDays && normalizedStart && !normalizedEnd) {
+      const maxEnd = new Date(normalizedStart);
+      maxEnd.setDate(maxEnd.getDate() + maxRangeDays - 1);
+      if (d > maxEnd.getTime()) return true;
+    }
     return false;
   };
 
