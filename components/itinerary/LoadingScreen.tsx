@@ -152,6 +152,12 @@ export default function LoadingScreen() {
         selectedPlaceIds: data.selectedPlaces
           .filter((p) => p.id > 0)
           .map((p) => p.id),
+        // 자유입력(음수 임시 ID) 장소는 이름으로 전달 — 백엔드가 Google 검색으로 실장소화.
+        // (기존엔 여기서 조용히 버려져 사용자가 넣은 장소가 서버에 도달조차 안 했음)
+        customPlaceNames: data.selectedPlaces
+          .filter((p) => p.id < 0)
+          .map((p) => p.name)
+          .slice(0, 5),
       };
 
       let jobId: string;
