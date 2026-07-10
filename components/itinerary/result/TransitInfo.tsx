@@ -15,14 +15,19 @@ export default function TransitInfo({ mode, duration, distance }: TransitInfoPro
   const isUnrealistic = distance != null && distance > UNREALISTIC_LEG_KM;
 
   return (
-    <div className="flex items-center gap-2 py-2 px-8 text-xs text-muted">
-      <span className="border-l-2 border-dashed border-card-border h-4" />
-      {React.createElement(IconComponent, { size: 14, 'aria-hidden': 'true' })}
-      {duration != null && <span>{formatDuration(duration)}</span>}
-      {distance != null && <span>({distance.toFixed(1)}km)</span>}
+    <div className="flex items-center gap-2 py-2 pl-1 text-[12.5px] font-semibold text-muted-2">
+      {React.createElement(IconComponent, { size: 15, 'aria-hidden': 'true' })}
+      {duration != null && distance != null ? (
+        <span>차로 {formatDuration(duration)} · {distance.toFixed(1)}km</span>
+      ) : (
+        <>
+          {duration != null && <span>{formatDuration(duration)}</span>}
+          {distance != null && <span>{distance.toFixed(1)}km</span>}
+        </>
+      )}
       {isUnrealistic && (
         <span
-          className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-500"
+          className="inline-flex items-center gap-1 text-warn-fg"
           title="이동 거리가 비정상적으로 큽니다. 장소 위치 정보가 정확하지 않을 수 있어요."
         >
           <AlertTriangle size={12} aria-hidden="true" />

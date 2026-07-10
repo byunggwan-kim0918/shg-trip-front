@@ -27,10 +27,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const springRes = await backendFetch('/api/auth/oauth/callback', {
-    method: 'POST',
-    body: JSON.stringify({ provider, code }),
-  });
+  let springRes: Response;
+  try {
+    springRes = await backendFetch('/api/auth/oauth/callback', {
+      method: 'POST',
+      body: JSON.stringify({ provider, code }),
+    });
+  } catch {
+    // 백엔드 미기동/네트워크 오류 (ECONNREFUSED 등) — 스택트레이스 노출 없이 502 반환
+    return NextResponse.json(
+      { error: 'Unable to reach authentication server' },
+      { status: 502 },
+    );
+  }
 
   if (!springRes.ok) {
     const errorData = await springRes.json().catch(() => null);

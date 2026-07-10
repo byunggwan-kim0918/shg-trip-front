@@ -8,7 +8,7 @@ import type { ItineraryStep } from '@/lib/types/itinerary';
 const MapPanelInner = dynamic(() => import('./MapPanelInner'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-surface text-muted text-sm">
+    <div className="w-full h-full flex items-center justify-center bg-surface-2 text-muted text-sm">
       지도 불러오는 중...
     </div>
   ),
@@ -43,7 +43,7 @@ export default function MapPanel({ steps, selectedDay, selectedStepId, onMarkerC
 
   if (filteredSteps.length === 0) {
     return (
-      <div className="w-full h-full min-h-[300px] flex items-center justify-center bg-surface text-muted text-sm">
+      <div className="w-full h-full min-h-[300px] flex items-center justify-center bg-surface-2 text-muted text-sm">
         <div className="text-center">
           <MapPin size={24} className="mx-auto mb-2" aria-hidden="true" />
           <p>장소 좌표 정보가 없어 지도를 표시할 수 없습니다.</p>

@@ -213,7 +213,7 @@ export default function MapPanelInner({
                     pixelOffset={[0, -40]}
                   >
                     <div className="text-sm min-w-[180px] max-w-[220px]">
-                      <div className="w-full h-24 rounded-md mb-2 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
+                      <div className="w-full h-24 rounded-md mb-2 overflow-hidden bg-surface-3">
                         {step.place.imageUrl ? (
                           <img
                             src={proxyImageUrl(step.place.imageUrl)!}
@@ -259,7 +259,7 @@ export default function MapPanelInner({
 
         {/* 일차별 범례 */}
         {uniqueDays.length > 1 && (
-          <div className="absolute top-3 left-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 flex flex-col gap-1 z-10">
+          <div className="absolute top-3 left-3 bg-card-bg/90 backdrop-blur-sm rounded-lg shadow-md border border-card-border px-3 py-2 flex flex-col gap-1 z-10">
             {uniqueDays.map((day) => {
               const color = getDayColor(day);
               return (
@@ -268,7 +268,7 @@ export default function MapPanelInner({
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: color.bg }}
                   />
-                  <span className="text-gray-700 dark:text-gray-300">{day}일차</span>
+                  <span className="text-text-2">{day}일차</span>
                 </div>
               );
             })}

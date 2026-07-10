@@ -1,225 +1,271 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus, MoreHorizontal, MapPinned } from 'lucide-react';
 import type { ItinerarySummary } from '@/lib/types/itinerary';
-import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import ConfirmModal from '@/components/common/ConfirmModal';
-
-const STATUS_LABEL: Record<string, { text: string; className: string }> = {
-  DRAFT: { text: '작성 중', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  FINALIZED: { text: '확정', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  ARCHIVED: { text: '보관', className: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
-};
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function getDday(startDate: string) {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
-  const diff = Math.ceil((start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff > 0) return `D-${diff}`;
-  if (diff === 0) return 'D-Day';
-  return `D+${Math.abs(diff)}`;
-}
-
-function getTripDays(startDate: string, endDate: string) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-}
-
-/** 목적지 문자열 기반 해시로 그라데이션 색상 결정 */
-const GRADIENTS = [
-  'from-blue-400 to-purple-500',
-  'from-teal-400 to-blue-500',
-  'from-rose-400 to-orange-400',
-  'from-emerald-400 to-cyan-500',
-  'from-violet-400 to-fuchsia-500',
-  'from-amber-400 to-red-400',
-  'from-sky-400 to-indigo-500',
-  'from-pink-400 to-purple-500',
-];
-
-function getGradient(destination: string) {
-  let hash = 0;
-  for (let i = 0; i < destination.length; i++) {
-    hash = destination.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
-}
+import StatusDot from '@/components/common/StatusDot';
+import TagChip from '@/components/common/TagChip';
+import DestinationCover from '@/components/common/DestinationCover';
+import EmptyState from '@/components/common/EmptyState';
+import {
+  FILTER_TABS,
+  type TripFilter,
+  matchesFilter,
+  displayStatus,
+  daysUntil,
+  ddayLabel,
+  dateRange,
+  nightsLabel,
+} from '@/lib/utils/tripStatus';
 
 interface Props {
-  itineraries: ItinerarySummary[];
+  /** 미지정 시 스토어에서 직접 로드(내 여행 페이지 겸용). */
+  itineraries?: ItinerarySummary[];
 }
 
-export default function ItineraryList({ itineraries }: Props) {
+export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
   const router = useRouter();
-  const { removeItinerary, isDeleting } = useItineraryStore();
-  const [showModeMenu, setShowModeMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  /** 현재 ··· 메뉴가 열린 카드 id */
+  const {
+    itineraries: storeItineraries,
+    loadItineraries,
+    removeItinerary,
+    isDeleting,
+  } = useItineraryStore();
+
+  const selfLoad = itinerariesProp === undefined;
+  useEffect(() => {
+    if (selfLoad) loadItineraries();
+  }, [selfLoad, loadItineraries]);
+
+  const itineraries = itinerariesProp ?? storeItineraries;
+
+  const [filter, setFilter] = useState<TripFilter>('all');
   const [openCardMenuId, setOpenCardMenuId] = useState<number | null>(null);
   const cardMenuRef = useRef<HTMLDivElement>(null);
-  /** 삭제 확인 모달 대상 */
   const [deleteTarget, setDeleteTarget] = useState<ItinerarySummary | null>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowModeMenu(false);
-      }
-      if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
-        setOpenCardMenuId(null);
-      }
+      if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) setOpenCardMenuId(null);
     }
-    if (showModeMenu || openCardMenuId !== null) {
-      document.addEventListener('mousedown', handleClick);
-    }
+    if (openCardMenuId !== null) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showModeMenu, openCardMenuId]);
+  }, [openCardMenuId]);
+
+  /** 필터 적용된 목록. */
+  const filtered = useMemo(
+    () => itineraries.filter((t) => matchesFilter(t, filter)),
+    [itineraries, filter],
+  );
+
+  /** 히어로 = 예정/여행중 중 startDate가 가장 가까운 것(D-day 최소, 음수 제외 우선). */
+  const hero = useMemo(() => {
+    const candidates = itineraries
+      .filter((t) => {
+        const s = displayStatus(t);
+        return s === 'upcoming' || s === 'ongoing';
+      })
+      .sort((a, b) => {
+        const da = daysUntil(a.startDate);
+        const db = daysUntil(b.startDate);
+        // 여행중(음수~0)·임박 순: 절대 임박도 기준
+        return Math.abs(da) - Math.abs(db);
+      });
+    return candidates[0] ?? null;
+  }, [itineraries]);
+
+  /** 그리드 = 히어로 제외 나머지. */
+  const gridItems = useMemo(
+    () => filtered.filter((t) => t.id !== hero?.id),
+    [filtered, hero],
+  );
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    const id = deleteTarget.id;
     try {
-      await removeItinerary(id);
+      await removeItinerary(deleteTarget.id);
       setDeleteTarget(null);
     } catch {
-      // 실패 시 모달 유지 + 알림
       alert('일정 삭제에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
+  const goToStep = (item: ItinerarySummary) => router.push(`/main/itinerary/${item.id}`);
+
   return (
-    <div className="px-4 py-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-foreground">내 여행</h1>
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setShowModeMenu((v) => !v)}
-            className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            + 새 여행
-          </button>
-          {showModeMenu && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-card-bg border border-card-border rounded-lg shadow-lg z-50 overflow-hidden">
-              <button
-                onClick={() => { setShowModeMenu(false); router.push('/main/plan/new?mode=auto'); }}
-                className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors"
-              >
-                <p className="text-sm font-medium text-foreground">🤖 AI 추천</p>
-                <p className="text-xs text-muted mt-0.5">AI가 장소부터 동선까지 완성</p>
-              </button>
-              <div className="border-t border-card-border" />
-              <button
-                onClick={() => { setShowModeMenu(false); router.push('/main/plan/new?mode=manual'); }}
-                className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors"
-              >
-                <p className="text-sm font-medium text-foreground">✋ AI 맞춤 설계</p>
-                <p className="text-xs text-muted mt-0.5">장소를 고르면 AI가 동선을 짜줌</p>
-              </button>
-            </div>
-          )}
+    <div className="mx-auto max-w-6xl px-1 py-2">
+      {/* 헤더 */}
+      <div className="mb-[18px] flex items-end justify-between">
+        <div className="flex items-baseline gap-2.5">
+          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-foreground">내 여행</h1>
+          <span className="text-sm font-semibold text-muted">{itineraries.length}개</span>
         </div>
+        <button
+          type="button"
+          onClick={() => router.push('/main/plan/new')}
+          className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13.5px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105"
+        >
+          <Plus size={15} strokeWidth={2.5} /> 새 여행
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {itineraries.map((item) => {
-          const status = STATUS_LABEL[item.status] ?? STATUS_LABEL.DRAFT;
-          const days = getTripDays(item.startDate, item.endDate);
-          const dday = getDday(item.startDate);
-
+      {/* 필터 탭 */}
+      <div className="mb-5 flex gap-1.5">
+        {FILTER_TABS.map((tab) => {
+          const active = filter === tab.key;
           return (
-            <div
-              key={item.id}
-              className="border border-card-border rounded-xl bg-card-bg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => router.push(`/main/itinerary/${item.id}`)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && router.push(`/main/itinerary/${item.id}`)}
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setFilter(tab.key)}
+              className={`rounded-full px-3.5 py-[7px] text-[13px] font-semibold transition-colors ${
+                active ? 'bg-accent text-white' : 'bg-surface-3 text-muted hover:text-foreground'
+              }`}
             >
-              {/* 커버 이미지 또는 그라데이션 */}
-              <div className="h-32 relative">
-                {item.coverImage ? (
-                  <img
-                    src={proxyImageUrl(item.coverImage)!}
-                    alt={item.title ?? item.destination}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className={`w-full h-full bg-gradient-to-br ${getGradient(item.destination)}`} />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-white font-semibold text-base truncate">
-                    {item.title ?? item.destination}
-                  </h3>
-                  <p className="text-white/80 text-xs mt-0.5">
-                    {item.destination}
-                  </p>
-                </div>
-                <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
-                  {status.text}
-                </span>
-
-                {/* ··· 삭제 메뉴 */}
-                <div
-                  className="absolute top-2 left-2"
-                  ref={openCardMenuId === item.id ? cardMenuRef : undefined}
-                >
-                  <button
-                    type="button"
-                    aria-label="일정 메뉴"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenCardMenuId((prev) => (prev === item.id ? null : item.id));
-                    }}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
-                  >
-                    <span className="text-lg leading-none">⋯</span>
-                  </button>
-                  {openCardMenuId === item.id && (
-                    <div
-                      className="absolute left-0 top-full mt-1 w-32 bg-card-bg border border-card-border rounded-lg shadow-lg overflow-hidden"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenCardMenuId(null);
-                          setDeleteTarget(item);
-                        }}
-                        className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-surface-hover transition-colors"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 하단 정보 */}
-              <div className="p-3 flex items-center justify-between">
-                <div className="flex items-center gap-3 text-xs text-muted">
-                  <span>📅 {formatDate(item.startDate)} - {formatDate(item.endDate)}</span>
-                  <span>{days}일</span>
-                </div>
-                <span className="text-xs font-semibold text-accent">{dday}</span>
-              </div>
-            </div>
+              {tab.label}
+            </button>
           );
         })}
       </div>
+
+      {/* 히어로 카드 — 필터 'all'일 때만 노출 */}
+      {hero && filter === 'all' && (
+        <button
+          type="button"
+          onClick={() => goToStep(hero)}
+          className="group relative mb-[18px] block h-[200px] w-full overflow-hidden rounded-[18px] border border-card-border text-left"
+        >
+          <DestinationCover
+            destination={hero.destination}
+            imageUrl={hero.coverImage}
+            scrim
+            labelSize={84}
+            className="absolute inset-0 h-full w-full"
+          />
+          <div className="absolute inset-0 flex flex-col justify-between p-6">
+            <div className="flex gap-2">
+              <span className="rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold text-[#14161c]">
+                {ddayLabel(hero.startDate)}
+              </span>
+              <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-[4px]">
+                가장 가까운 여행
+              </span>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <span className="text-2xl font-extrabold tracking-[-0.02em] text-white">
+                {hero.title ?? hero.destination}
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {hero.tags.slice(0, 3).map((t) => (
+                  <span key={t} className="rounded-full bg-white/18 px-2.5 py-1 text-xs font-semibold text-white">
+                    {t}
+                  </span>
+                ))}
+                <span className="ml-1 text-[13px] font-medium text-white/85">
+                  {dateRange(hero.startDate, hero.endDate)} · {nightsLabel(hero.startDate, hero.endDate)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+      )}
+
+      {/* 그리드 */}
+      {gridItems.length === 0 ? (
+        <div className="py-10">
+          <EmptyState
+            icon={MapPinned}
+            title="해당하는 여행이 없어요"
+            description={filter === 'all' ? '새 여행을 만들어보세요.' : '다른 필터를 선택해보세요.'}
+            className="mx-auto max-w-sm"
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {gridItems.map((item, idx) => {
+            const st = displayStatus(item);
+            return (
+              <div
+                key={item.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => goToStep(item)}
+                onKeyDown={(e) => e.key === 'Enter' && goToStep(item)}
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
+              >
+                {/* 커버 */}
+                <DestinationCover
+                  destination={item.destination}
+                  imageUrl={item.coverImage}
+                  seedOffset={idx * 7}
+                  labelSize={40}
+                  className="h-[122px] w-full"
+                >
+                  <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[11.5px] font-bold text-[#14161c]">
+                    {ddayLabel(item.startDate)}
+                  </span>
+                  {/* ··· 삭제 메뉴 */}
+                  <div
+                    className="absolute left-2 top-2"
+                    ref={openCardMenuId === item.id ? cardMenuRef : undefined}
+                  >
+                    <button
+                      type="button"
+                      aria-label="일정 메뉴"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenCardMenuId((prev) => (prev === item.id ? null : item.id));
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/30 text-white transition-colors hover:bg-black/50"
+                    >
+                      <MoreHorizontal size={15} />
+                    </button>
+                    {openCardMenuId === item.id && (
+                      <div
+                        className="absolute left-0 top-full mt-1 w-28 overflow-hidden rounded-lg border border-card-border bg-card-bg shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenCardMenuId(null);
+                            setDeleteTarget(item);
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm text-danger transition-colors hover:bg-surface-hover"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </DestinationCover>
+
+                {/* 본문 */}
+                <div className="p-[15px]">
+                  <div className="mb-2.5 truncate text-[15px] font-bold text-foreground">
+                    {item.title ?? item.destination}
+                  </div>
+                  <div className="mb-3.5 flex flex-wrap gap-1.5">
+                    {item.tags.slice(0, 2).map((t) => (
+                      <TagChip key={t}>{t}</TagChip>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between border-t border-divider pt-3">
+                    <span className="text-[12.5px] font-medium text-muted-2">
+                      {dateRange(item.startDate, item.endDate)} · {nightsLabel(item.startDate, item.endDate)}
+                    </span>
+                    <StatusDot status={st} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <ConfirmModal
         open={deleteTarget !== null}

@@ -5,7 +5,7 @@ const PROVIDERS: Provider[] = ['KAKAO', 'GOOGLE', 'NAVER'];
 
 export default function SocialLoginGroup() {
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex w-full flex-col gap-[11px]">
       {PROVIDERS.map((provider) => (
         <SocialLoginButton key={provider} provider={provider} />
       ))}

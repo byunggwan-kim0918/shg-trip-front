@@ -1,29 +1,34 @@
+import { Suspense } from 'react';
 import SocialLoginGroup from '@/components/auth/SocialLoginGroup';
+import LoginErrorToast from '@/components/auth/LoginErrorToast';
 
 export default function LoginPage() {
   return (
-    <div className="w-full max-w-sm mx-auto flex flex-col items-center">
-      <div className="animate-fade-in-up mb-10 flex flex-col items-center gap-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/20">
-          <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+    <div className="mx-auto flex w-full max-w-sm flex-col items-center">
+      <Suspense fallback={null}>
+        <LoginErrorToast />
+      </Suspense>
+
+      <div className="animate-fade-in-up mb-8 flex flex-col items-center">
+        <div
+          className="mb-5 flex h-[62px] w-[62px] items-center justify-center rounded-[18px] text-[28px] font-extrabold text-white shadow-[0_14px_30px_-12px_var(--accent)]"
+          style={{ background: 'linear-gradient(140deg, var(--accent), oklch(0.62 0.15 200))' }}
+        >
+          S
         </div>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">TripPlan</h1>
-          <p className="mt-1.5 text-sm text-muted">간편하게 시작하세요</p>
-        </div>
+        <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-foreground">SHG trip</h1>
+        <p className="mt-1.5 text-sm text-muted">한 문장으로 시작하세요</p>
       </div>
 
-      <div className="animate-fade-in-up animation-delay-100 w-full glass-card rounded-2xl p-6">
+      <div className="animate-fade-in-up animation-delay-100 flex w-full max-w-[340px] flex-col gap-[11px]">
         <SocialLoginGroup />
       </div>
 
-      <p className="animate-fade-in-up animation-delay-200 mt-8 text-[11px] text-muted/60 text-center leading-relaxed">
-        시작하기를 누르면{' '}
-        <a href="/terms" className="underline hover:text-muted transition-colors">이용약관</a>
+      <p className="animate-fade-in-up animation-delay-200 mt-6 text-center text-[11.5px] leading-relaxed text-muted-2">
+        시작하면{' '}
+        <a href="/terms" className="underline transition-colors hover:text-muted">이용약관</a>
         {' '}및{' '}
-        <a href="/privacy" className="underline hover:text-muted transition-colors">개인정보처리방침</a>
+        <a href="/privacy" className="underline transition-colors hover:text-muted">개인정보처리방침</a>
         에 동의하게 됩니다.
       </p>
     </div>

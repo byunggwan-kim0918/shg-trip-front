@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import type { WizardData } from '@/lib/types/itinerary';
-// WizardData.selectedPlaces는 WizardPlace[] (id: number 기반)
 
-const STEPS_AUTO = 7;   // 여행지 → 테마 → 카테고리 → 페이스 → 이동방법 → 예산/기간 → 요약
-const STEPS_MANUAL = 9; // 여행지 → 테마 → 카테고리 → 페이스 → 이동방법 → 예산/기간 → 장소선택 → 부가설명 → 요약
+// 5단계 통합 마법사 (자동/수동 모드 분리 폐지).
+// 0 여행지·기간 → 1 취향(테마+카테고리) → 2 스타일(페이스+이동) → 3 예산·필수장소(선택) → 4 확인
+const TOTAL_STEPS = 5;
 
 const initialData: WizardData = {
-  mode: 'auto',
   destination: '',
   themes: [],
   categories: [],
@@ -19,26 +18,15 @@ const initialData: WizardData = {
   selectedPlaces: [],
 };
 
-// 각 단계의 유효성을 데이터 기반으로 동기적으로 계산
+/** 각 단계 유효성 (데이터 기반, 동기 계산). 4단계(예산·장소)는 선택이라 항상 유효. */
 export function computeStepValid(step: number, data: WizardData): boolean {
   switch (step) {
-    case 0: return data.destination.trim().length > 0;
-    case 1: return data.themes.length >= 1;
-    case 2: return data.categories.length >= 1;
-    case 3: return true; // 페이스 (기본값 있으므로 항상 유효)
-    case 4: return true; // 이동방법 (기본값 있으므로 항상 유효)
-    case 5: return !!data.startDate && !!data.endDate;
-    case 6:
-      // auto: 요약(항상 유효), manual: 장소선택
-      if (data.mode === 'manual') return data.selectedPlaces.length >= 1;
-      return true;
-    case 7:
-      // manual: 부가설명(선택)
-      return true;
-    case 8:
-      return true; // manual 요약
-    default:
-      return true;
+    case 0: return data.destination.trim().length > 0 && !!data.startDate && !!data.endDate;
+    case 1: return data.themes.length >= 1 && data.categories.length >= 1;
+    case 2: return true; // 스타일 (페이스·이동 기본값 있음)
+    case 3: return true; // 예산·필수장소 (선택·건너뛰기)
+    case 4: return true; // 확인
+    default: return true;
   }
 }
 
@@ -63,30 +51,28 @@ export const useWizardStore = create<WizardState & WizardActions>((set, get) => 
   data: initialData,
   isStepValid: false,
 
-  getTotalSteps: () => (get().data.mode === 'manual' ? STEPS_MANUAL : STEPS_AUTO),
+  getTotalSteps: () => TOTAL_STEPS,
 
   setStep: (step) => {
-    const total = get().getTotalSteps();
-    const clamped = Math.max(0, Math.min(step, total - 1));
+    const clamped = Math.max(0, Math.min(step, TOTAL_STEPS - 1));
     const { data } = get();
     set({ currentStep: clamped, isStepValid: computeStepValid(clamped, data) });
   },
 
   nextStep: () => {
-    const { currentStep, isStepValid, getTotalSteps, data } = get();
+    const { currentStep, isStepValid, data } = get();
     if (!isStepValid) return;
-    const total = getTotalSteps();
-    if (currentStep < total - 1) {
-      const nextStep = currentStep + 1;
-      set({ currentStep: nextStep, isStepValid: computeStepValid(nextStep, data) });
+    if (currentStep < TOTAL_STEPS - 1) {
+      const next = currentStep + 1;
+      set({ currentStep: next, isStepValid: computeStepValid(next, data) });
     }
   },
 
   prevStep: () => {
     const { currentStep, data } = get();
     if (currentStep > 0) {
-      const prevStep = currentStep - 1;
-      set({ currentStep: prevStep, isStepValid: computeStepValid(prevStep, data) });
+      const prev = currentStep - 1;
+      set({ currentStep: prev, isStepValid: computeStepValid(prev, data) });
     }
   },
 

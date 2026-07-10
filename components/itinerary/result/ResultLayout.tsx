@@ -1,20 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { AlertTriangle, Share2 } from 'lucide-react';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
-import { groupStepsByDay } from '@/lib/types/itinerary';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import { coverGradient } from '@/lib/utils/coverGradient';
+import { nightsLabel } from '@/lib/utils/tripStatus';
 import { finalizeItinerary } from '@/lib/data/itineraryService';
+import Toast from '@/components/common/Toast';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
-
-function getDuration(start: string, end: string) {
-  const n = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
-  return `${n}박 ${n + 1}일`;
-}
 
 function toMinutes(time: string | null): number | null {
   if (!time) return null;
@@ -44,10 +41,32 @@ function hasTimeAnomaly(steps: ItineraryStep[]): boolean {
 }
 
 export default function ResultLayout() {
-  const { currentItinerary, selectedDay, selectedStepId, setSelectedDay, setSelectedStep, setCurrentItinerary } =
-    useItineraryStore();
+  const { currentItinerary, selectedDay, selectedStepId, setSelectedDay, setSelectedStep, setCurrentItinerary,
+    alternativeError, clearAlternativeError } = useItineraryStore();
   const [showMap, setShowMap] = useState(true);
   const [finalizing, setFinalizing] = useState(false);
+  // 편집 어피던스는 시각만 — 실제 드래그/삭제는 후속(백엔드 reorder/delete 필요)
+  const [editNotice, setEditNotice] = useState(false);
+  const editNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 확정: 헤더 버튼 + 모바일 고정 바가 공유하는 단일 콜백
+  const handleFinalize = useCallback(async () => {
+    if (!currentItinerary) return;
+    setFinalizing(true);
+    try {
+      const updated = await finalizeItinerary(currentItinerary.id);
+      setCurrentItinerary(updated);
+    } catch { /* 이미 확정된 경우 등 무시 */ }
+    setFinalizing(false);
+  }, [currentItinerary, setCurrentItinerary]);
+
+  const showEditNotice = useCallback(() => {
+    setEditNotice(true);
+    if (editNoticeTimer.current) clearTimeout(editNoticeTimer.current);
+    editNoticeTimer.current = setTimeout(() => setEditNotice(false), 2400);
+  }, []);
+
+  useEffect(() => () => { if (editNoticeTimer.current) clearTimeout(editNoticeTimer.current); }, []);
 
   if (!currentItinerary) {
     return (
@@ -58,8 +77,6 @@ export default function ResultLayout() {
   }
 
   const { destination, startDate, endDate, totalBudget, coverImage, tags } = currentItinerary;
-  const dayGroups = groupStepsByDay(currentItinerary.steps);
-  const currentGroup = dayGroups.find((g) => g.dayNumber === selectedDay) ?? dayGroups[0];
 
   // 예산 대비 추정 총액 = 장소 비용 + 이동 비용 (대안 선택 시 실시간 반영되도록 steps에서 합산).
   // 이동비를 빼면 렌터카/택시 여행의 실제 지출이 과소 표시돼 여행자가 예산을 오판한다.
@@ -84,80 +101,95 @@ export default function ResultLayout() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
-      {/* SummaryHeader */}
-      <div className="px-4 py-3 border-b border-card-border flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          {cover && (
+      {/* SummaryHeader (4a) */}
+      <div className="flex items-start gap-4 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5">
+        {/* 커버 사각 74 */}
+        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-2xl sm:block">
+          {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cover}
-              alt={currentItinerary.title ?? destination}
-              className="hidden sm:block w-14 h-14 rounded-lg object-cover flex-shrink-0"
-            />
+            <img src={cover} alt={currentItinerary.title ?? destination} className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full" style={{ background: coverGradient(destination) }} />
           )}
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold text-foreground truncate">
-              {currentItinerary.title ?? destination}
-            </h1>
-            <p className="text-sm text-muted">
-              {startDate} ~ {endDate} ({getDuration(startDate, endDate)})
-              {totalBudget != null && (
-                <span className={overBudget ? 'text-red-500 font-medium' : undefined}>
-                  {' · 예상 '}{formatBudget(estimatedTotal)}원 / 예산 {formatBudget(totalBudget)}원
-                  {budgetPct != null && ` (${budgetPct}%)`}
-                </span>
-              )}
-              {totalBudget == null && estimatedTotal > 0 && ` · 예상 ${formatBudget(estimatedTotal)}원`}
-            </p>
-            {tags && tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 rounded-full text-[11px] bg-surface text-muted"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {currentItinerary.status === 'DRAFT' && (
+
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
+            {currentItinerary.title ?? destination}
+          </h1>
+          <p className="mt-1.5 text-[13.5px] font-medium text-muted">
+            {startDate} – {endDate} · {nightsLabel(startDate, endDate)}
+            {totalBudget != null && (
+              <span className={overBudget ? 'font-semibold text-danger' : undefined}>
+                {' · 예상 '}
+                <b className="text-foreground">{formatBudget(estimatedTotal)}원</b>
+                {' / 예산 '}{formatBudget(totalBudget)}원{budgetPct != null && ` (${budgetPct}%)`}
+              </span>
+            )}
+            {totalBudget == null && estimatedTotal > 0 && (
+              <span> · 예상 <b className="text-foreground">{formatBudget(estimatedTotal)}원</b></span>
+            )}
+          </p>
+          {tags && tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-surface-3 px-2.5 py-1 text-[12px] font-semibold text-muted">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 액션 */}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              disabled={finalizing}
-              onClick={async () => {
-                setFinalizing(true);
-                try {
-                  const updated = await finalizeItinerary(currentItinerary.id);
-                  setCurrentItinerary(updated);
-                } catch { /* 에러 무시 — 이미 확정된 경우 등 */ }
-                setFinalizing(false);
-              }}
-              className="px-4 py-1.5 rounded-lg text-xs font-medium bg-accent text-white hover:opacity-90 transition-opacity disabled:opacity-50 min-h-[36px]"
+              onClick={showEditNotice}
+              className="min-h-[36px] rounded-xl border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover"
             >
-              {finalizing ? '확정 중...' : '✓ 일정 확정'}
+              일정 편집
             </button>
-          )}
-          {currentItinerary.status === 'FINALIZED' && (
-            <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              확정됨
-            </span>
-          )}
+            <button
+              type="button"
+              className="hidden min-h-[36px] items-center gap-1.5 rounded-xl border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover sm:inline-flex"
+            >
+              <Share2 size={14} aria-hidden="true" /> 공유
+            </button>
+            {currentItinerary.status === 'DRAFT' && (
+              // 모바일은 하단 고정 확정 바가 담당 → 헤더 버튼은 lg 이상에서만
+              <button
+                type="button"
+                disabled={finalizing}
+                onClick={handleFinalize}
+                className="hidden min-h-[36px] rounded-xl bg-accent px-4 py-2 text-[13px] font-bold text-white shadow-[0_8px_18px_-8px_var(--accent)] transition-[filter] hover:brightness-105 disabled:opacity-50 lg:block"
+              >
+                {finalizing ? '확정 중...' : '일정 확정'}
+              </button>
+            )}
+            {currentItinerary.status === 'FINALIZED' && (
+              <span className="rounded-xl bg-status-done-bg px-3.5 py-2 text-[13px] font-semibold text-status-done">확정됨</span>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setShowMap((v) => !v)}
-            className="lg:hidden px-3 py-1.5 rounded-lg text-xs font-medium border border-card-border bg-card-bg text-foreground hover:bg-surface-hover transition-colors min-h-[36px]"
+            className="min-h-[32px] rounded-lg border border-card-border bg-card-bg px-3 py-1.5 text-xs font-semibold text-text-2 transition-colors hover:bg-surface-hover lg:hidden"
           >
             {showMap ? '지도 숨기기' : '지도 보기'}
           </button>
         </div>
       </div>
 
+      {editNotice && (
+        <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
+          일정 편집(순서 변경·삭제)은 곧 제공될 예정이에요.
+        </div>
+      )}
+
       {(timeAnomaly || unrealisticLeg) && (
-        <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-900 flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400">
+        <div className="px-4 py-2 bg-warn-bg border-b border-warn-border flex items-start gap-2 text-xs text-warn-fg">
           <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
           <span>
             일부 장소의 위치·시간 정보가 정확하지 않을 수 있어요.
@@ -168,21 +200,13 @@ export default function ResultLayout() {
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
-        <div className={`${showMap ? 'lg:w-[55%]' : 'w-full'} w-full overflow-y-auto`}>
-          <TimelinePanel
-            itinerary={currentItinerary}
-            selectedDay={selectedDay}
-            onDayChange={setSelectedDay}
-            onStepClick={setSelectedStep}
-          />
-        </div>
+      {/* 본문. 모바일: 지도 상단 고정 → 타임라인 스크롤. lg: 타임라인 좌 / 지도 우. */}
+      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* 지도 — 모바일 상단(고정 높이, 토글), lg 우측 */}
         <div
-          className={`
-            lg:block lg:w-[45%] w-full overflow-hidden
-            ${showMap ? 'block' : 'hidden lg:block'}
-          `}
-          style={{ minHeight: showMap ? '300px' : undefined }}
+          className={`w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[45%] lg:shrink lg:border-b-0 lg:border-l ${
+            showMap ? 'block h-[180px]' : 'hidden lg:block'
+          }`}
         >
           <MapPanel
             steps={currentItinerary.steps}
@@ -191,7 +215,45 @@ export default function ResultLayout() {
             onMarkerClick={setSelectedStep}
           />
         </div>
+
+        {/* 타임라인 */}
+        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[55%]">
+          <TimelinePanel
+            itinerary={currentItinerary}
+            selectedDay={selectedDay}
+            onDayChange={setSelectedDay}
+            onStepClick={setSelectedStep}
+            editHint
+          />
+        </div>
       </div>
+
+      {/* 모바일 하단 고정 확정 바 (DRAFT일 때) */}
+      {currentItinerary.status === 'DRAFT' && (
+        <div className="shrink-0 border-t border-card-border bg-card-bg px-4 py-3 lg:hidden">
+          <button
+            type="button"
+            disabled={finalizing}
+            onClick={handleFinalize}
+            className="w-full rounded-[13px] bg-accent py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105 disabled:opacity-50"
+          >
+            {finalizing ? '확정 중...' : '일정 확정'}
+          </button>
+        </div>
+      )}
+
+      {/* 대안 선택 실패(네트워크 등) 토스트 */}
+      {alternativeError && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+          <div className="w-full max-w-md">
+            <Toast
+              title="대안을 변경하지 못했어요"
+              description={alternativeError}
+              onClose={clearAlternativeError}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

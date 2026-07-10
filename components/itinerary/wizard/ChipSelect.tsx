@@ -40,7 +40,7 @@ export default function ChipSelect({ options, selected, onChange, minSelect = 1 
               transition-all duration-150 min-h-[44px]
               ${isSelected
                 ? 'bg-accent text-white shadow-sm border border-transparent'
-                : 'bg-surface text-foreground border border-card-border hover:bg-surface-hover'
+                : 'bg-surface-3 text-text-2 border border-transparent hover:bg-surface-hover'
               }
             `}
             aria-pressed={isSelected}
