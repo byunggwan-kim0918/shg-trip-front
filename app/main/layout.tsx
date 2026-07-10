@@ -22,7 +22,7 @@ export default function MainLayout({
         >
           <Header />
           <main
-            className="flex-1 overflow-y-auto p-4 md:p-6"
+            className="flex-1 overflow-y-auto px-4 py-5 md:px-[30px] md:py-[26px]"
             role="main"
             aria-label="메인 콘텐츠"
           >

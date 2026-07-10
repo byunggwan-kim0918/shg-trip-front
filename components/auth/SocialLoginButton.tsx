@@ -5,30 +5,31 @@ import KakaoIcon from '@/components/icons/KakaoIcon';
 import GoogleIcon from '@/components/icons/GoogleIcon';
 import NaverIcon from '@/components/icons/NaverIcon';
 
+/**
+ * 버튼 위계 (리디자인 스펙):
+ * 카카오만 브랜드 채움(#FEE500). 구글·네이버는 아웃라인(surface+border)이고
+ * 브랜드 색은 좌측 아이콘에만 적용 → 네이버 초록 버튼이 CTA처럼 튀는 문제 해결.
+ */
 const PROVIDER_STYLES: Record<Provider, {
-  bg: string;
-  text: string;
-  border?: string;
+  container: string;
+  iconClass?: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = {
   KAKAO: {
-    bg: 'bg-[#FEE500] hover:bg-[#F5DC00]',
-    text: 'text-[#191919]',
-    label: '카카오로 시작하기',
+    container: 'bg-[#FEE500] hover:bg-[#F5DC00] text-[#191600] font-bold',
+    label: '카카오로 3초 만에 시작',
     icon: KakaoIcon,
   },
   GOOGLE: {
-    bg: 'bg-white hover:bg-gray-50',
-    text: 'text-[#1F1F1F]',
-    border: 'border border-gray-200',
-    label: 'Google로 시작하기',
+    container: 'bg-surface border border-card-border hover:bg-surface-hover text-foreground font-semibold',
+    label: 'Google로 계속하기',
     icon: GoogleIcon,
   },
   NAVER: {
-    bg: 'bg-[#03C75A] hover:bg-[#02b351]',
-    text: 'text-white',
-    label: '네이버로 시작하기',
+    container: 'bg-surface border border-card-border hover:bg-surface-hover text-foreground font-semibold',
+    iconClass: 'text-[#03C75A]',
+    label: '네이버로 계속하기',
     icon: NaverIcon,
   },
 };
@@ -49,16 +50,15 @@ export default function SocialLoginButton({ provider }: SocialLoginButtonProps) 
     <button
       onClick={handleClick}
       className={`
-        w-full flex items-center justify-center gap-3
-        px-6 py-3.5 rounded-xl
-        text-[15px] font-medium
+        flex w-full cursor-pointer items-center justify-center gap-[9px]
+        rounded-[13px] px-6 py-[15px]
+        text-[14.5px]
         transition-all duration-200
         hover:scale-[1.01] active:scale-[0.99]
-        cursor-pointer
-        ${style.bg} ${style.text} ${style.border || ''}
+        ${style.container}
       `}
     >
-      <Icon className="w-5 h-5 shrink-0" />
+      <Icon className={`h-[18px] w-[18px] shrink-0 ${style.iconClass ?? ''}`} />
       <span>{style.label}</span>
     </button>
   );

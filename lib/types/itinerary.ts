@@ -85,11 +85,12 @@ export interface ItinerarySummary {
   status: ItineraryStatus;
   createdAt: string;
   coverImage: string | null;
+  tags: string[];
 }
 
-/** 위자드 입력 데이터 (프론트 전용) */
+/** 위자드 입력 데이터 (프론트 전용). 자동/수동 모드 분리 폐지 — 생성 요청 mode는
+ *  selectedPlaces 유무로 파생하므로 별도 mode 필드를 두지 않는다. */
 export interface WizardData {
-  mode: 'auto' | 'manual';
   destination: string;
   themes: Theme[];
   categories: Category[];

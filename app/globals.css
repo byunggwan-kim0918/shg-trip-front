@@ -1,126 +1,210 @@
 @import "tailwindcss";
 
+/* ============================================================
+   SHG trip · 2026 리디자인 디자인 토큰 (라이트 / 다크 듀얼 테마)
+   단일 소스. 값만 교체하면 @theme inline 을 통해 Tailwind 유틸에 반영.
+   ============================================================ */
+
 :root {
-  --background: #fafafa;
-  --foreground: #111111;
-  --sidebar-bg: #f5f6f7;
-  --sidebar-border: #e5e7eb;
+  /* accent */
+  --accent: #4c6ef5;
+  --accent-hover: #3651c9;
+  --accent-soft: #edf0fe;          /* accent-weak 배경 */
+  --accent-weak-fg: #4c6ef5;       /* accent-weak 텍스트(칩) */
+
+  /* text */
+  --foreground: #14161c;           /* 기본 텍스트 */
+  --text-2: #23262e;               /* 보조 텍스트 */
+  --muted: #7a828f;                /* muted */
+  --muted-2: #98a0ab;              /* placeholder */
+
+  /* surface */
+  --background: #eef0f4;           /* 페이지 배경(canvas) */
+  --card-bg: #ffffff;              /* 프레임·카드(surface) */
+  --surface: #ffffff;
+  --surface-2: #fbfbfd;            /* 내부 카드 */
+  --surface-3: #f4f5f8;            /* 칩 배경 */
+  --surface-hover: #f4f5f8;
+
+  /* line */
+  --card-border: #e4e7ec;          /* border */
+  --divider: #f0f1f4;              /* 구분선 */
+
+  /* sidebar / header (surface 계열에 정렬) */
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #eceef2;
   --header-bg: rgba(255, 255, 255, 0.8);
-  --header-border: #e5e7eb;
-  --card-bg: #ffffff;
-  --muted: #6b7280;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --card-border: #e5e7eb;
-  --accent-soft: #eff6ff;
-  --success: #10b981;
-  --surface: #f8fafc;
-  --surface-hover: #f1f5f9;
-  --danger: #ef4444;
+  --header-border: #eceef2;
+
+  /* status */
+  --success: #12996b;              /* 완료(done) */
+  --danger: #e0563e;
+  --status-ongoing: #4c6ef5;       /* 여행 중 */
+  --status-ongoing-bg: #edf0fe;
+  --status-draft: #d98a1a;         /* 초안 */
+  --status-draft-bg: #fef4e6;
+  --status-done: #12996b;          /* 완료 */
+  --status-done-bg: #eaf7f0;
+  --status-upcoming: #98a0ab;      /* 예정 */
+  --status-upcoming-bg: #f2f4f7;
+
+  /* warn (예산 유도 넛지) */
+  --warn-bg: #fff8ec;
+  --warn-border: #f6e6c4;
+  --warn-fg: #a8791f;
+
+  /* 캘린더 요일 헤더 (일=빨강, 토=파랑) */
+  --calendar-sun: #c86a6a;
+  --calendar-sat: #6a86c8;
 }
 
 .dark {
-  --background: #0d1117;
-  --foreground: #e2e8f0;
-  --sidebar-bg: #111827;
-  --sidebar-border: #1e293b;
-  --header-bg: rgba(13, 17, 23, 0.8);
-  --header-border: #1e293b;
-  --card-bg: rgba(22, 30, 46, 0.8);
-  --muted: #94a3b8;
-  --accent: #60a5fa;
-  --accent-hover: #3b82f6;
-  --card-border: rgba(51, 65, 85, 0.5);
-  --accent-soft: rgba(59, 130, 246, 0.1);
-  --success: #34d399;
-  --surface: #111827;
-  --surface-hover: #1e293b;
-  --danger: #f87171;
+  --accent: #6b8bff;
+  --accent-hover: #4c6ef5;
+  --accent-soft: rgba(107, 139, 255, 0.16);
+  --accent-weak-fg: #9db0ff;
+
+  --foreground: #f3f5f9;
+  --text-2: #c8ccd4;
+  --muted: #8b929c;
+  --muted-2: #6b7280;
+
+  --background: #0d0e12;
+  --card-bg: #15171d;
+  --surface: #15171d;
+  --surface-2: #1b1e25;
+  --surface-3: #23272f;
+  --surface-hover: #23272f;
+
+  --card-border: #2a2e38;
+  --divider: #262a33;
+
+  --sidebar-bg: #15171d;
+  --sidebar-border: #23262e;
+  --header-bg: rgba(13, 14, 18, 0.8);
+  --header-border: #23262e;
+
+  --success: #3ecf8e;
+  --danger: #ff8a70;
+  --status-ongoing: #6b8bff;
+  --status-ongoing-bg: rgba(107, 139, 255, 0.16);
+  --status-draft: #d98a1a;
+  --status-draft-bg: rgba(216, 138, 26, 0.16);
+  --status-done: #3ecf8e;
+  --status-done-bg: rgba(18, 153, 107, 0.16);
+  --status-upcoming: #6b7280;
+  --status-upcoming-bg: #23272f;
+
+  --warn-bg: rgba(216, 138, 26, 0.12);
+  --warn-border: rgba(216, 138, 26, 0.3);
+  --warn-fg: #e0a848;
+
+  --calendar-sun: #e08a8a;
+  --calendar-sat: #8aa4e0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-text-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-weak-fg: var(--accent-weak-fg);
+
+  --color-card-bg: var(--card-bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-card-border: var(--card-border);
+  --color-divider: var(--divider);
+
   --color-sidebar-bg: var(--sidebar-bg);
   --color-sidebar-border: var(--sidebar-border);
   --color-header-bg: var(--header-bg);
   --color-header-border: var(--header-border);
-  --color-card-bg: var(--card-bg);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-card-border: var(--card-border);
-  --color-accent-soft: var(--accent-soft);
+
   --color-success: var(--success);
-  --color-surface: var(--surface);
-  --color-surface-hover: var(--surface-hover);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-status-ongoing: var(--status-ongoing);
+  --color-status-ongoing-bg: var(--status-ongoing-bg);
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-status-done: var(--status-done);
+  --color-status-done-bg: var(--status-done-bg);
+  --color-status-upcoming: var(--status-upcoming);
+  --color-status-upcoming-bg: var(--status-upcoming-bg);
+
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-border: var(--warn-border);
+  --color-warn-fg: var(--warn-fg);
+
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3 {
   letter-spacing: -0.025em;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-/* Aurora gradient background */
-.aurora-bg {
-  position: relative;
-  overflow: hidden;
+/* ============================================================
+   애니메이션 (리디자인 스펙)
+   ============================================================ */
+
+/* 캐럿 · 로딩 점 */
+@keyframes shg-blink {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 1; }
 }
 
-.aurora-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(13, 148, 136, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
+/* 스피너 (border-top:transparent 원) */
+@keyframes shg-spin {
+  to { transform: rotate(360deg); }
 }
 
-.dark .aurora-bg::before {
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(13, 148, 136, 0.2) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 10%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+/* 스켈레톤 shimmer */
+@keyframes shg-shimmer {
+  0% { background-position: -240px 0; }
+  100% { background-position: 240px 0; }
 }
 
-/* Glass card */
-.glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+/* 불확정 프로그레스 바 */
+@keyframes shg-indef {
+  0% { left: -40%; }
+  100% { left: 100%; }
 }
 
-.dark .glass-card {
-  background: rgba(22, 30, 46, 0.85);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+.shg-blink { animation: shg-blink 1.2s infinite; }
+.shg-spin { animation: shg-spin 0.7s linear infinite; }
+.shg-shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background-size: 400px 100%;
+  animation: shg-shimmer 1.4s linear infinite;
 }
+.shg-indef { animation: shg-indef 1.3s ease-in-out infinite; }
 
-/* Smooth fade-in animation */
+/* 진입 페이드 (기존 유지) */
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
+  animation: fade-in-up 0.5s ease-out forwards;
   opacity: 0;
 }
 
@@ -128,13 +212,20 @@ h1, h2, h3 {
 .animation-delay-200 { animation-delay: 200ms; }
 .animation-delay-300 { animation-delay: 300ms; }
 
-/* Noise texture overlay */
-.noise-overlay::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
+/* ============================================================
+   테마 전환 (View Transitions API)
+   toggleThemeWithTransition()이 .dark 토글을 크로스페이드로 감싼다.
+   전체 화면을 하나의 페이드로 전환해 "영역별 시차" 현상을 제거한다.
+   ============================================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }

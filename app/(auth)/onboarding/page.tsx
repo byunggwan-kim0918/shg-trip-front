@@ -63,10 +63,11 @@ export default function OnboardingPage() {
   return (
     <div className="w-full max-w-sm flex flex-col items-center">
       <div className="mb-10 flex flex-col items-center gap-3">
-        <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/20">
-          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-extrabold text-white shadow-[0_14px_30px_-12px_var(--accent)]"
+          style={{ background: 'linear-gradient(140deg, var(--accent), oklch(0.62 0.15 200))' }}
+        >
+          S
         </div>
         <div className="text-center">
           <h1 className="text-xl font-bold text-foreground">환영합니다!</h1>
@@ -85,17 +86,17 @@ export default function OnboardingPage() {
             }}
             placeholder="닉네임 (2~20자)"
             maxLength={20}
-            className="w-full px-4 py-3.5 rounded-xl border border-sidebar-border focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 text-sm transition-all bg-card-bg text-foreground placeholder:text-muted/50"
+            className="w-full px-4 py-3.5 rounded-xl border border-card-border focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 text-sm transition-all bg-card-bg text-foreground placeholder:text-muted-2"
           />
           {error && (
-            <p className="mt-2 text-xs text-red-500">{error}</p>
+            <p className="mt-2 text-xs text-danger">{error}</p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={!isValid || isSubmitting}
-          className="w-full py-3.5 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-muted/30 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors cursor-pointer"
+          className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover disabled:bg-muted/30 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors cursor-pointer shadow-[0_10px_24px_-10px_var(--accent)]"
         >
           {isSubmitting ? '설정 중...' : '시작하기'}
         </button>

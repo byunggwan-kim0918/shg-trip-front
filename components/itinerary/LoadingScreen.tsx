@@ -2,40 +2,34 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Search,
-  MapPin,
-  CheckCircle2,
-  Save,
-  AlertCircle,
-  LucideIcon,
-} from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { startItineraryGeneration, fetchItinerary } from '@/lib/data/itineraryService';
+import { tripDays } from '@/lib/utils/tripStatus';
+import ErrorState from '@/components/common/ErrorState';
 import type { ItineraryGenerateRequest } from '@/lib/types/itinerary';
 
-const STAGES: { key: string; label: string; icon: LucideIcon }[] = [
-  { key: 'ENRICHING', label: '여행 정보 분석', icon: Search },
-  { key: 'GENERATING', label: '최적 동선 계산', icon: MapPin },
-  { key: 'VALIDATING', label: '일정 품질 검증', icon: CheckCircle2 },
-  { key: 'SAVING', label: '맞춤 일정 저장', icon: Save },
+/** 리디자인 진행 단계 칩 4개 (2f/3d). */
+const STAGES: { key: string; label: string }[] = [
+  { key: 'select', label: '장소 선별' },
+  { key: 'route', label: '동선 최적화' },
+  { key: 'time', label: '시간 배분' },
+  { key: 'budget', label: '예산 정리' },
 ];
 
 const SESSION_KEY = 'shg_active_job_id';
 
 // 백엔드는 최적화 경로(OptimizedGenerationExecutor)와 fallback 경로
 // (ItineraryGenerationExecutor)에서 서로 다른 stage 문자열을 보낸다.
-// STAGES에 없는 값(SEARCHING/FALLBACK/SYNCING/SELECTING/OPTIMIZING)이 오면
-// 기존 코드는 무조건 0번(여행 정보 분석)으로 떨어져 퍼센트만 올라가고
-// 단계 표시는 멈춘 것처럼 보였다 — 모든 backend stage를 4단계로 매핑한다.
+// 모든 backend stage를 리디자인 4단계 칩으로 매핑한다.
 const STAGE_BUCKET: Record<string, number> = {
   ENRICHING: 0,
-  SEARCHING: 1,
-  FALLBACK: 1,
+  SEARCHING: 0,
+  FALLBACK: 0,
+  SYNCING: 0,
+  SELECTING: 0,
   GENERATING: 1,
-  SYNCING: 1,
-  SELECTING: 1,
   OPTIMIZING: 1,
   VALIDATING: 2,
   SAVING: 3,
@@ -87,7 +81,6 @@ function useSmoothedProgress() {
 }
 
 // 백엔드가 실제로 전송하는 퍼센트 값들 (최적화 경로 + fallback 경로 합집합).
-// 여기 없는 값은 다음 목표 추정 시 더 일찍 정체된 것처럼 보이게 만든다.
 const KNOWN_PERCENTAGES = [10, 20, 30, 35, 50, 65, 70, 80, 90, 100];
 
 function getNextTarget(current: number): number {
@@ -96,6 +89,19 @@ function getNextTarget(current: number): number {
   }
   return 100;
 }
+
+const stageMessages: Record<string, string> = {
+  ENRICHING: '여행지 정보를 분석하고 있어요',
+  SEARCHING: '어울리는 장소를 찾고 있어요',
+  FALLBACK: '다른 방식으로 장소를 다시 찾고 있어요',
+  GENERATING: 'AI가 최적의 장소를 찾고 있어요',
+  SYNCING: '최신 장소 정보를 확인하고 있어요',
+  SELECTING: '일자별로 장소를 배치하고 있어요',
+  OPTIMIZING: '동선과 이동 시간을 다듬고 있어요',
+  VALIDATING: '동선과 일정을 검증하고 있어요',
+  SAVING: '맞춤 일정을 저장하고 있어요',
+  COMPLETE: '일정이 완성됐어요!',
+};
 
 export default function LoadingScreen() {
   const router = useRouter();
@@ -110,6 +116,8 @@ export default function LoadingScreen() {
   const esRef = useRef<EventSource | null>(null);
   // complete 이벤트 수신 후 onerror 오발화 방지 플래그
   const completedRef = useRef(false);
+  // Day 보드 열 수 — 새로고침 재연결 시 wizard 데이터가 없으면 3열 기본
+  const dayCountRef = useRef(3);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -125,6 +133,10 @@ export default function LoadingScreen() {
       const hasWizardData = data.destination.trim().length > 0 && !!data.startDate && !!data.endDate;
       const savedJobId = sessionStorage.getItem(SESSION_KEY);
 
+      if (hasWizardData) {
+        dayCountRef.current = Math.min(tripDays(data.startDate!, data.endDate!), 3);
+      }
+
       // 새로고침 케이스: wizard 데이터는 없지만 진행 중인 jobId가 있음
       if (!hasWizardData && savedJobId) {
         reconnectToJob(savedJobId);
@@ -137,9 +149,10 @@ export default function LoadingScreen() {
         return;
       }
 
-      // 정상 플로우: 새 생성 요청
+      // 정상 플로우: 새 생성 요청.
+      // 모드는 필수 장소 유무로 파생 (자동/수동 모드 분리 폐지 — 5단계 통합 마법사).
       const req: ItineraryGenerateRequest = {
-        mode: data.mode === 'manual' ? 'MANUAL' : 'AUTO',
+        mode: data.selectedPlaces.length > 0 ? 'MANUAL' : 'AUTO',
         destination: data.destination,
         themes: data.themes,
         categories: data.categories,
@@ -153,7 +166,6 @@ export default function LoadingScreen() {
           .filter((p) => p.id > 0)
           .map((p) => p.id),
         // 자유입력(음수 임시 ID) 장소는 이름으로 전달 — 백엔드가 Google 검색으로 실장소화.
-        // (기존엔 여기서 조용히 버려져 사용자가 넣은 장소가 서버에 도달조차 안 했음)
         customPlaceNames: data.selectedPlaces
           .filter((p) => p.id < 0)
           .map((p) => p.name)
@@ -192,7 +204,6 @@ export default function LoadingScreen() {
           }
         }
         // 404(아직 진행 중이거나 result 없음) → SSE 재연결 시도
-        // SSE 연결 자체가 실패하면 onerror에서 에러 처리됨
         connectToJob(jobId);
       })
       .catch(() => {
@@ -215,31 +226,33 @@ export default function LoadingScreen() {
     });
 
     // complete: 구조(day·순서·시간·동선) 일정이 확정된 시점. story(가이드북 문장)는 아직
-    // 비동기로 채워지는 중이므로 여기서 곧바로 결과 화면으로 이동한다 — 이게 체감 속도를
-    // 줄이는 지점. 백엔드는 story-ready/story-failed까지 같은 SSE 연결을 유지하지만,
-    // 화면 전환(unmount)으로 연결이 자연히 정리되며 백엔드는 이를 정상 처리한다.
+    // 비동기로 채워지는 중이므로 여기서 곧바로 결과 화면으로 이동한다.
     eventSource.addEventListener('complete', async () => {
       completedRef.current = true;
       setTarget(100);
       setStage('COMPLETE');
 
-      const res = await fetch(`/api/proxy/itineraries/generate/${jobId}/result`, {
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        setError('일정을 불러오는데 실패했습니다.');
-        return;
+      // fetch/json은 네트워크 단절 시 throw → unhandled rejection 방지 위해 감싼다.
+      try {
+        const res = await fetch(`/api/proxy/itineraries/generate/${jobId}/result`, {
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          setError('일정을 불러오는데 실패했습니다.');
+          return;
+        }
+        const body = await res.json() as { success: boolean; data: number };
+        if (!body.success) {
+          setError('일정을 불러오는데 실패했습니다.');
+          return;
+        }
+        await handleComplete(jobId, body.data);
+      } catch {
+        setError('일정을 불러오는데 실패했습니다. 네트워크를 확인해주세요.');
       }
-      const body = await res.json() as { success: boolean; data: number };
-      if (!body.success) {
-        setError('일정을 불러오는데 실패했습니다.');
-        return;
-      }
-      await handleComplete(jobId, body.data);
     });
 
     // story-ready/story-failed: 화면 전환 전에 먼저 도착하는 경우를 대비한 정리용 리스너.
-    // (구조 일정은 이미 complete에서 처리됐으므로 추가 동작 없음)
     eventSource.addEventListener('story-ready', () => {
       eventSource.close();
     });
@@ -258,7 +271,6 @@ export default function LoadingScreen() {
     });
 
     // onerror: 서버 complete 후 브라우저가 재연결 시도할 때도 발화함
-    // completedRef로 정상 완료 후 발화는 무시
     eventSource.onerror = () => {
       if (completedRef.current) return;
       eventSource.close();
@@ -283,151 +295,105 @@ export default function LoadingScreen() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[65vh] px-4 gap-4">
-        <div className="glass-card rounded-2xl p-8 text-center max-w-sm">
-          <AlertCircle size={48} className="mx-auto mb-4 text-danger" aria-hidden="true" />
-          <p className="text-danger text-sm mb-4">{error}</p>
-          <button
-            type="button"
-            onClick={() => router.push('/main/plan/new')}
-            className="px-6 py-2.5 rounded-xl bg-accent text-white font-medium hover:bg-accent-hover transition-colors min-h-[44px]"
-          >
-            다시 시도
-          </button>
-        </div>
+      <div className="flex min-h-[65vh] items-center justify-center px-4">
+        <ErrorState
+          className="w-full max-w-sm"
+          description={error}
+          retryLabel="다시 시도"
+          onRetry={() => router.push('/main/plan/new?builder=1')}
+          secondaryLabel="처음으로"
+          onSecondary={() => router.push('/main')}
+        />
       </div>
     );
   }
 
   const clampedProgress = Math.min(progress, 100);
   const currentStageIdx = getStageIndex(stage);
-  const CurrentIcon = STAGES[currentStageIdx].icon;
-
-  const stageMessages: Record<string, string> = {
-    ENRICHING: '여행지 정보를 분석하고 있어요',
-    SEARCHING: '어울리는 장소를 찾고 있어요',
-    FALLBACK: '다른 방식으로 장소를 다시 찾고 있어요',
-    GENERATING: 'AI가 최적의 장소를 찾고 있어요',
-    SYNCING: '최신 장소 정보를 확인하고 있어요',
-    SELECTING: '일자별로 장소를 배치하고 있어요',
-    OPTIMIZING: '동선과 이동 시간을 다듬고 있어요',
-    VALIDATING: '동선과 일정을 검증하고 있어요',
-    SAVING: '맞춤 일정을 저장하고 있어요',
-    COMPLETE: '일정이 완성됐어요!',
-  };
-
-  const radius = 64;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - clampedProgress / 100);
+  const dayCount = dayCountRef.current;
 
   return (
     <div
-      className={`flex flex-col items-center justify-center min-h-[65vh] px-6 transition-all duration-700 ease-out ${
+      className={`mx-auto flex min-h-[65vh] w-full max-w-[632px] flex-col justify-center px-4 py-8 transition-all duration-700 ease-out ${
         fadeOut ? 'opacity-0 scale-95' : visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 translate-y-4'
       }`}
     >
-      <div className="glass-card rounded-3xl p-8 sm:p-10 w-full max-w-md relative overflow-hidden">
-        <div className="absolute inset-0 loading-shimmer pointer-events-none" />
-
-        {/* 원형 진행률 */}
-        <div className="relative w-40 h-40 mx-auto mb-8">
-          <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
-            <circle
-              cx="80" cy="80" r={radius}
-              fill="none" stroke="currentColor" strokeWidth="10"
-              className="text-surface/70"
+      {/* 헤더: 점 3개 로딩 + 타이틀 */}
+      <div className="mb-[22px] text-center">
+        <div className="mb-2.5 inline-flex items-center gap-1">
+          {[0, 0.2, 0.4].map((delay) => (
+            <span
+              key={delay}
+              className="h-2 w-2 rounded-full bg-accent"
+              style={{ animation: `shg-blink 1.2s infinite`, animationDelay: `${delay}s` }}
             />
-            <circle
-              cx="80" cy="80" r={radius}
-              fill="none" strokeWidth="10" strokeLinecap="round"
-              className="loading-ring"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <CurrentIcon size={22} aria-hidden="true" className="text-accent mb-1 loading-icon-pulse" />
-            <p className="text-3xl font-extrabold text-foreground tabular-nums tracking-tight">
-              {clampedProgress}<span className="text-base text-muted font-bold">%</span>
-            </p>
-          </div>
-        </div>
-
-        {/* 단계 스테퍼 */}
-        <div className="grid grid-cols-4 gap-1 mb-5">
-          {STAGES.map((s, i) => (
-            <div key={s.key} className="flex flex-col items-center gap-1.5">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-base transition-all duration-500 ${
-                  i < currentStageIdx
-                    ? 'bg-accent text-white scale-100'
-                    : i === currentStageIdx
-                      ? 'bg-accent/15 text-accent scale-110 loading-stage-pulse'
-                      : 'bg-surface/60 text-muted/50 scale-95'
-                }`}
-              >
-                {i < currentStageIdx ? (
-                  <CheckCircle2 size={16} aria-hidden="true" />
-                ) : (
-                  <s.icon size={16} aria-hidden="true" />
-                )}
-              </div>
-              <span
-                className={`text-[10px] leading-tight text-center transition-colors duration-300 ${
-                  i <= currentStageIdx ? 'text-foreground/80 font-medium' : 'text-muted/50'
-                }`}
-              >
-                {s.label}
-              </span>
-            </div>
           ))}
         </div>
-
-        {/* 현재 단계 메시지 */}
-        <p className="text-sm text-muted text-center">
-          {stageMessages[stage] ?? stageMessages.ENRICHING}
-        </p>
+        <div className="text-xl font-extrabold tracking-[-0.02em] text-foreground">
+          AI가 일정을 짜고 있어요
+        </div>
+        <div className="mt-1.5 text-[13px] text-muted">
+          {stageMessages[stage] ?? stageMessages.ENRICHING} · {clampedProgress}% · 약 20초
+        </div>
       </div>
 
-      <style jsx>{`
-        .loading-ring {
-          stroke: var(--accent);
-          transition: stroke-dashoffset 0.6s ease-out;
-          filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 50%, transparent));
-        }
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .loading-shimmer::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(59, 130, 246, 0.04) 40%,
-            rgba(59, 130, 246, 0.08) 50%,
-            rgba(59, 130, 246, 0.04) 60%,
-            transparent 100%
+      {/* 진행 단계 칩 4개 */}
+      <div className="mb-6 flex flex-wrap justify-center gap-2">
+        {STAGES.map((s, i) => {
+          const isDone = i < currentStageIdx || stage === 'COMPLETE';
+          const isCurrent = i === currentStageIdx && stage !== 'COMPLETE';
+          return (
+            <span
+              key={s.key}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                isDone
+                  ? 'bg-status-done-bg text-status-done'
+                  : isCurrent
+                    ? 'bg-accent-soft text-accent-weak-fg'
+                    : 'bg-surface-3 text-muted-2'
+              }`}
+            >
+              {isDone ? (
+                <Check size={11} strokeWidth={3} aria-hidden="true" />
+              ) : isCurrent ? (
+                <span
+                  className="h-[11px] w-[11px] rounded-full border-2 border-accent shg-spin"
+                  style={{ borderTopColor: 'transparent' }}
+                  aria-hidden="true"
+                />
+              ) : (
+                <span className="h-[9px] w-[9px] rounded-full border-[1.5px] border-current" aria-hidden="true" />
+              )}
+              {s.label}
+            </span>
           );
-          animation: shimmer 2.5s ease-in-out infinite;
-        }
-        @keyframes stage-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3); }
-          50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
-        }
-        .loading-stage-pulse {
-          animation: stage-pulse 2s ease-in-out infinite;
-        }
-        @keyframes icon-pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(0.92); }
-        }
-        .loading-icon-pulse {
-          animation: icon-pulse 1.8s ease-in-out infinite;
-        }
-      `}</style>
+        })}
+      </div>
+
+      {/* Day 보드 — 스켈레톤 (실카드 스트리밍 교체는 Layer B) */}
+      <div
+        className="grid min-h-0 flex-1 gap-3"
+        style={{ gridTemplateColumns: `repeat(${dayCount}, 1fr)` }}
+      >
+        {Array.from({ length: dayCount }, (_, d) => (
+          <div key={d} className="flex flex-col gap-[9px]">
+            <div
+              className={`text-[12.5px] font-extrabold ${
+                d === 0 ? 'text-accent-weak-fg' : 'text-muted-2'
+              }`}
+            >
+              Day {d + 1}
+            </div>
+            {[0, 1, 2].map((r) => (
+              <div
+                key={r}
+                className="h-[52px] rounded-[11px] shg-shimmer"
+                style={{ animationDelay: `${(d * 0.15 + r * 0.2) % 0.6}s` }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

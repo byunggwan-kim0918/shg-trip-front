@@ -85,8 +85,16 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
           ›
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-center text-xs text-muted mb-1">
-        {DAYS.map((d) => <div key={d} className="py-1">{d}</div>)}
+      <div className="grid grid-cols-7 gap-0.5 text-center text-xs font-semibold mb-1">
+        {DAYS.map((d, i) => (
+          <div
+            key={d}
+            className="py-1"
+            style={{ color: i === 0 ? 'var(--calendar-sun)' : i === 6 ? 'var(--calendar-sat)' : 'var(--muted-2)' }}
+          >
+            {d}
+          </div>
+        ))}
       </div>
       <div className="grid grid-cols-7 gap-0.5">
         {calendarDays.map((date, i) => {
