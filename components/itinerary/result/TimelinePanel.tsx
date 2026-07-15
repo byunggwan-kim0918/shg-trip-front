@@ -18,6 +18,8 @@ interface TimelinePanelProps {
   onStepClick: (stepId: number) => void;
   /** 편집 어피던스 힌트 노출 (시각만 — 실제 드래그/삭제는 후속). */
   editHint?: boolean;
+  /** 읽기 전용(공유 공개 뷰): 대안 선택·편집힌트 비활성, StepCard readOnly. */
+  readOnly?: boolean;
 }
 
 function toMinutes(hhmm: string | null): number | null {
@@ -56,6 +58,7 @@ export default function TimelinePanel({
   onDayChange,
   onStepClick,
   editHint = false,
+  readOnly = false,
 }: TimelinePanelProps) {
   // alternativeError는 ResultLayout의 Toast에서 표시하므로 여기선 구독하지 않는다.
   const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative, clearAlternativeError } = useItineraryStore();
@@ -118,7 +121,7 @@ export default function TimelinePanel({
             <span>{dateLabel}</span>
           </>
         )}
-        {editHint && (
+        {editHint && !readOnly && (
           <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-muted-2">
             <GripVertical size={13} aria-hidden="true" /> 끌어서 순서 변경 · 눌러 편집
           </span>
@@ -159,7 +162,8 @@ export default function TimelinePanel({
                   isExpanded={expandedStepId === step.id}
                   onToggleExpand={() => toggleExpandStep(step.id)}
                   onClick={() => onStepClick(step.id)}
-                  onSelectAlternative={isSelectingAlternative ? undefined : (alt) => handleSelectAlternative(step, alt)}
+                  onSelectAlternative={readOnly || isSelectingAlternative ? undefined : (alt) => handleSelectAlternative(step, alt)}
+                  readOnly={readOnly}
                 />
 
                 {/* 다음 스텝까지 이동 커넥터 + 자유시간 */}

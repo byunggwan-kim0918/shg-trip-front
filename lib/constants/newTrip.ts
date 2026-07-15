@@ -5,6 +5,12 @@
  */
 export const NEW_TRIP_SENTENCE_KEY = 'shg.newTripSentence';
 
+/**
+ * 파싱 완료된 새 여행 데이터(원문 문장 + 구조화 필드)를 마법사로 전달하는 키.
+ * NewTripShell에서 /parse 결과를 저장 → builder 진입 시 wizard 필드 프리필 + ConfirmStep 점프에 사용.
+ */
+export const NEW_TRIP_PARSED_KEY = 'shg.newTripParsed';
+
 export const SENTENCE_PLACEHOLDER =
   '예) 7월 말에 제주로 2박 3일, 카페랑 오름 위주로 여유롭게';
 

@@ -1,17 +1,24 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { AlertTriangle, Share2 } from 'lucide-react';
+import { AlertTriangle, Share2, Pencil } from 'lucide-react';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { coverGradient } from '@/lib/utils/coverGradient';
 import { nightsLabel } from '@/lib/utils/tripStatus';
-import { finalizeItinerary } from '@/lib/data/itineraryService';
+import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
+import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
+
+/** 만료일까지 남은 일수 (공유 안내용). */
+function daysUntilExpiry(iso: string): number {
+  const diff = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / 86400000));
+}
 
 function toMinutes(time: string | null): number | null {
   if (!time) return null;
@@ -48,6 +55,53 @@ export default function ResultLayout() {
   // 편집 어피던스는 시각만 — 실제 드래그/삭제는 후속(백엔드 reorder/delete 필요)
   const [editNotice, setEditNotice] = useState(false);
   const editNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 공유
+  const [sharing, setSharing] = useState(false);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
+  const shareNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleShare = useCallback(async () => {
+    if (!currentItinerary || sharing) return;
+    setSharing(true);
+    try {
+      const { shareToken, expiresAt } = await shareItinerary(currentItinerary.id);
+      const url = `${window.location.origin}/shared/${shareToken}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareNotice(`공유 링크가 복사됐어요 · ${daysUntilExpiry(expiresAt)}일 후 만료`);
+      } catch {
+        // 클립보드 권한 없을 때: 링크를 안내에 노출(사용자가 직접 복사)
+        setShareNotice(`공유 링크: ${url}`);
+      }
+      if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
+      shareNoticeTimer.current = setTimeout(() => setShareNotice(null), 4000);
+    } catch (e) {
+      setShareNotice(e instanceof Error ? e.message : '공유 링크 생성에 실패했어요.');
+      if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
+      shareNoticeTimer.current = setTimeout(() => setShareNotice(null), 4000);
+    }
+    setSharing(false);
+  }, [currentItinerary, sharing]);
+
+  // 제목/태그 편집
+  const [editOpen, setEditOpen] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const handleSaveEdit = useCallback(async (payload: { title: string; tags: string[] }) => {
+    if (!currentItinerary) return;
+    setEditBusy(true);
+    setEditError(null);
+    try {
+      const updated = await updateItinerary(currentItinerary.id, payload);
+      setCurrentItinerary(updated);
+      setEditOpen(false);
+    } catch (e) {
+      // 409(Optimistic Lock 충돌) 등 — 모달에 에러 표시
+      setEditError(e instanceof Error ? e.message : '수정에 실패했어요. 새로고침 후 다시 시도해주세요.');
+    }
+    setEditBusy(false);
+  }, [currentItinerary, setCurrentItinerary]);
 
   // 확정: 헤더 버튼 + 모바일 고정 바가 공유하는 단일 콜백
   const handleFinalize = useCallback(async () => {
@@ -66,7 +120,10 @@ export default function ResultLayout() {
     editNoticeTimer.current = setTimeout(() => setEditNotice(false), 2400);
   }, []);
 
-  useEffect(() => () => { if (editNoticeTimer.current) clearTimeout(editNoticeTimer.current); }, []);
+  useEffect(() => () => {
+    if (editNoticeTimer.current) clearTimeout(editNoticeTimer.current);
+    if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
+  }, []);
 
   if (!currentItinerary) {
     return (
@@ -114,9 +171,19 @@ export default function ResultLayout() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
-            {currentItinerary.title ?? destination}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-xl font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
+              {currentItinerary.title ?? destination}
+            </h1>
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="shrink-0 rounded-lg p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
+              aria-label="제목·태그 편집"
+            >
+              <Pencil size={15} aria-hidden="true" />
+            </button>
+          </div>
           <p className="mt-1.5 text-[13.5px] font-medium text-muted">
             {startDate} – {endDate} · {nightsLabel(startDate, endDate)}
             {totalBudget != null && (
@@ -153,9 +220,11 @@ export default function ResultLayout() {
             </button>
             <button
               type="button"
-              className="hidden min-h-[36px] items-center gap-1.5 rounded-xl border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover sm:inline-flex"
+              onClick={handleShare}
+              disabled={sharing}
+              className="hidden min-h-[36px] items-center gap-1.5 rounded-xl border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover disabled:opacity-50 sm:inline-flex"
             >
-              <Share2 size={14} aria-hidden="true" /> 공유
+              <Share2 size={14} aria-hidden="true" /> {sharing ? '생성 중...' : '공유'}
             </button>
             {currentItinerary.status === 'DRAFT' && (
               // 모바일은 하단 고정 확정 바가 담당 → 헤더 버튼은 lg 이상에서만
@@ -185,6 +254,12 @@ export default function ResultLayout() {
       {editNotice && (
         <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
           일정 편집(순서 변경·삭제)은 곧 제공될 예정이에요.
+        </div>
+      )}
+
+      {shareNotice && (
+        <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
+          {shareNotice}
         </div>
       )}
 
@@ -254,6 +329,18 @@ export default function ResultLayout() {
           </div>
         </div>
       )}
+
+      {/* key로 열 때마다 재마운트 — 폴링(currentItinerary 교체) 중에도 편집값이 리셋되지 않게 */}
+      <EditItineraryModal
+        key={editOpen ? 'edit-open' : 'edit-closed'}
+        open={editOpen}
+        initialTitle={currentItinerary.title ?? destination}
+        initialTags={tags ?? []}
+        busy={editBusy}
+        error={editError}
+        onSave={handleSaveEdit}
+        onCancel={() => { if (!editBusy) { setEditOpen(false); setEditError(null); } }}
+      />
     </div>
   );
 }

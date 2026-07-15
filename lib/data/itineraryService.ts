@@ -124,6 +124,51 @@ export async function searchPlaces(keyword: string): Promise<WizardPlace[]> {
   }));
 }
 
+/** 공유 링크 생성 응답 (백엔드 ShareLinkResponse). */
+export interface ShareLink {
+  shareToken: string;
+  expiresAt: string; // OffsetDateTime → ISO 문자열
+}
+
+/** POST /api/itineraries/{id}/share — 공유 링크(토큰+만료) 발급 */
+export async function shareItinerary(id: number): Promise<ShareLink> {
+  const res = await authFetch(`/api/itineraries/${id}/share`, { method: 'POST' });
+  if (!res.ok) throw new Error('공유 링크 생성에 실패했습니다.');
+  return parseJson<ShareLink>(res);
+}
+
+/** 자연어 문장 파싱 결과 (백엔드 SentenceParseResponse). 미추론 필드는 null/[]. */
+export interface ParsedTrip {
+  destination: string | null;
+  startDate: string | null;  // "2026-07-25"
+  endDate: string | null;
+  party: string | null;      // 표시 전용 (마법사 필드 아님)
+  themes: string[];
+  categories: string[];
+  pace: string | null;
+  transportPref: string | null;
+  budget: number | null;
+}
+
+/**
+ * POST /api/itineraries/parse — 문장 → 구조화 필드.
+ * 콘텐츠 실패는 백엔드가 200 + empty()로 반환하므로 2xx면 항상 파싱된다.
+ * 비2xx는 null 반환(패널 미갱신). abort 시 AbortError를 던지므로 호출부에서 잡는다.
+ */
+export async function parseTripSentence(
+  sentence: string,
+  signal?: AbortSignal,
+): Promise<ParsedTrip | null> {
+  const res = await authFetch('/api/itineraries/parse', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sentence }),
+    signal,
+  });
+  if (!res.ok) return null;
+  return parseJson<ParsedTrip>(res);
+}
+
 /** POST /api/itineraries/{id}/finalize — 일정 확정 */
 export async function finalizeItinerary(id: number): Promise<Itinerary> {
   const res = await authFetch(`/api/itineraries/${id}/finalize`, {

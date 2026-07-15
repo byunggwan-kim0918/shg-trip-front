@@ -15,6 +15,8 @@ interface StepCardProps {
   onToggleExpand: () => void;
   onClick: () => void;
   onSelectAlternative?: (alternative: AlternativeOption) => void;
+  /** 읽기 전용(공유 공개 뷰). 대안 보기 버튼 숨김 + store 미구독. */
+  readOnly?: boolean;
 }
 
 export default function StepCard({
@@ -23,6 +25,7 @@ export default function StepCard({
   onToggleExpand,
   onClick,
   onSelectAlternative,
+  readOnly = false,
 }: StepCardProps) {
   const place = step.place;
   const [imgError, setImgError] = useState(false);
@@ -36,7 +39,9 @@ export default function StepCard({
     setImgLoaded(false);
   }, [imageUrl]);
   const IconComponent = place ? getCategoryIcon(place.category) : null;
-  const storyPending = useItineraryStore((s) => s.storyPending);
+  // 공유 뷰(readOnly)는 store에 의존하지 않음 — storyPending 항상 false 취급.
+  const storyPendingFromStore = useItineraryStore((s) => s.storyPending);
+  const storyPending = readOnly ? false : storyPendingFromStore;
   const hasStory = !!step.notes && step.notes.trim().length > 0;
   const missingCoords = !!place && (place.latitude == null || place.longitude == null
     || (place.latitude === 0 && place.longitude === 0));
@@ -108,7 +113,7 @@ export default function StepCard({
             <span className="text-[12.5px] font-semibold text-muted">
               예상 비용 <b className="text-foreground">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
             </span>
-            {step.alternatives.length > 0 && (
+            {!readOnly && step.alternatives.length > 0 && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}

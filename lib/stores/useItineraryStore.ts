@@ -34,7 +34,7 @@ interface ItineraryActions {
   setLoading: (loading: boolean) => void;
   setLoadingProgress: (progress: number) => void;
   setStoryPending: (pending: boolean) => void;
-  loadItineraries: () => Promise<void>;
+  loadItineraries: (size?: number) => Promise<void>;
   /** 일정 삭제 — 서버 soft delete 후 목록 재조회. 중복 클릭은 isDeleting으로 무시 */
   removeItinerary: (id: number) => Promise<void>;
 }
@@ -89,9 +89,19 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
 
   setStoryPending: (pending) => set({ storyPending: pending }),
 
-  loadItineraries: async () => {
-    const page = await fetchMyItineraries();
-    set({ itineraries: page.content });
+  loadItineraries: async (size?: number) => {
+    // in-flight 가드: Sidebar/MainPage/HeaderSearch가 거의 동시에 호출해 생기는
+    // 중복 요청·레이스(작은 size 응답이 큰 size 응답을 덮어씀)를 방지한다.
+    if (useItineraryStore.getState().isLoading) return;
+    set({ isLoading: true });
+    try {
+      const page = await fetchMyItineraries(0, size ?? 20);
+      set({ itineraries: page.content });
+    } catch {
+      // 목록 로드 실패는 조용히 무시(호출부가 UI 에러를 별도 처리). unhandled rejection 방지.
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   removeItinerary: async (id) => {
