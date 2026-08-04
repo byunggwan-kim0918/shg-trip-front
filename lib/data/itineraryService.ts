@@ -28,6 +28,19 @@ async function parseJson<T>(res: Response): Promise<T> {
   return body.data;
 }
 
+/**
+ * 생성이 정책(rate-limit·쿼터)으로 거부됐을 때 던지는 에러 — errorCode(PLANNING_003/004)를 담는다.
+ * 호출부가 일반 실패와 구분해 차단 안내를 띄우게 한다.
+ */
+export class GenerationRejectedError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = 'GenerationRejectedError';
+    this.code = code;
+  }
+}
+
 /** POST /api/itineraries/generate → { jobId } */
 export async function startItineraryGeneration(req: ItineraryGenerateRequest): Promise<string> {
   const res = await authFetch('/api/itineraries/generate', {
@@ -35,9 +48,31 @@ export async function startItineraryGeneration(req: ItineraryGenerateRequest): P
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
-  if (!res.ok) throw new Error('일정 생성 요청에 실패했습니다.');
+  if (!res.ok) {
+    // 429(차단·쿼터 초과) 등은 error.code를 담아 던져 호출부가 구분하게 한다.
+    const body = (await res.json().catch(() => null)) as ApiResponse<unknown> | null;
+    const code = body?.error?.code;
+    const message = body?.error?.message ?? '일정 생성 요청에 실패했습니다.';
+    if (code) throw new GenerationRejectedError(code, message);
+    throw new Error(message);
+  }
   const data = await parseJson<{ jobId: string }>(res);
   return data.jobId;
+}
+
+/** 생성 쿼터/차단 상태 (백엔드 GenerationQuotaResponse). */
+export interface GenerationQuota {
+  used: number;
+  limit: number;
+  resetAt: string | null;      // ISO — 쿼터 창 리셋(첫 생성 +30일)
+  blockedUntil: string | null; // ISO — R1 검증 실패 차단 해제 시각
+}
+
+/** GET /api/itineraries/generation-quota — 배지·차단 안내용 잔여 조회. */
+export async function fetchGenerationQuota(): Promise<GenerationQuota> {
+  const res = await authFetch('/api/itineraries/generation-quota');
+  if (!res.ok) throw new Error('생성 한도를 불러오지 못했습니다.');
+  return parseJson<GenerationQuota>(res);
 }
 
 /** GET /api/itineraries/{id} */
@@ -75,6 +110,33 @@ export async function selectAlternative(
     },
   );
   if (!res.ok) throw new Error('대안 선택에 실패했습니다.');
+  return parseJson<Itinerary>(res);
+}
+
+/**
+ * PATCH /api/itineraries/{id}/steps/reorder — 같은 day 내 스텝 재정렬.
+ * orderedStepIds는 해당 day 전체 스텝 id를 새 순서대로. 응답은 갱신된 전체 일정.
+ */
+export async function reorderSteps(
+  itineraryId: number,
+  dayNumber: number,
+  orderedStepIds: number[],
+): Promise<Itinerary> {
+  const res = await authFetch(`/api/itineraries/${itineraryId}/steps/reorder`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dayNumber, orderedStepIds }),
+  });
+  if (!res.ok) throw new Error('순서 변경에 실패했습니다.');
+  return parseJson<Itinerary>(res);
+}
+
+/** DELETE /api/itineraries/{id}/steps/{stepId} — 스텝(스톱) 삭제. 응답은 갱신된 전체 일정. */
+export async function deleteStep(itineraryId: number, stepId: number): Promise<Itinerary> {
+  const res = await authFetch(`/api/itineraries/${itineraryId}/steps/${stepId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('일정 삭제에 실패했습니다.');
   return parseJson<Itinerary>(res);
 }
 

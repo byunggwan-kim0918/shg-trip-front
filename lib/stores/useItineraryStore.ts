@@ -4,7 +4,39 @@ import {
   fetchMyItineraries,
   selectAlternative,
   deleteItinerary,
+  reorderSteps,
+  deleteStep,
 } from '@/lib/data/itineraryService';
+
+/**
+ * 같은 day 내 스텝을 새 순서로 낙관 재배정(백엔드 assignSlot과 동일).
+ * 시간 슬롯 고정 — startTime/endTime은 위치(슬롯)에 고정되고 이동한 스텝이 그 위치의 시간을
+ * 물려받는다(시간을 스텝에 붙여 옮기면 타임라인이 비단조로 보임). 교통정보는 서버 응답이 채운다.
+ */
+function reorderStepsLocally(
+  itinerary: Itinerary,
+  dayNumber: number,
+  orderedStepIds: number[],
+): Itinerary {
+  const daySteps = itinerary.steps
+    .filter((s) => s.dayNumber === dayNumber)
+    .sort((a, b) => a.stepOrder - b.stepOrder);
+  const slots = daySteps.map((s) => s.stepOrder);
+  // 슬롯(위치)별 시간을 뮤테이션 전에 캡처: stepOrder → {startTime, endTime}
+  const slotTimes = new Map<number, { startTime: string | null; endTime: string | null }>();
+  daySteps.forEach((s) => slotTimes.set(s.stepOrder, { startTime: s.startTime, endTime: s.endTime }));
+  const newSlotById = new Map<number, number>();
+  orderedStepIds.forEach((id, i) => newSlotById.set(id, slots[i]));
+  return {
+    ...itinerary,
+    steps: itinerary.steps.map((s) => {
+      if (!newSlotById.has(s.id)) return s;
+      const slot = newSlotById.get(s.id)!;
+      const t = slotTimes.get(slot)!;
+      return { ...s, stepOrder: slot, startTime: t.startTime, endTime: t.endTime };
+    }),
+  };
+}
 
 interface ItineraryState {
   currentItinerary: Itinerary | null;
@@ -16,6 +48,10 @@ interface ItineraryState {
   isDeleting: boolean;
   isSelectingAlternative: boolean;
   alternativeError: string | null;
+  /** 편집(재정렬·삭제) 진행 중 — 중복 요청 가드 */
+  isEditingSteps: boolean;
+  /** 편집 실패 안내(재정렬 롤백·삭제 실패) */
+  stepError: string | null;
   loadingProgress: number; // 0-100
   /** story(가이드북 문장)가 비동기로 채워지는 중인지 — 상세 페이지 폴링이 제어 */
   storyPending: boolean;
@@ -25,12 +61,23 @@ interface ItineraryActions {
   setCurrentItinerary: (itinerary: Itinerary) => void;
   /** 폴링 갱신용 — 현재 보고 있는 day/확장 상태를 유지한 채 일정 데이터만 교체 */
   refreshCurrentItinerary: (itinerary: Itinerary) => void;
+  /**
+   * 비동기 채움(story notes·place.imageUrl·cover) 폴링 전용 머지.
+   * 편집(재정렬/삭제)으로 바뀐 steps 순서·집합은 보존하고, id가 일치하는 스텝의 채움 필드만 덮어쓴다.
+   * → 폴링의 stale 응답이 편집 결과를 되돌리는 레이스를 원천 차단한다.
+   */
+  applyAsyncFill: (fresh: Itinerary) => void;
   setSelectedDay: (day: number) => void;
   setSelectedStep: (stepId: number | null) => void;
   toggleExpandStep: (stepId: number) => void;
   /** 대안 선택 — 서버에 저장 후 응답으로 상태 갱신 */
   selectAlternativeStep: (itineraryId: number, stepId: number, alternativeId: number) => Promise<void>;
   clearAlternativeError: () => void;
+  /** 같은 day 내 스텝 재정렬 — 낙관 반영 후 서버 확정, 실패 시 스냅샷 롤백 */
+  reorderStepsAction: (itineraryId: number, dayNumber: number, orderedStepIds: number[]) => Promise<void>;
+  /** 스텝(스톱) 삭제 — 서버 확정 후 응답으로 갱신 */
+  deleteStepAction: (itineraryId: number, stepId: number) => Promise<void>;
+  clearStepError: () => void;
   setLoading: (loading: boolean) => void;
   setLoadingProgress: (progress: number) => void;
   setStoryPending: (pending: boolean) => void;
@@ -49,12 +96,31 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   isDeleting: false,
   isSelectingAlternative: false,
   alternativeError: null,
+  isEditingSteps: false,
+  stepError: null,
   loadingProgress: 0,
   storyPending: false,
 
   setCurrentItinerary: (itinerary) => set({ currentItinerary: itinerary, selectedDay: 1 }),
 
   refreshCurrentItinerary: (itinerary) => set({ currentItinerary: itinerary }),
+
+  applyAsyncFill: (fresh) =>
+    set((state) => {
+      const cur = state.currentItinerary;
+      // 다른 일정이거나 아직 없음 → 그대로 채택(머지할 기준 없음)
+      if (!cur || cur.id !== fresh.id) return { currentItinerary: fresh };
+      const freshById = new Map(fresh.steps.map((s) => [s.id, s]));
+      const steps = cur.steps.map((s) => {
+        const f = freshById.get(s.id);
+        if (!f) return s; // 편집으로 삭제된/추가된 스텝은 현재 상태 유지
+        // 비동기로 채워지는 필드만 덮어씀 — 순서(stepOrder)·시간·교통은 현재(편집 반영) 값 보존
+        const place =
+          s.place && f.place ? { ...s.place, imageUrl: f.place.imageUrl ?? s.place.imageUrl } : s.place;
+        return { ...s, notes: f.notes ?? s.notes, place };
+      });
+      return { currentItinerary: { ...cur, coverImage: fresh.coverImage ?? cur.coverImage, steps } };
+    }),
 
   setSelectedDay: (day) => set({ selectedDay: day, selectedStepId: null }),
 
@@ -80,6 +146,45 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
       set({ isSelectingAlternative: false });
     }
   },
+
+  reorderStepsAction: async (itineraryId, dayNumber, orderedStepIds) => {
+    const state = useItineraryStore.getState();
+    if (state.isEditingSteps || !state.currentItinerary) return;
+    const snapshot = state.currentItinerary;
+    // 낙관 반영: 드래그 결과를 즉시 화면에 (교통정보는 서버 응답이 채움)
+    set({
+      isEditingSteps: true,
+      stepError: null,
+      currentItinerary: reorderStepsLocally(snapshot, dayNumber, orderedStepIds),
+    });
+    try {
+      const updated = await reorderSteps(itineraryId, dayNumber, orderedStepIds);
+      set({ currentItinerary: updated });
+    } catch (e) {
+      // 실패 → 스냅샷 롤백 + 안내
+      const msg = e instanceof Error ? e.message : '순서 변경에 실패했습니다.';
+      set({ currentItinerary: snapshot, stepError: msg });
+    } finally {
+      set({ isEditingSteps: false });
+    }
+  },
+
+  deleteStepAction: async (itineraryId, stepId) => {
+    const state = useItineraryStore.getState();
+    if (state.isEditingSteps || !state.currentItinerary) return;
+    set({ isEditingSteps: true, stepError: null });
+    try {
+      const updated = await deleteStep(itineraryId, stepId);
+      set({ currentItinerary: updated, expandedStepId: null });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '일정 삭제에 실패했습니다.';
+      set({ stepError: msg });
+    } finally {
+      set({ isEditingSteps: false });
+    }
+  },
+
+  clearStepError: () => set({ stepError: null }),
 
   setLoading: (loading) => set({ isLoading: loading }),
 

@@ -10,6 +10,7 @@ import { coverGradient } from '@/lib/utils/coverGradient';
 import { nightsLabel } from '@/lib/utils/tripStatus';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
@@ -49,12 +50,15 @@ function hasTimeAnomaly(steps: ItineraryStep[]): boolean {
 
 export default function ResultLayout() {
   const { currentItinerary, selectedDay, selectedStepId, setSelectedDay, setSelectedStep, setCurrentItinerary,
-    alternativeError, clearAlternativeError } = useItineraryStore();
+    alternativeError, clearAlternativeError,
+    deleteStepAction, isEditingSteps, stepError, clearStepError } = useItineraryStore();
   const [showMap, setShowMap] = useState(true);
+  const [coverError, setCoverError] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  // 편집 어피던스는 시각만 — 실제 드래그/삭제는 후속(백엔드 reorder/delete 필요)
-  const [editNotice, setEditNotice] = useState(false);
-  const editNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
+  // F3: 편집 모드(드래그 재정렬·삭제) 토글 + 삭제 확인 대상
+  const [editMode, setEditMode] = useState(false);
+  const [stepToDelete, setStepToDelete] = useState<ItineraryStep | null>(null);
   // 공유
   const [sharing, setSharing] = useState(false);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
@@ -107,23 +111,36 @@ export default function ResultLayout() {
   const handleFinalize = useCallback(async () => {
     if (!currentItinerary) return;
     setFinalizing(true);
+    setFinalizeError(null);
     try {
       const updated = await finalizeItinerary(currentItinerary.id);
       setCurrentItinerary(updated);
-    } catch { /* 이미 확정된 경우 등 무시 */ }
+    } catch (e) {
+      // 확정 실패(낙관락 충돌·네트워크 등)를 사용자에게 알린다.
+      // (과거엔 조용히 삼켜, 버튼을 눌러도 아무 반응 없는 것처럼 보였음)
+      setFinalizeError(e instanceof Error ? e.message : '일정 확정에 실패했어요. 잠시 후 다시 시도해주세요.');
+    }
     setFinalizing(false);
   }, [currentItinerary, setCurrentItinerary]);
 
-  const showEditNotice = useCallback(() => {
-    setEditNotice(true);
-    if (editNoticeTimer.current) clearTimeout(editNoticeTimer.current);
-    editNoticeTimer.current = setTimeout(() => setEditNotice(false), 2400);
-  }, []);
+  const handleConfirmDeleteStep = useCallback(async () => {
+    if (!currentItinerary || !stepToDelete) return;
+    await deleteStepAction(currentItinerary.id, stepToDelete.id);
+    setStepToDelete(null);
+  }, [currentItinerary, stepToDelete, deleteStepAction]);
 
   useEffect(() => () => {
-    if (editNoticeTimer.current) clearTimeout(editNoticeTimer.current);
     if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
   }, []);
+
+  // 커버 이미지 교체(일정 전환·비동기 채움) 시 로드 에러 상태 초기화 → 새 URL 재시도.
+  // 실제 표시 커버는 coverImage ?? 첫 스텝 이미지로 폴백되므로, firstStepImage가 폴링으로
+  // 새 URL로 바뀌는 경우도 리셋 트리거에 포함해야 그라데이션 폴백에 고착되지 않는다.
+  useEffect(() => { setCoverError(false); }, [
+    currentItinerary?.id,
+    currentItinerary?.coverImage,
+    currentItinerary?.steps.find((s) => s.place?.imageUrl)?.place?.imageUrl,
+  ]);
 
   if (!currentItinerary) {
     return (
@@ -162,9 +179,14 @@ export default function ResultLayout() {
       <div className="flex items-start gap-4 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5">
         {/* 커버 사각 74 */}
         <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-2xl sm:block">
-          {cover ? (
+          {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt={currentItinerary.title ?? destination} className="h-full w-full object-cover" />
+            <img
+              src={cover}
+              alt={currentItinerary.title ?? destination}
+              className="h-full w-full object-cover"
+              onError={() => setCoverError(true)}
+            />
           ) : (
             <div className="h-full w-full" style={{ background: coverGradient(destination) }} />
           )}
@@ -213,10 +235,15 @@ export default function ResultLayout() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={showEditNotice}
-              className="min-h-[36px] rounded-xl border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover"
+              onClick={() => setEditMode((v) => !v)}
+              aria-pressed={editMode}
+              className={`min-h-[36px] rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+                editMode
+                  ? 'border-accent bg-accent text-white hover:brightness-105'
+                  : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
+              }`}
             >
-              일정 편집
+              {editMode ? '편집 완료' : '일정 편집'}
             </button>
             <button
               type="button"
@@ -251,9 +278,9 @@ export default function ResultLayout() {
         </div>
       </div>
 
-      {editNotice && (
+      {editMode && (
         <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
-          일정 편집(순서 변경·삭제)은 곧 제공될 예정이에요.
+          편집 모드 · 같은 날 안에서 끌어서 순서를 바꾸거나 휴지통으로 삭제하세요. 시간은 그대로 유지돼요.
         </div>
       )}
 
@@ -298,7 +325,8 @@ export default function ResultLayout() {
             selectedDay={selectedDay}
             onDayChange={setSelectedDay}
             onStepClick={setSelectedStep}
-            editHint
+            editMode={editMode}
+            onRequestDeleteStep={setStepToDelete}
           />
         </div>
       </div>
@@ -329,6 +357,46 @@ export default function ResultLayout() {
           </div>
         </div>
       )}
+
+      {/* 편집(재정렬/삭제) 실패 토스트 — 낙관 반영은 롤백됨 */}
+      {stepError && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+          <div className="w-full max-w-md">
+            <Toast
+              title="편집을 반영하지 못했어요"
+              description={stepError}
+              onClose={clearStepError}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 확정 실패 토스트 — 과거엔 조용히 삼켜 버튼이 먹통처럼 보였음 */}
+      {finalizeError && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+          <div className="w-full max-w-md">
+            <Toast
+              title="일정을 확정하지 못했어요"
+              description={finalizeError}
+              onClose={() => setFinalizeError(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 스톱 삭제 확인 */}
+      <ConfirmModal
+        open={stepToDelete != null}
+        title="이 스톱을 삭제할까요?"
+        message={stepToDelete?.place?.name
+          ? `'${stepToDelete.place.name}'을(를) 일정에서 제거합니다. 남은 스톱의 이동 경로가 다시 계산돼요.`
+          : '이 스톱을 일정에서 제거합니다.'}
+        confirmLabel="삭제"
+        danger
+        busy={isEditingSteps}
+        onConfirm={handleConfirmDeleteStep}
+        onCancel={() => { if (!isEditingSteps) setStepToDelete(null); }}
+      />
 
       {/* key로 열 때마다 재마운트 — 폴링(currentItinerary 교체) 중에도 편집값이 리셋되지 않게 */}
       <EditItineraryModal

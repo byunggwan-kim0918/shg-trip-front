@@ -17,6 +17,8 @@ interface StepCardProps {
   onSelectAlternative?: (alternative: AlternativeOption) => void;
   /** 읽기 전용(공유 공개 뷰). 대안 보기 버튼 숨김 + store 미구독. */
   readOnly?: boolean;
+  /** 편집 모드(F3 드래그·삭제). 카드 클릭·대안 버튼 비활성(드래그와 충돌 방지). */
+  editMode?: boolean;
 }
 
 export default function StepCard({
@@ -26,6 +28,7 @@ export default function StepCard({
   onClick,
   onSelectAlternative,
   readOnly = false,
+  editMode = false,
 }: StepCardProps) {
   const place = step.place;
   const [imgError, setImgError] = useState(false);
@@ -49,15 +52,15 @@ export default function StepCard({
 
   return (
     <div
-      className={`cursor-pointer rounded-2xl bg-card-bg p-4 transition-shadow ${
+      className={`rounded-2xl bg-card-bg p-4 transition-shadow ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
         isExpanded
           ? 'border-[1.5px] border-accent shadow-[0_10px_26px_-18px_var(--accent)]'
           : 'border border-card-border hover:shadow-sm'
       }`}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      onClick={editMode ? undefined : onClick}
+      role={editMode ? undefined : 'button'}
+      tabIndex={editMode ? undefined : 0}
+      onKeyDown={editMode ? undefined : (e) => e.key === 'Enter' && onClick()}
     >
       <div className="flex gap-3.5">
         <div className="min-w-0 flex-1">
@@ -113,7 +116,7 @@ export default function StepCard({
             <span className="text-[12.5px] font-semibold text-muted">
               예상 비용 <b className="text-foreground">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
             </span>
-            {!readOnly && step.alternatives.length > 0 && (
+            {!readOnly && !editMode && step.alternatives.length > 0 && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}

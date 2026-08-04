@@ -16,7 +16,7 @@ export default function ItineraryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
-  const { currentItinerary, setCurrentItinerary, refreshCurrentItinerary, setStoryPending } =
+  const { currentItinerary, setCurrentItinerary, applyAsyncFill, setStoryPending } =
     useItineraryStore();
   const [notFound, setNotFound] = useState(false);
   // true로 초기화 — 첫 렌더에서 currentItinerary=null 상태로 ResultLayout이 노출되는 것을 방지
@@ -53,7 +53,8 @@ export default function ItineraryDetailPage() {
       try {
         const fresh = await fetchItinerary(id);
         if (cancelled) return true;
-        refreshCurrentItinerary(fresh);
+        // 편집(재정렬/삭제) 결과를 되돌리지 않도록 순서/집합은 보존하고 채움 필드만 머지.
+        applyAsyncFill(fresh);
         setStoryPending(hasPendingStory(fresh));
         const stillPending = hasPendingStory(fresh) || hasPendingImage(fresh);
         if (!stillPending || attempts >= STORY_POLL_MAX_ATTEMPTS) {
@@ -78,7 +79,7 @@ export default function ItineraryDetailPage() {
     });
 
     return () => { cancelled = true; if (interval) clearInterval(interval); };
-  }, [contentPending, storyPending, id, refreshCurrentItinerary, setStoryPending]);
+  }, [contentPending, storyPending, id, applyAsyncFill, setStoryPending]);
 
   if (isLoading) {
     return (

@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { NEW_TRIP_SENTENCE_KEY, NEW_TRIP_PARSED_KEY, SENTENCE_PLACEHOLDER } from '@/lib/constants/newTrip';
 import { parseTripSentence, type ParsedTrip } from '@/lib/data/itineraryService';
+import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
 import { THEME_LABEL, PACE_LABEL } from '@/lib/constants/wizardOptions';
 import { dateRange, nightsLabel } from '@/lib/utils/tripStatus';
+import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 
 /** 예산 퀵칩: 라벨 + 문장에 덧붙일 구절. */
 const BUDGET_CHIPS: Array<{ label: string; phrase: string }> = [
@@ -42,6 +44,7 @@ export default function NewTripShell() {
   const [budgetChip, setBudgetChip] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedTrip | null>(null);
   const [parsing, setParsing] = useState(false);
+  const { quota } = useGenerationQuota();
 
   // 스테일 응답 드롭용 단조증가 seq (BFF 경유 abort 레이스 대비) + 진행중 요청 취소.
   const seqRef = useRef(0);
@@ -190,6 +193,13 @@ export default function NewTripShell() {
             직접 고를래요
           </button>
         </div>
+
+        {/* 생성 쿼터 배지 (30일 최대 5회) */}
+        {quota && (
+          <div className="mt-3">
+            <GenerationQuotaBadge quota={quota} />
+          </div>
+        )}
       </div>
 
       {/* 우: AI 이해 요약 패널 */}

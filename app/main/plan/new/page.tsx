@@ -14,7 +14,45 @@ import StyleStep from '@/components/itinerary/wizard/steps/StyleStep';
 import BudgetPlacesStep from '@/components/itinerary/wizard/steps/BudgetPlacesStep';
 import ConfirmStep from '@/components/itinerary/wizard/steps/ConfirmStep';
 
-/** 파싱 결과 + 원문 문장을 마법사 필드로 프리필하고, destination+날짜가 모두 있으면 확인 단계로 점프. */
+/** 테마 → 기본 카테고리 (문장에 카테고리 키워드가 없을 때 AI 이해값으로 보강용). */
+const THEME_DEFAULT_CATEGORIES: Record<string, Category[]> = {
+  food: ['restaurant', 'cafe', 'street_food'],
+  healing: ['cafe', 'nature', 'attraction'],
+  romance: ['restaurant', 'cafe', 'viewpoint'],
+  nature: ['nature', 'trail', 'viewpoint'],
+  ocean: ['beach', 'viewpoint', 'restaurant'],
+  mountain: ['trail', 'nature', 'viewpoint'],
+  culture: ['museum', 'temple', 'attraction'],
+  art: ['museum', 'attraction', 'cafe'],
+  shopping: ['shopping', 'market', 'cafe'],
+  activity: ['experience', 'attraction', 'restaurant'],
+  adventure: ['experience', 'trail', 'attraction'],
+  family: ['theme_park', 'attraction', 'restaurant'],
+  nightview: ['viewpoint', 'nightlife', 'restaurant'],
+  photo: ['viewpoint', 'attraction', 'cafe'],
+  walking: ['trail', 'attraction', 'cafe'],
+  local: ['market', 'street_food', 'restaurant'],
+  festival: ['attraction', 'experience', 'restaurant'],
+  luxury: ['restaurant', 'spa', 'attraction'],
+  budget: ['attraction', 'street_food', 'market'],
+  pet: ['cafe', 'nature', 'attraction'],
+};
+const DEFAULT_CATEGORIES: Category[] = ['attraction', 'restaurant', 'cafe'];
+const DEFAULT_THEME: Theme[] = ['healing'];
+
+/** 파싱된 테마에서 기본 카테고리 유도(최대 4개). 매핑이 없으면 무난한 기본 세트. */
+function deriveCategories(themes: Theme[]): Category[] {
+  const set = new Set<Category>();
+  for (const t of themes) for (const c of THEME_DEFAULT_CATEGORIES[t] ?? []) set.add(c);
+  const derived = Array.from(set).slice(0, 4);
+  return derived.length > 0 ? derived : DEFAULT_CATEGORIES;
+}
+
+/**
+ * 파싱 결과 + 원문 문장을 마법사 필드로 프리필한다.
+ * 자연어 흐름의 핵심: 문장에 없던 필수 필드(테마/카테고리)를 AI 이해값 기반으로 자동 보강해
+ * 선택 화면 없이 곧장 확인(ConfirmStep, 요약)으로 보낸다. (여행지+기간이 있을 때만 — 없으면 마법사)
+ */
 function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
   const partial: Partial<WizardData> = { description: sentence };
   if (parsed) {
@@ -29,10 +67,16 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
     // party는 프리필하지 않음(홀18) — 원문 문장(description)에 이미 포함, enrich가 자유텍스트로 읽음.
   }
   useWizardStore.getState().updateData(partial);
-  // 필수 단계(0: 여행지+기간, 1: 테마+카테고리)가 모두 충족될 때만 ConfirmStep 점프.
-  // 테마/카테고리가 비면 백엔드 generate가 @NotEmpty로 400 → step1을 거치도록 점프하지 않는다.
+
+  // 여행지+기간이 있으면 확인 화면으로 직행. 테마/카테고리(생성 필수 @NotEmpty)가 비면
+  // AI가 이해한 테마 기반으로 자동 보강 → 사용자는 선택 화면 없이 요약을 확인하고 생성.
   const d = useWizardStore.getState().data;
-  if (d.destination && d.startDate && d.endDate && d.themes.length > 0 && d.categories.length > 0) {
+  if (d.destination && d.startDate && d.endDate) {
+    const boost: Partial<WizardData> = {};
+    if (d.themes.length === 0) boost.themes = DEFAULT_THEME;
+    const effectiveThemes = boost.themes ?? d.themes;
+    if (d.categories.length === 0) boost.categories = deriveCategories(effectiveThemes);
+    if (Object.keys(boost).length > 0) useWizardStore.getState().updateData(boost);
     useWizardStore.getState().setStep(4);
   }
 }
@@ -45,14 +89,26 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
 export default function PlanNewPage() {
   const searchParams = useSearchParams();
   const builder = searchParams.get('builder') === '1';
+  // "조건 수정" 재진입(LoadingScreen 에러): 기존 입력을 보존한 채 지정 단계로 점프.
+  const stepParam = searchParams.get('step');
   const { reset } = useWizardStore();
   // consume-once 가드: StrictMode(dev) 이중 실행 시 2회차가 프리필을 지우는 것을 방지.
   const didInit = useRef(false);
 
   useEffect(() => {
-    if (!builder) return;
+    // shell로 돌아오면 가드를 풀어준다 — 같은 라우트(?builder 토글)라 PlanNewPage가 리마운트되지
+    // 않으므로, 리셋 없이는 두 번째 builder 진입에서 새 프리필/파싱 소비가 스킵돼 이전 여행이 남는다.
+    if (!builder) { didInit.current = false; return; }
     if (didInit.current) return;
     didInit.current = true;
+
+    // (0) step 파라미터가 있으면 reset·파싱 없이 기존 마법사 데이터 유지 + 해당 단계로 점프.
+    if (stepParam != null) {
+      const n = Number(stepParam);
+      if (Number.isFinite(n)) useWizardStore.getState().setStep(n);
+      return;
+    }
+
     reset();
 
     // (1) NewTripShell에서 구조화 파싱 결과가 넘어온 경우 → 동기 프리필
@@ -84,7 +140,7 @@ export default function PlanNewPage() {
     parseTripSentence(sentence)
       .then((parsed) => { if (parsed) applyPrefill(sentence, parsed); })
       .catch(() => { /* 파싱 실패 → description만 유지 */ });
-  }, [builder, reset]);
+  }, [builder, reset, stepParam]);
 
   if (!builder) {
     return <NewTripShell />;

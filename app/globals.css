@@ -188,6 +188,12 @@ h1, h2, h3 {
   100% { left: 100%; }
 }
 
+/* F4: 스트리밍 실카드 진입 (스켈레톤 → 실카드 교체 시) */
+@keyframes shg-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .shg-blink { animation: shg-blink 1.2s infinite; }
 .shg-spin { animation: shg-spin 0.7s linear infinite; }
 .shg-shimmer {

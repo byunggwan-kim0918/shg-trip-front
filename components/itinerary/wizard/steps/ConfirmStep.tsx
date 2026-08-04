@@ -3,16 +3,19 @@
 import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
+import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
 import { formatBudget } from '@/lib/utils/format';
 import { nightsLabel, dateRange } from '@/lib/utils/tripStatus';
 import {
   THEME_LABEL, CATEGORY_LABEL, PACE_LABEL, TRANSPORT_LABEL,
 } from '@/lib/constants/wizardOptions';
+import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 
 /** 5단계: 확인 → 생성 (6e). 요약 + "AI에게 한마디"(선택) + 생성. */
 export default function ConfirmStep() {
   const router = useRouter();
   const { data, setStep } = useWizardStore();
+  const { quota, canGenerate } = useGenerationQuota();
 
   const themeCat = [
     data.themes.map((t) => THEME_LABEL[t] ?? t).join('·'),
@@ -84,13 +87,22 @@ export default function ConfirmStep() {
         />
       </div>
 
-      {/* 생성 CTA */}
+      {/* 쿼터 배지 (30일 최대 5회 명시) */}
+      {quota && (
+        <div className="flex justify-center">
+          <GenerationQuotaBadge quota={quota} />
+        </div>
+      )}
+
+      {/* 생성 CTA — 소진/차단 시 비활성 */}
       <button
         type="button"
         onClick={handleGenerate}
-        className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-accent py-[15px] text-[15px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105"
+        disabled={!canGenerate}
+        className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-accent py-[15px] text-[15px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
       >
-        <Sparkles size={16} aria-hidden="true" /> 이대로 일정 만들기
+        <Sparkles size={16} aria-hidden="true" />
+        {canGenerate ? '이대로 일정 만들기' : '이번 달 생성 한도 초과'}
       </button>
     </div>
   );

@@ -21,6 +21,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
   const dayGroups = groupStepsByDay(itinerary.steps);
   const [selectedDay, setSelectedDay] = useState(dayGroups[0]?.dayNumber ?? 1);
   const [selectedStepId, setSelectedStepId] = useState<number | null>(null);
+  const [coverError, setCoverError] = useState(false);
 
   const { destination, startDate, endDate, tags, coverImage } = itinerary;
   const cover = proxyImageUrl(
@@ -32,9 +33,9 @@ export default function SharedItineraryView({ itinerary }: Props) {
       {/* 헤더 (ResultLayout 헤더 축약, 액션 없음) */}
       <div className="flex items-start gap-4 border-b border-card-border bg-card-bg px-4 py-4 sm:px-6 sm:py-5">
         <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-2xl sm:block">
-          {cover ? (
+          {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt={itinerary.title ?? destination} className="h-full w-full object-cover" />
+            <img src={cover} alt={itinerary.title ?? destination} className="h-full w-full object-cover" onError={() => setCoverError(true)} />
           ) : (
             <div className="h-full w-full" style={{ background: coverGradient(destination) }} />
           )}
