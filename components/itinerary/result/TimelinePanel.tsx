@@ -1,11 +1,27 @@
 'use client';
 
 import { BedDouble, Coffee, ArrowLeftRight, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import type { AlternativeOption, DayGroup, Itinerary, ItineraryStep } from '@/lib/types/itinerary';
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { formatDuration } from '@/lib/utils/format';
 import StepCard from './StepCard';
+import SortableStepCard from './SortableStepCard';
 import TransitInfo from './TransitInfo';
 
 const FREE_TIME_THRESHOLD_MIN = 90;
@@ -16,8 +32,12 @@ interface TimelinePanelProps {
   selectedDay: number;  // dayNumber (1-indexed)
   onDayChange: (dayNumber: number) => void;
   onStepClick: (stepId: number) => void;
-  /** 편집 어피던스 힌트 노출 (시각만 — 실제 드래그/삭제는 후속). */
-  editHint?: boolean;
+  /** 편집 모드(F3): 같은 day 내 드래그 재정렬 + 스톱 삭제 활성화. */
+  editMode?: boolean;
+  /** 스톱 삭제 요청 — 상위(ResultLayout)가 ConfirmModal로 처리. */
+  onRequestDeleteStep?: (step: ItineraryStep) => void;
+  /** 읽기 전용(공유 공개 뷰): 대안 선택·편집힌트 비활성, StepCard readOnly. */
+  readOnly?: boolean;
 }
 
 function toMinutes(hhmm: string | null): number | null {
@@ -55,18 +75,38 @@ export default function TimelinePanel({
   selectedDay,
   onDayChange,
   onStepClick,
-  editHint = false,
+  editMode = false,
+  onRequestDeleteStep,
+  readOnly = false,
 }: TimelinePanelProps) {
   // alternativeError는 ResultLayout의 Toast에서 표시하므로 여기선 구독하지 않는다.
-  const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative, clearAlternativeError } = useItineraryStore();
+  const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative,
+    clearAlternativeError, reorderStepsAction, isEditingSteps } = useItineraryStore();
   const dayGroups: DayGroup[] = groupStepsByDay(itinerary.steps);
   const currentGroup = dayGroups.find((g) => g.dayNumber === selectedDay) ?? dayGroups[0];
+
+  // 드래그 센서: 6px 이동해야 드래그 시작(카드 클릭/스크롤과 구분) + 키보드 접근성.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   if (!currentGroup) return null;
 
   const handleSelectAlternative = async (step: ItineraryStep, alt: AlternativeOption) => {
     clearAlternativeError();
     await selectAlternativeStep(itinerary.id, step.id, alt.id);
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const ids = currentGroup.steps.map((s) => s.id);
+    const oldIndex = ids.indexOf(Number(active.id));
+    const newIndex = ids.indexOf(Number(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    // 같은 day 내에서만 재정렬 (Property 22: same-day only)
+    reorderStepsAction(itinerary.id, currentGroup.dayNumber, arrayMove(ids, oldIndex, newIndex));
   };
 
   const totalDistanceKm = currentGroup.steps.reduce((sum, s) => sum + (s.transportationDistance ?? 0), 0);
@@ -118,14 +158,33 @@ export default function TimelinePanel({
             <span>{dateLabel}</span>
           </>
         )}
-        {editHint && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-muted-2">
-            <GripVertical size={13} aria-hidden="true" /> 끌어서 순서 변경 · 눌러 편집
+        {editMode && !readOnly && (
+          <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
+            <GripVertical size={13} aria-hidden="true" /> 끌어서 순서 변경 · 휴지통으로 삭제
           </span>
         )}
       </div>
 
-      {/* 타임라인 */}
+      {/* 편집 모드: 같은 day 내 드래그 재정렬 + 삭제 (단순 리스트) */}
+      {editMode && !readOnly ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={currentGroup.steps.map((s) => s.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {currentGroup.steps.map((step) => (
+              <SortableStepCard
+                key={step.id}
+                step={step}
+                disabled={isEditingSteps}
+                deletable={currentGroup.steps.length > 1}
+                onRequestDelete={() => onRequestDeleteStep?.(step)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      ) : (
+      /* 일반 타임라인 */
       <div>
         {currentGroup.steps.map((step, idx) => {
           const isLast = idx === currentGroup.steps.length - 1;
@@ -159,7 +218,8 @@ export default function TimelinePanel({
                   isExpanded={expandedStepId === step.id}
                   onToggleExpand={() => toggleExpandStep(step.id)}
                   onClick={() => onStepClick(step.id)}
-                  onSelectAlternative={isSelectingAlternative ? undefined : (alt) => handleSelectAlternative(step, alt)}
+                  onSelectAlternative={readOnly || isSelectingAlternative ? undefined : (alt) => handleSelectAlternative(step, alt)}
+                  readOnly={readOnly}
                 />
 
                 {/* 다음 스텝까지 이동 커넥터 + 자유시간 */}
@@ -185,6 +245,7 @@ export default function TimelinePanel({
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Sun, Moon, PanelLeftOpen } from 'lucide-react';
-import { useAppStore, useAuthStore } from '@/lib/stores';
+import { Sun, Moon, PanelLeftOpen } from 'lucide-react';
+import { useAppStore } from '@/lib/stores';
 import { toggleThemeWithTransition } from '@/lib/theme';
+import HeaderSearch from './HeaderSearch';
+import AvatarMenu from './AvatarMenu';
 
 export default function Header() {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const theme = useAppStore((s) => s.theme);
-  const user = useAuthStore((s) => s.user);
 
   return (
     <header
@@ -44,18 +45,10 @@ export default function Header() {
         )}
       </div>
 
-      {/* 검색 (Layer A: UI만 — 검색 연동은 후속) */}
-      <label className="flex h-9 max-w-[360px] flex-1 items-center gap-2 rounded-[10px] border border-transparent bg-surface-3 px-3 transition-colors focus-within:border-accent">
-        <Search size={14} className="shrink-0 text-muted-2" aria-hidden="true" />
-        <input
-          type="search"
-          placeholder="여행 검색"
-          className="w-full bg-transparent text-[13.5px] text-text-2 outline-none placeholder:text-muted-2"
-          aria-label="여행 검색"
-        />
-      </label>
+      {/* 검색 */}
+      <HeaderSearch />
 
-      {/* 오른쪽: 테마 토글 + 아바타 */}
+      {/* 오른쪽: 테마 토글 + 아바타 메뉴 */}
       <div className="ml-auto flex items-center gap-2.5">
         <button
           onClick={toggleThemeWithTransition}
@@ -64,27 +57,7 @@ export default function Header() {
         >
           {theme === 'light' ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}
         </button>
-
-        {user?.profileImage ? (
-          <img
-            src={user.profileImage}
-            alt=""
-            className="h-[30px] w-[30px] cursor-pointer rounded-full object-cover"
-            role="button"
-            tabIndex={0}
-            aria-label="사용자 메뉴"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div
-            className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-full bg-accent text-xs font-bold text-white"
-            role="button"
-            tabIndex={0}
-            aria-label="사용자 메뉴"
-          >
-            {user?.nickname?.charAt(0) ?? user?.email?.charAt(0)?.toUpperCase() ?? '?'}
-          </div>
-        )}
+        <AvatarMenu />
       </div>
     </header>
   );

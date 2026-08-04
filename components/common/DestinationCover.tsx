@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { coverGradient } from '@/lib/utils/coverGradient';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 
@@ -32,10 +35,19 @@ export default function DestinationCover({
   children,
 }: Props) {
   const img = proxyImageUrl(imageUrl);
+  const [imgError, setImgError] = useState(false);
+  // imageUrl(비동기 채움 등)이 바뀌면 에러 상태 초기화 → 새 URL 재시도
+  useEffect(() => { setImgError(false); }, [img]);
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      {img ? (
-        <img src={img} alt={destination} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+      {img && !imgError ? (
+        <img
+          src={img}
+          alt={destination}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          onError={() => setImgError(true)}
+        />
       ) : (
         <>
           {/* light */}

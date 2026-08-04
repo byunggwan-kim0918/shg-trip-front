@@ -5,10 +5,18 @@ import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
-import { startItineraryGeneration, fetchItinerary } from '@/lib/data/itineraryService';
+import { startItineraryGeneration, fetchItinerary, GenerationRejectedError } from '@/lib/data/itineraryService';
 import { tripDays } from '@/lib/utils/tripStatus';
+import { isEnrichValidationError, enrichErrorStep } from '@/lib/constants/enrichErrors';
 import ErrorState from '@/components/common/ErrorState';
 import type { ItineraryGenerateRequest } from '@/lib/types/itinerary';
+
+/** F4: step-stream 이벤트의 스텝(확정 뼈대) — 백엔드 { name, startTime, category }. */
+interface StreamStep {
+  name: string;
+  startTime: string | null;
+  category: string | null;
+}
 
 /** 리디자인 진행 단계 칩 4개 (2f/3d). */
 const STAGES: { key: string; label: string }[] = [
@@ -110,6 +118,10 @@ export default function LoadingScreen() {
   const { display: progress, setTarget } = useSmoothedProgress();
   const [stage, setStage] = useState('ENRICHING');
   const [error, setError] = useState<string | null>(null);
+  // enrich 검증 실패 errorCode(UNREALISTIC_BUDGET 등) — "조건 수정" 단계 점프에 사용
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  // F4: step-stream 수신한 day별 확정 뼈대 (dayNumber → steps) → 스켈레톤을 실카드로 교체
+  const [streamedDays, setStreamedDays] = useState<Record<number, StreamStep[]>>({});
   const [visible, setVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const startedRef = useRef(false);
@@ -176,7 +188,13 @@ export default function LoadingScreen() {
       try {
         jobId = await startItineraryGeneration(req);
       } catch (e) {
-        setError(e instanceof Error ? e.message : '일정 생성 요청에 실패했습니다.');
+        // 429(차단·쿼터 초과)는 errorCode를 담아 종료 상태로 표시(재시도 무의미)
+        if (e instanceof GenerationRejectedError) {
+          setError(e.message);
+          setErrorCode(e.code);
+        } else {
+          setError(e instanceof Error ? e.message : '일정 생성 요청에 실패했습니다.');
+        }
         return;
       }
 
@@ -225,6 +243,16 @@ export default function LoadingScreen() {
       setStage(payload.stage);
     });
 
+    // F4: 확정된 뼈대(장소·시간)를 day별로 수신 → 해당 Day 스켈레톤을 실카드로 교체.
+    eventSource.addEventListener('step-stream', (e) => {
+      try {
+        const payload = JSON.parse((e as MessageEvent).data) as { dayNumber: number; steps: StreamStep[] };
+        if (payload?.dayNumber && Array.isArray(payload.steps)) {
+          setStreamedDays((prev) => ({ ...prev, [payload.dayNumber]: payload.steps }));
+        }
+      } catch { /* 잘못된 페이로드 무시 */ }
+    });
+
     // complete: 구조(day·순서·시간·동선) 일정이 확정된 시점. story(가이드북 문장)는 아직
     // 비동기로 채워지는 중이므로 여기서 곧바로 결과 화면으로 이동한다.
     eventSource.addEventListener('complete', async () => {
@@ -264,9 +292,10 @@ export default function LoadingScreen() {
       completedRef.current = true;
       eventSource.close();
       const payload = (e as MessageEvent).data
-        ? (JSON.parse((e as MessageEvent).data) as { message: string })
+        ? (JSON.parse((e as MessageEvent).data) as { message: string; errorCode?: string })
         : null;
       setError(payload?.message ?? 'AI 일정 생성 중 오류가 발생했습니다.');
+      setErrorCode(payload?.errorCode ?? null);
       sessionStorage.removeItem(SESSION_KEY);
     });
 
@@ -294,14 +323,21 @@ export default function LoadingScreen() {
   }
 
   if (error) {
+    // 차단·쿼터 초과(PLANNING_003/004)는 재시도 무의미 → "확인"만.
+    const isBlocked = errorCode === 'PLANNING_003' || errorCode === 'PLANNING_004';
+    // 입력 검증 실패(비현실 예산·테마 상충·여행지/기간)면 "조건 수정"으로 해당 단계 점프.
+    // 그 외(서버·AI 오류)는 "다시 시도"로 확인 단계(4)에서 재제출 — 두 경우 모두 입력값 보존.
+    const isValidationError = isEnrichValidationError(errorCode);
+    const targetStep = isValidationError ? enrichErrorStep(errorCode) : 4;
     return (
       <div className="flex min-h-[65vh] items-center justify-center px-4">
         <ErrorState
           className="w-full max-w-sm"
           description={error}
-          retryLabel="다시 시도"
-          onRetry={() => router.push('/main/plan/new?builder=1')}
-          secondaryLabel="처음으로"
+          errorCode={errorCode ?? undefined}
+          retryLabel={isValidationError ? '조건 수정' : '다시 시도'}
+          onRetry={isBlocked ? undefined : () => router.push(`/main/plan/new?builder=1&step=${targetStep}`)}
+          secondaryLabel={isBlocked ? '확인' : '처음으로'}
           onSecondary={() => router.push('/main')}
         />
       </div>
@@ -370,29 +406,46 @@ export default function LoadingScreen() {
         })}
       </div>
 
-      {/* Day 보드 — 스켈레톤 (실카드 스트리밍 교체는 Layer B) */}
+      {/* Day 보드 — step-stream 수신 시 스켈레톤을 실카드로 교체 (F4) */}
       <div
         className="grid min-h-0 flex-1 gap-3"
         style={{ gridTemplateColumns: `repeat(${dayCount}, 1fr)` }}
       >
-        {Array.from({ length: dayCount }, (_, d) => (
-          <div key={d} className="flex flex-col gap-[9px]">
-            <div
-              className={`text-[12.5px] font-extrabold ${
-                d === 0 ? 'text-accent-weak-fg' : 'text-muted-2'
-              }`}
-            >
-              Day {d + 1}
-            </div>
-            {[0, 1, 2].map((r) => (
+        {Array.from({ length: dayCount }, (_, d) => {
+          const daySteps = streamedDays[d + 1];
+          return (
+            <div key={d} className="flex flex-col gap-[9px]">
               <div
-                key={r}
-                className="h-[52px] rounded-[11px] shg-shimmer"
-                style={{ animationDelay: `${(d * 0.15 + r * 0.2) % 0.6}s` }}
-              />
-            ))}
-          </div>
-        ))}
+                className={`text-[12.5px] font-extrabold ${
+                  d === 0 ? 'text-accent-weak-fg' : 'text-muted-2'
+                }`}
+              >
+                Day {d + 1}
+              </div>
+              {daySteps
+                ? daySteps.slice(0, 5).map((step, r) => (
+                    <div
+                      key={r}
+                      className="flex min-h-[52px] animate-[shg-fade-in_0.4s_ease-out] flex-col justify-center gap-0.5 rounded-[11px] border border-card-border bg-card-bg px-3 py-2"
+                    >
+                      <div className="truncate text-[12.5px] font-bold text-foreground">{step.name}</div>
+                      <div className="truncate text-[11px] font-semibold text-muted-2">
+                        {step.startTime ?? ''}
+                        {step.startTime && step.category ? ' · ' : ''}
+                        {step.category ?? ''}
+                      </div>
+                    </div>
+                  ))
+                : [0, 1, 2].map((r) => (
+                    <div
+                      key={r}
+                      className="h-[52px] rounded-[11px] shg-shimmer"
+                      style={{ animationDelay: `${(d * 0.15 + r * 0.2) % 0.6}s` }}
+                    />
+                  ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

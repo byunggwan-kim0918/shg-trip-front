@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import type { AlternativeOption } from '@/lib/types/itinerary';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
@@ -13,6 +16,8 @@ interface AlternativeCardProps {
 export default function AlternativeCard({ alternative, isSelected, onSelect }: AlternativeCardProps) {
   const { place } = alternative;
   const img = proxyImageUrl(place.imageUrl);
+  const [imgError, setImgError] = useState(false);
+  useEffect(() => { setImgError(false); }, [img]);
   return (
     <button
       type="button"
@@ -22,9 +27,9 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
       }`}
     >
       <span className="h-11 w-11 shrink-0 overflow-hidden rounded-[9px]">
-        {img ? (
+        {img && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt={place.name} className="h-full w-full object-cover" loading="lazy" />
+          <img src={img} alt={place.name} className="h-full w-full object-cover" loading="lazy" onError={() => setImgError(true)} />
         ) : (
           <span className="block h-full w-full" style={{ background: coverGradient(place.name) }} />
         )}
