@@ -7,16 +7,18 @@
 
 :root {
   /* accent */
-  --accent: #4c6ef5;
-  --accent-hover: #3651c9;
-  --accent-soft: #edf0fe;          /* accent-weak 배경 */
-  --accent-weak-fg: #4c6ef5;       /* accent-weak 텍스트(칩) */
+  --accent: #1c1c1e;               /* 주요 액션 = 잉크. 사진이 컬러를 담당 */
+  --accent-fg: #ffffff;            /* accent 위 텍스트. 라이트=흰색(잉크 배경 17.01) */
+  --accent-grad-to: #7a8729;       /* 프로그레스 바 그라데이션 종점(글자가 없어 대비 무관). 로고는 단색 */
+  --accent-hover: #33343b;
+  --accent-soft: #eef0e2;          /* accent-weak 배경 (샤르트뢰즈 틴트) */
+  --accent-weak-fg: #5f6a1e;       /* accent-weak 텍스트(칩) */
 
   /* text */
   --foreground: #14161c;           /* 기본 텍스트 */
   --text-2: #23262e;               /* 보조 텍스트 */
-  --muted: #7a828f;                /* muted */
-  --muted-2: #98a0ab;              /* placeholder */
+  --muted: #5f6875;                /* 보조 텍스트. 캔버스 4.94 / surface 5.64 (AA) */
+  --muted-2: #727a87;              /* placeholder·캡션. UI 3:1 기준 */
 
   /* surface */
   --background: #eef0f4;           /* 페이지 배경(canvas) */
@@ -39,13 +41,13 @@
   /* status */
   --success: #12996b;              /* 완료(done) */
   --danger: #e0563e;
-  --status-ongoing: #4c6ef5;       /* 여행 중 */
-  --status-ongoing-bg: #edf0fe;
-  --status-draft: #d98a1a;         /* 초안 */
-  --status-draft-bg: #fef4e6;
+  --status-ongoing: #7a8729;       /* 여행 중 */
+  --status-ongoing-bg: #eef0e2;
+  --status-draft: #5f6875;         /* 초안 = 미완성. 경고가 아니므로 무채색. 앰버는 --warn 전용 */
+  --status-draft-bg: #f2f4f7;
   --status-done: #12996b;          /* 완료 */
   --status-done-bg: #eaf7f0;
-  --status-upcoming: #98a0ab;      /* 예정 */
+  --status-upcoming: #14161c;      /* 예정 = 확정된 미래. 무채색 중 가장 진하게 */
   --status-upcoming-bg: #f2f4f7;
 
   /* warn (예산 유도 넛지) */
@@ -59,15 +61,17 @@
 }
 
 .dark {
-  --accent: #6b8bff;
-  --accent-hover: #4c6ef5;
-  --accent-soft: rgba(107, 139, 255, 0.16);
-  --accent-weak-fg: #9db0ff;
+  --accent: #c8d158;               /* 다크: 선명한 샤르트뢰즈(레퍼런스 실측값). 잉크 텍스트 10.95 / 배경분리 11.68 */
+  --accent-fg: #14161c;            /* accent 위 텍스트. 다크=잉크(밝은 accent 위) */
+  --accent-grad-to: #6f7a2c;       /* 다크: 밝은 샤르트뢰즈→깊은 올리브 */
+  --accent-hover: #d2da6a;
+  --accent-soft: rgba(200, 209, 88, 0.14);
+  --accent-weak-fg: #c8d158;
 
   --foreground: #f3f5f9;
   --text-2: #c8ccd4;
-  --muted: #8b929c;
-  --muted-2: #6b7280;
+  --muted: #a0a7b1;                /* 배경 7.95 / surface 7.39 / surface-2 6.88 */
+  --muted-2: #8b929c;              /* 배경 6.14 / surface 5.71 / surface-2 5.31 */
 
   --background: #0d0e12;
   --card-bg: #15171d;
@@ -86,13 +90,13 @@
 
   --success: #3ecf8e;
   --danger: #ff8a70;
-  --status-ongoing: #6b8bff;
-  --status-ongoing-bg: rgba(107, 139, 255, 0.16);
-  --status-draft: #d98a1a;
-  --status-draft-bg: rgba(216, 138, 26, 0.16);
+  --status-ongoing: #c8d158;
+  --status-ongoing-bg: rgba(200, 209, 88, 0.16);
+  --status-draft: #a0a7b1;
+  --status-draft-bg: #23272f;
   --status-done: #3ecf8e;
   --status-done-bg: rgba(18, 153, 107, 0.16);
-  --status-upcoming: #6b7280;
+  --status-upcoming: #f3f5f9;
   --status-upcoming-bg: #23272f;
 
   --warn-bg: rgba(216, 138, 26, 0.12);
@@ -111,6 +115,7 @@
   --color-muted-2: var(--muted-2);
 
   --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
   --color-accent-weak-fg: var(--accent-weak-fg);
@@ -227,6 +232,17 @@ h1, h2, h3 {
 ::view-transition-new(root) {
   animation-duration: 0.22s;
   animation-timing-function: ease;
+}
+
+/* 다크모드 지도 타일. Google Cloud 맵 스타일(mapId) 등록 없이 코드만으로 다크를 만든다.
+   타일 이미지 레이어에만 반전+색상보정을 걸고, 우리가 그린 마커·폴리라인·InfoWindow는 제외한다. */
+.map-dark .gm-style > div:first-child > div:first-child {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.7);
+}
+.map-dark .gm-style img[src*="gstatic"],
+.map-dark .gm-style .gmnoprint,
+.map-dark .gm-style-cc {
+  filter: invert(1) hue-rotate(180deg);
 }
 
 @media (prefers-reduced-motion: reduce) {

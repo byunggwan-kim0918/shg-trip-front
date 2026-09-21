@@ -41,23 +41,23 @@ export default function SharedItineraryView({ itinerary }: Props) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
+          <h1 className="line-clamp-2 text-[17px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
             {itinerary.title ?? destination}
           </h1>
-          <p className="mt-1.5 text-[13.5px] font-medium text-muted">
-            {startDate} – {endDate} · {nightsLabel(startDate, endDate)}
+          <p className="mt-1.5 text-[13px] font-medium text-muted">
+            {startDate} - {endDate} · {nightsLabel(startDate, endDate)}
           </p>
           {tags && tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-surface-3 px-2.5 py-1 text-[12px] font-semibold text-muted">
+                <span key={tag} className="rounded-full bg-surface-3 px-2.5 py-1 text-xs font-semibold text-muted">
                   {tag}
                 </span>
               ))}
             </div>
           )}
         </div>
-        <span className="shrink-0 rounded-full bg-surface-3 px-3 py-1.5 text-[12px] font-semibold text-muted-2">
+        <span className="shrink-0 rounded-full bg-surface-3 px-3 py-1.5 text-xs font-semibold text-muted-2">
           공유된 일정
         </span>
       </div>

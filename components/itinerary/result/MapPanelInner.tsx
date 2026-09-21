@@ -16,16 +16,25 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
 /** 일차별 색상 팔레트 (최대 10일) */
 const DAY_COLORS = [
-  { bg: '#2563eb', border: '#1d4ed8', line: '#3b82f6' }, // 1일차 파랑
-  { bg: '#dc2626', border: '#b91c1c', line: '#ef4444' }, // 2일차 빨강
-  { bg: '#16a34a', border: '#15803d', line: '#22c55e' }, // 3일차 초록
-  { bg: '#d97706', border: '#b45309', line: '#f59e0b' }, // 4일차 주황
-  { bg: '#9333ea', border: '#7e22ce', line: '#a855f7' }, // 5일차 보라
-  { bg: '#0891b2', border: '#0e7490', line: '#06b6d4' }, // 6일차 청록
-  { bg: '#e11d48', border: '#be123c', line: '#f43f5e' }, // 7일차 로즈
-  { bg: '#4f46e5', border: '#4338ca', line: '#6366f1' }, // 8일차 인디고
-  { bg: '#0d9488', border: '#0f766e', line: '#14b8a6' }, // 9일차 틸
-  { bg: '#c026d3', border: '#a21caf', line: '#d946ef' }, // 10일차 퓨시아
+  // 일차 구분은 기능이므로 카테고리 색을 쓴다. 단 Tailwind 기본 무지개(blue-600·indigo-600…)는
+  // 브랜드와 무관한 AI tell이라, 색상환을 고르게 분배하고 채도를 낮춰(S 0.42~0.46)
+  // 잉크 모노 팔레트 위에서 튀지 않게 설계했다.
+  //
+  // 1일차는 110°(맑은 초록)다. 브랜드 올리브(68°)를 그대로 쓰지 않은 이유:
+  // 마커 채도(S~0.45)·명도(L~42%)로 내리면 68°는 카키로 읽히고, 지도 지형색(베이지·연녹)
+  // 위에서 특히 탁해진다. 여기서는 브랜드 일치보다 **지도 위 식별**이 우선이라 초록을 유지한다.
+  // (커버 그라데이션 대역을 100~210으로 좁힌 것과 같은 판단 — 카키 구간을 피한다)
+  // bg=마커 채움 / border=한 단계 어둡게 / line=경로선 한 단계 밝게.
+  { bg: '#7a8729', border: '#5f6a1e', line: '#98a733' }, // 1일차 = 브랜드 올리브(--status-ongoing과 동일 색상)
+  { bg: '#3e7a98', border: '#2c5e77', line: '#4f97ba' }, // 2일차
+  { bg: '#98643e', border: '#774b2c', line: '#ba7c4f' }, // 3일차
+  { bg: '#643e98', border: '#4b2c77', line: '#7c4fba' }, // 4일차
+  { bg: '#3e987a', border: '#2c775e', line: '#4fba97' }, // 5일차
+  { bg: '#983e5c', border: '#772c45', line: '#ba4f73' }, // 6일차
+  { bg: '#4d983e', border: '#39772c', line: '#61ba4f' }, // 7일차
+  { bg: '#3e5598', border: '#2c3f77', line: '#4f6aba' }, // 8일차
+  { bg: '#983e98', border: '#772c77', line: '#ba4fba' }, // 9일차
+  { bg: '#3e9198', border: '#2c7177', line: '#4fb1ba' }, // 10일차
 ];
 
 function getDayColor(dayNumber: number) {
@@ -165,7 +174,11 @@ export default function MapPanelInner({
 
   return (
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-      <div className="relative w-full h-full">
+      {/* 다크모드 지도: mapId('dark-map')는 Google Cloud에 등록된 스타일이 있어야 동작하는데
+          현재 등록돼 있지 않아 라이트 타일이 그대로 나온다(다크 화면에서 지도만 하얗게 튐).
+          Cloud 설정 없이 코드만으로 해결하려면 타일에 필터를 건다. 마커·경로선은 우리가 그린
+          오버레이라 같이 반전되면 안 되므로, 필터는 타일 레이어(.gm-style > div:first-child)에만 적용한다. */}
+      <div className={`relative w-full h-full ${isDark ? 'map-dark' : ''}`}>
         <GoogleMap
           mapId={isDark ? 'dark-map' : 'light-map'}
           defaultCenter={center}
@@ -213,7 +226,7 @@ export default function MapPanelInner({
                     pixelOffset={[0, -40]}
                   >
                     <div className="text-sm min-w-[180px] max-w-[220px]">
-                      <div className="w-full h-24 rounded-md mb-2 overflow-hidden bg-surface-3">
+                      <div className="w-full h-24 rounded-[10px] mb-2 overflow-hidden bg-surface-3">
                         {step.place.imageUrl ? (
                           <img
                             src={proxyImageUrl(step.place.imageUrl)!}
@@ -223,7 +236,7 @@ export default function MapPanelInner({
                           />
                         ) : (
                           // imageUrl 아직 없음(비동기 업로드 대기) → skeleton
-                          <div className="w-full h-full animate-pulse bg-gray-200/70" />
+                          <div className="w-full h-full animate-pulse bg-black/10" />
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 mb-1">
@@ -231,21 +244,22 @@ export default function MapPanelInner({
                           className="inline-block w-3 h-3 rounded-full"
                           style={{ backgroundColor: color.bg }}
                         />
-                        <span className="text-xs text-gray-500">{step.dayNumber}일차</span>
+                        <span className="text-xs text-black/55">{step.dayNumber}일차</span>
                       </div>
-                      <p className="font-semibold text-gray-900">{step.place.name}</p>
-                      <p className="text-gray-500 text-xs mt-0.5">{step.place.address}</p>
+                      <p className="font-semibold text-black/88">{step.place.name}</p>
+                      <p className="text-black/55 text-xs mt-0.5">{step.place.address}</p>
                       <p style={{ color: color.bg }} className="text-xs mt-0.5">
                         {step.place.category}
                       </p>
+                      {/* 별점은 데이터다. amber(경고 계열)나 상태색을 쓰지 않는다 */}
                       {step.place.rating != null && (
-                        <div className="flex items-center gap-1 text-xs mt-0.5 text-amber-400">
-                          <Star size={12} className="fill-amber-400" aria-hidden="true" />
+                        <div className="flex items-center gap-1 text-xs mt-0.5 text-black/70">
+                          <Star size={12} className="fill-current" aria-hidden="true" />
                           <span>{step.place.rating}</span>
                         </div>
                       )}
                       {step.startTime && step.endTime && (
-                        <p className="text-gray-400 text-xs mt-0.5">
+                        <p className="text-black/45 text-xs mt-0.5 tabular-nums">
                           {step.startTime} - {step.endTime}
                         </p>
                       )}
@@ -259,7 +273,7 @@ export default function MapPanelInner({
 
         {/* 일차별 범례 */}
         {uniqueDays.length > 1 && (
-          <div className="absolute top-3 left-3 bg-card-bg/90 backdrop-blur-sm rounded-lg shadow-md border border-card-border px-3 py-2 flex flex-col gap-1 z-10">
+          <div className="absolute top-3 left-3 bg-card-bg/90 backdrop-blur-sm rounded-xl shadow-md border border-card-border px-3 py-2 flex flex-col gap-1 z-10">
             {uniqueDays.map((day) => {
               const color = getDayColor(day);
               return (

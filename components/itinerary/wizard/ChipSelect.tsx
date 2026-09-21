@@ -37,15 +37,15 @@ export default function ChipSelect({ options, selected, onChange, minSelect = 1 
             onClick={() => toggle(opt.id)}
             className={`
               inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium
-              transition-all duration-150 min-h-[44px]
+              transition-[background-color,border-color,box-shadow] duration-150 min-h-[44px]
               ${isSelected
-                ? 'bg-accent text-white shadow-sm border border-transparent'
+                ? 'bg-accent text-accent-fg shadow-sm border border-transparent'
                 : 'bg-surface-3 text-text-2 border border-transparent hover:bg-surface-hover'
               }
             `}
             aria-pressed={isSelected}
           >
-            {opt.icon && <span className="text-base">{opt.icon}</span>}
+            {opt.icon && <span className="text-[17px]">{opt.icon}</span>}
             {opt.label}
           </button>
         );

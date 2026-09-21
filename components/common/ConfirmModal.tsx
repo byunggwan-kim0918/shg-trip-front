@@ -57,14 +57,14 @@ export default function ConfirmModal({
         className="w-full max-w-sm rounded-xl bg-card-bg border border-card-border shadow-xl p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        <h2 className="text-[17px] font-semibold text-foreground">{title}</h2>
         {message && <p className="mt-2 text-sm text-muted">{message}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onCancel(); }}
             disabled={busy}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 min-h-[40px]"
+            className="px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 min-h-[40px]"
           >
             {cancelLabel}
           </button>
@@ -73,7 +73,7 @@ export default function ConfirmModal({
             type="button"
             onClick={(e) => { e.stopPropagation(); onConfirm(); }}
             disabled={busy}
-            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 min-h-[40px] ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium text-accent-fg transition-colors disabled:opacity-50 min-h-[40px] ${
               danger ? 'bg-danger hover:opacity-90' : 'bg-accent hover:bg-accent-hover'
             }`}
           >

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, MoreHorizontal, MapPinned } from 'lucide-react';
+import { normalizeText } from '@/lib/utils/text';
 import type { ItinerarySummary } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -98,15 +99,15 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-1 py-2">
       {/* 헤더 */}
-      <div className="mb-[18px] flex items-end justify-between">
+      <div className="mb-4 flex items-end justify-between">
         <div className="flex items-baseline gap-2.5">
-          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-foreground">내 여행</h1>
+          <h1 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">내 여행</h1>
           <span className="text-sm font-semibold text-muted">{itineraries.length}개</span>
         </div>
         <button
           type="button"
           onClick={() => router.push('/main/plan/new')}
-          className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13.5px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105"
+          className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-[13px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105"
         >
           <Plus size={15} strokeWidth={2.5} /> 새 여행
         </button>
@@ -121,8 +122,8 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
               key={tab.key}
               type="button"
               onClick={() => setFilter(tab.key)}
-              className={`rounded-full px-3.5 py-[7px] text-[13px] font-semibold transition-colors ${
-                active ? 'bg-accent text-white' : 'bg-surface-3 text-muted hover:text-foreground'
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                active ? 'bg-accent-soft text-accent-weak-fg ring-1 ring-accent-weak-fg/25' : 'bg-surface-3 text-muted hover:text-foreground'
               }`}
             >
               {tab.label}
@@ -136,7 +137,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
         <button
           type="button"
           onClick={() => goToStep(hero)}
-          className="group relative mb-[18px] block h-[200px] w-full overflow-hidden rounded-[18px] border border-card-border text-left"
+          className="group relative mb-4 block h-[200px] w-full overflow-hidden rounded-2xl border border-card-border text-left"
         >
           <DestinationCover
             destination={hero.destination}
@@ -148,15 +149,15 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
           <div className="absolute inset-0 flex flex-col justify-between p-6">
             <div className="flex gap-2">
               <span className="rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold text-[#14161c]">
-                {ddayLabel(hero.startDate)}
+                <span className="tabular-nums">{ddayLabel(hero.startDate)}</span>
               </span>
               <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-[4px]">
                 가장 가까운 여행
               </span>
             </div>
             <div className="flex flex-col gap-2.5">
-              <span className="text-2xl font-extrabold tracking-[-0.02em] text-white">
-                {hero.title ?? hero.destination}
+              <span className="line-clamp-2 text-[23px] font-extrabold tracking-[-0.02em] text-white">
+                {normalizeText(hero.title) || hero.destination}
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {hero.tags.slice(0, 3).map((t) => (
@@ -165,7 +166,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                   </span>
                 ))}
                 <span className="ml-1 text-[13px] font-medium text-white/85">
-                  {dateRange(hero.startDate, hero.endDate)} · {nightsLabel(hero.startDate, hero.endDate)}
+                  <span className="tabular-nums">{dateRange(hero.startDate, hero.endDate)}</span> · <span className="tabular-nums">{nightsLabel(hero.startDate, hero.endDate)}</span>
                 </span>
               </div>
             </div>
@@ -194,18 +195,18 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                 tabIndex={0}
                 onClick={() => goToStep(item)}
                 onKeyDown={(e) => e.key === 'Enter' && goToStep(item)}
-                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
+                className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
               >
                 {/* 커버 */}
                 <DestinationCover
                   destination={item.destination}
                   imageUrl={item.coverImage}
                   seedOffset={idx * 7}
-                  labelSize={40}
-                  className="h-[122px] w-full"
+                  labelSize={30}
+                  className="h-[88px] w-full"
                 >
-                  <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[11.5px] font-bold text-[#14161c]">
-                    {ddayLabel(item.startDate)}
+                  <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-bold text-[#14161c]">
+                    <span className="tabular-nums">{ddayLabel(item.startDate)}</span>
                   </span>
                   {/* ··· 삭제 메뉴 */}
                   <div
@@ -225,7 +226,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                     </button>
                     {openCardMenuId === item.id && (
                       <div
-                        className="absolute left-0 top-full mt-1 w-28 overflow-hidden rounded-lg border border-card-border bg-card-bg shadow-lg"
+                        className="absolute left-0 top-full mt-1 w-28 overflow-hidden rounded-xl border border-card-border bg-card-bg shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
@@ -244,18 +245,20 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                   </div>
                 </DestinationCover>
 
-                {/* 본문 */}
-                <div className="p-[15px]">
-                  <div className="mb-2.5 truncate text-[15px] font-bold text-foreground">
-                    {item.title ?? item.destination}
+                {/* 본문. flex-1 + 메타 mt-auto로 카드 높이를 맞춘다(제목 줄수·태그 유무와 무관). */}
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="mb-2.5 line-clamp-2 text-[17px] font-extrabold leading-[1.35] tracking-[-0.02em] text-foreground">
+                    {normalizeText(item.title) || item.destination}
                   </div>
-                  <div className="mb-3.5 flex flex-wrap gap-1.5">
-                    {item.tags.slice(0, 2).map((t) => (
-                      <TagChip key={t}>{t}</TagChip>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between border-t border-divider pt-3">
-                    <span className="text-[12.5px] font-medium text-muted-2">
+                  {item.tags.length > 0 && (
+                    <div className="mb-3.5 flex flex-wrap gap-1.5">
+                      {item.tags.slice(0, 2).map((t) => (
+                        <TagChip key={t}>{t}</TagChip>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-auto flex items-center justify-between border-t border-divider pt-3">
+                    <span className="text-xs font-medium text-muted-2">
                       {dateRange(item.startDate, item.endDate)} · {nightsLabel(item.startDate, item.endDate)}
                     </span>
                     <StatusDot status={st} />

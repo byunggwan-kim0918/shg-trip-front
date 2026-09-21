@@ -25,19 +25,19 @@ export default function ErrorState({
 }: Props) {
   return (
     <div
-      className={`rounded-[18px] border border-danger/30 bg-card-bg px-6 py-8 text-center ${className}`}
+      className={`rounded-2xl border border-danger/30 bg-card-bg px-6 py-8 text-center ${className}`}
     >
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-danger/10 text-danger">
         <AlertCircle size={26} aria-hidden="true" />
       </div>
-      <div className="text-lg font-extrabold tracking-[-0.02em] text-foreground">{title}</div>
-      <div className="mt-2 text-[13.5px] leading-relaxed text-muted">{description}</div>
+      <div className="text-[17px] font-extrabold tracking-[-0.02em] text-foreground">{title}</div>
+      <div className="mt-2 text-[13px] leading-relaxed text-muted">{description}</div>
       <div className="mt-5 flex justify-center gap-2.5">
         {onRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-105"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-fg transition-[filter] hover:brightness-105"
           >
             <RotateCcw size={14} aria-hidden="true" /> {retryLabel}
           </button>
@@ -53,7 +53,7 @@ export default function ErrorState({
         )}
       </div>
       {errorCode && (
-        <div className="mt-4 text-[11.5px] text-muted-2">오류 코드 · {errorCode}</div>
+        <div className="mt-4 text-[11px] text-muted-2">오류 코드 · {errorCode}</div>
       )}
     </div>
   );

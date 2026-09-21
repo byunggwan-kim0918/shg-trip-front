@@ -39,18 +39,21 @@ export default function TripBasicsStep() {
     <div className="space-y-4">
       <div>
         <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">어디로, 언제 떠나세요?</h2>
-        <p className="mt-1 text-[13.5px] text-muted">여행지와 날짜를 한 번에 정해요.</p>
+        <p className="mt-1 text-[13px] text-muted">여행지와 날짜를 한 번에 정해요.</p>
       </div>
 
       {/* 여행지 검색 */}
       <div>
-        <label className="flex h-[50px] items-center gap-2.5 rounded-[13px] border-[1.5px] border-accent bg-surface-3 px-4">
-          <Search size={16} className="shrink-0 text-accent" aria-hidden="true" />
+        <label className="flex h-[50px] items-center gap-2.5 rounded-xl border-[1.5px] border-accent bg-surface-3 px-4">
+          <Search size={16} className="shrink-0 text-accent-weak-fg" aria-hidden="true" />
           <input
             type="text"
             value={data.destination}
             onChange={(e) => updateData({ destination: e.target.value })}
-            onKeyDown={(e) => { if (e.key === 'Enter' && isStepValid) { e.preventDefault(); nextStep(); } }}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing) return;
+              if (e.key === 'Enter' && isStepValid) { e.preventDefault(); nextStep(); }
+            }}
             placeholder="여행지를 입력하세요 (예: 제주도)"
             className="w-full bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
             aria-label="여행지"
@@ -59,7 +62,7 @@ export default function TripBasicsStep() {
       </div>
 
       {/* 인기 목적지 칩 */}
-      <div className="flex flex-wrap gap-[7px]">
+      <div className="flex flex-wrap gap-1.5">
         {POPULAR_DESTINATIONS.map((d) => {
           const active = data.destination.trim() === d;
           return (
@@ -67,8 +70,8 @@ export default function TripBasicsStep() {
               key={d}
               type="button"
               onClick={() => updateData({ destination: d })}
-              className={`rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                active ? 'bg-accent text-white' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
+              className={`rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
+                active ? 'bg-accent text-accent-fg' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
               }`}
             >
               {d}
@@ -81,7 +84,7 @@ export default function TripBasicsStep() {
       <div className="pt-1">
         <div className="mb-2 flex items-baseline justify-between">
           <span className="text-[15px] font-bold text-foreground">여행 기간</span>
-          {durationText && <span className="text-[13px] font-bold text-accent">{durationText}</span>}
+          {durationText && <span className="text-[13px] font-bold text-accent-weak-fg">{durationText}</span>}
         </div>
         <CalendarPicker
           startDate={startDate}

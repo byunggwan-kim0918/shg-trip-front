@@ -38,7 +38,7 @@ export default function MainPage() {
               .catch(() => setError('일정 목록을 불러오는데 실패했습니다.'))
               .finally(() => setIsLoading(false));
           }}
-          className="px-4 py-2 rounded-lg bg-accent text-white text-sm"
+          className="px-4 py-2 rounded-xl bg-accent text-accent-fg text-sm"
         >
           다시 시도
         </button>

@@ -96,7 +96,7 @@ export default function ItineraryDetailPage() {
         <button
           type="button"
           onClick={() => router.push('/main/my-trips')}
-          className="px-6 py-2.5 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors min-h-[44px]"
+          className="px-6 py-2.5 rounded-xl bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors min-h-[44px]"
         >
           내 일정함으로 이동
         </button>

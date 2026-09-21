@@ -19,7 +19,7 @@ export default function StatusDot({ status, showLabel = true, size = 6, classNam
         style={{ width: size, height: size, background: meta.dotVar }}
       />
       {showLabel && (
-        <span className="text-[11.5px] font-semibold" style={{ color: meta.fgVar }}>
+        <span className="text-[11px] font-semibold" style={{ color: meta.fgVar }}>
           {meta.label}
         </span>
       )}

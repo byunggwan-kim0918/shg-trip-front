@@ -62,11 +62,13 @@ export default function HeaderSearch() {
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={(e) => {
+            // 조합 중 Escape는 조합 취소, Enter는 조합 확정 — 둘 다 IME가 먼저 가져간다.
+            if (e.nativeEvent.isComposing) return;
             if (e.key === 'Escape') { setOpen(false); (e.target as HTMLInputElement).blur(); }
             if (e.key === 'Enter' && results[0]) go(results[0].id);
           }}
           placeholder="여행 검색"
-          className="w-full bg-transparent text-[13.5px] text-text-2 outline-none placeholder:text-muted-2"
+          className="w-full bg-transparent text-[13px] text-text-2 outline-none placeholder:text-muted-2"
           aria-label="여행 검색"
         />
       </label>
@@ -86,10 +88,10 @@ export default function HeaderSearch() {
                   >
                     <StatusDot status={displayStatus(it)} showLabel={false} size={8} />
                     <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-[13.5px] font-semibold text-foreground">
+                      <span className="truncate text-[13px] font-semibold text-foreground">
                         {it.title ?? it.destination}
                       </span>
-                      <span className="truncate text-[11.5px] text-muted-2">
+                      <span className="truncate text-[11px] text-muted-2">
                         {it.destination} · {dateRange(it.startDate, it.endDate)}
                       </span>
                     </span>

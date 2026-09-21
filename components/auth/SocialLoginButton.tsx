@@ -50,10 +50,10 @@ export default function SocialLoginButton({ provider }: SocialLoginButtonProps) 
     <button
       onClick={handleClick}
       className={`
-        flex w-full cursor-pointer items-center justify-center gap-[9px]
-        rounded-[13px] px-6 py-[15px]
-        text-[14.5px]
-        transition-all duration-200
+        flex w-full cursor-pointer items-center justify-center gap-2
+        rounded-xl px-6 py-3.5
+        text-[15px]
+        transition-[background-color,transform] duration-200
         hover:scale-[1.01] active:scale-[0.99]
         ${style.container}
       `}

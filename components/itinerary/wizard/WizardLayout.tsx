@@ -30,7 +30,7 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
           type="button"
           onClick={prevStep}
           disabled={currentStep === 0}
-          className="shrink-0 rounded-lg p-1 text-foreground transition-colors hover:bg-surface-hover disabled:opacity-30"
+          className="shrink-0 rounded-xl p-1 text-foreground transition-colors hover:bg-surface-hover disabled:opacity-30"
           aria-label="이전 단계"
         >
           <ChevronLeft size={22} aria-hidden="true" />
@@ -78,7 +78,7 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
             disabled={!isStepValid}
             className={`min-h-[44px] rounded-xl px-7 py-2.5 text-sm font-bold transition-colors ${
               isStepValid
-                ? 'bg-accent text-white shadow-[0_8px_18px_-8px_var(--accent)] hover:bg-accent-hover'
+                ? 'bg-accent text-accent-fg shadow-[0_8px_18px_-8px_rgba(20,22,28,0.45)] hover:bg-accent-hover'
                 : 'cursor-not-allowed bg-surface-3 text-muted-2'
             }`}
           >
