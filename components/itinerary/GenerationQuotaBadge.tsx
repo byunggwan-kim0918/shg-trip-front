@@ -40,7 +40,7 @@ export default function GenerationQuotaBadge({
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
         warn ? 'bg-warn-bg text-warn-fg' : 'bg-surface-3 text-muted'
       } ${className}`}
     >

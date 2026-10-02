@@ -35,7 +35,7 @@ export default function ProgressBar({
           className="h-full rounded-full transition-[width] duration-300"
           style={{
             width: `${clamped}%`,
-            background: 'linear-gradient(90deg, var(--accent), oklch(0.62 0.15 200))',
+            background: 'linear-gradient(90deg, var(--accent), var(--accent-grad-to))',
           }}
         />
       )}

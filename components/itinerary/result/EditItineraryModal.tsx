@@ -70,7 +70,7 @@ export default function EditItineraryModal({
         className="w-full max-w-md rounded-xl border border-card-border bg-card-bg p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-bold text-foreground">일정 편집</h2>
+        <h2 className="text-[17px] font-bold text-foreground">일정 편집</h2>
 
         {/* 제목 */}
         <div className="mt-4">
@@ -94,7 +94,10 @@ export default function EditItineraryModal({
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+              onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing) return;
+                if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+              }}
               maxLength={MAX_TAG_LEN}
               placeholder="태그 입력 후 Enter"
               className="flex-1 rounded-xl border border-card-border bg-surface-3 px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-accent"
@@ -103,7 +106,7 @@ export default function EditItineraryModal({
               type="button"
               onClick={addTag}
               disabled={!tagInput.trim() || tags.length >= MAX_TAGS}
-              className="shrink-0 rounded-xl bg-accent px-3.5 text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="shrink-0 rounded-xl bg-accent px-3.5 text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
               aria-label="태그 추가"
             >
               <Plus size={16} aria-hidden="true" />
@@ -112,7 +115,7 @@ export default function EditItineraryModal({
           {tags.length > 0 && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {tags.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-2.5 py-1 text-[12px] font-semibold text-muted">
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-2.5 py-1 text-xs font-semibold text-muted">
                   {t}
                   <button type="button" onClick={() => removeTag(t)} aria-label={`${t} 삭제`} className="opacity-60 hover:opacity-100">
                     <X size={12} aria-hidden="true" />
@@ -130,7 +133,7 @@ export default function EditItineraryModal({
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="min-h-[40px] rounded-lg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+            className="min-h-[40px] rounded-xl px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
           >
             취소
           </button>
@@ -138,7 +141,7 @@ export default function EditItineraryModal({
             type="button"
             onClick={() => onSave({ title: title.trim(), tags })}
             disabled={!canSave}
-            className="min-h-[40px] rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+            className="min-h-[40px] rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
           >
             {busy ? '저장 중...' : '저장'}
           </button>

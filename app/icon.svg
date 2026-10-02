@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2dd4bf"/>
-      <stop offset="100%" stop-color="#0d9488"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="url(#g)"/>
-  <path d="M6.1 15h2.6a2.7 2.7 0 012.6 2.7v1.3a2.7 2.7 0 002.7 2.7 2.7 2.7 0 012.7 2.6v3.9M12 5.2v2.1a3.3 3.3 0 003.3 3.4h.7a2.7 2.7 0 012.7 2.6 2.7 2.7 0 105.3 0 2.7 2.7 0 012.7-2.6h1.4M21.3 27.3V24a2.7 2.7 0 012.7-2.7h4.1M28 16a12 12 0 11-24 0 12 12 0 0124 0z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- SHG trip 마크: 굽은 길 + 도착점.
+       이전 마크(경선 그려진 지구)는 브라우저 기본 아이콘처럼 생겨 브랜드가 없었다.
+       이 앱이 실제로 그리는 것은 "경유지를 잇는 경로"라서 그걸 마크로 삼았다.
+       곡선이 S를 그려 이름(SHG)과도 겹친다. 도착점만 샤르트뢰즈로 브랜드색을 넣는다.
+       16·28·64px로 래스터해 고른 형태다 — 링/간격 변형은 16px에서 뭉갰다. -->
+  <rect width="32" height="32" rx="8" fill="#1c1c1e"/>
+  <path d="M8 23C13 23 12 11 23 10" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="23" cy="10" r="3.6" fill="#c8d158"/>
 </svg>

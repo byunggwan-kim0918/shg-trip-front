@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores';
+import Logo from '@/components/common/Logo';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -63,14 +64,9 @@ export default function OnboardingPage() {
   return (
     <div className="w-full max-w-sm flex flex-col items-center">
       <div className="mb-10 flex flex-col items-center gap-3">
-        <div
-          className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-extrabold text-white shadow-[0_14px_30px_-12px_var(--accent)]"
-          style={{ background: 'linear-gradient(140deg, var(--accent), oklch(0.62 0.15 200))' }}
-        >
-          S
-        </div>
+        <Logo size={56} className="shadow-[0_14px_30px_-12px_rgba(20,22,28,0.45)]" />
         <div className="text-center">
-          <h1 className="text-xl font-bold text-foreground">환영합니다!</h1>
+          <h1 className="text-[23px] font-bold text-foreground">환영합니다!</h1>
           <p className="mt-1 text-sm text-muted">사용할 닉네임을 설정해주세요</p>
         </div>
       </div>
@@ -86,7 +82,7 @@ export default function OnboardingPage() {
             }}
             placeholder="닉네임 (2~20자)"
             maxLength={20}
-            className="w-full px-4 py-3.5 rounded-xl border border-card-border focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 text-sm transition-all bg-card-bg text-foreground placeholder:text-muted-2"
+            className="w-full px-4 py-3.5 rounded-xl border border-card-border focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 text-sm transition-[border-color,box-shadow] bg-card-bg text-foreground placeholder:text-muted-2"
           />
           {error && (
             <p className="mt-2 text-xs text-danger">{error}</p>
@@ -96,7 +92,7 @@ export default function OnboardingPage() {
         <button
           type="submit"
           disabled={!isValid || isSubmitting}
-          className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover disabled:bg-muted/30 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors cursor-pointer shadow-[0_10px_24px_-10px_var(--accent)]"
+          className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover disabled:bg-muted/30 disabled:cursor-not-allowed text-accent-fg font-bold text-sm transition-colors cursor-pointer shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)]"
         >
           {isSubmitting ? '설정 중...' : '시작하기'}
         </button>

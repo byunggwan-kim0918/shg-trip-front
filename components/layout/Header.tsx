@@ -6,6 +6,7 @@ import { useAppStore } from '@/lib/stores';
 import { toggleThemeWithTransition } from '@/lib/theme';
 import HeaderSearch from './HeaderSearch';
 import AvatarMenu from './AvatarMenu';
+import Logo from '@/components/common/Logo';
 
 export default function Header() {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
@@ -26,17 +27,12 @@ export default function Header() {
               aria-label="홈으로 이동"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <span
-                className="flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[13px] font-extrabold text-white"
-                style={{ background: 'linear-gradient(140deg, var(--accent), oklch(0.62 0.15 200))' }}
-              >
-                S
-              </span>
+              <Logo size={26} />
               <span className="text-[15px] font-bold text-foreground">SHG trip</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-lg text-muted hover:bg-surface-hover transition-colors"
+              className="p-1.5 rounded-xl text-muted hover:bg-surface-hover transition-colors"
               aria-label="사이드바 열기"
             >
               <PanelLeftOpen size={17} aria-hidden="true" />
@@ -52,7 +48,7 @@ export default function Header() {
       <div className="ml-auto flex items-center gap-2.5">
         <button
           onClick={toggleThemeWithTransition}
-          className="p-2 rounded-lg text-muted hover:bg-surface-hover transition-colors"
+          className="p-2 rounded-xl text-muted hover:bg-surface-hover transition-colors"
           aria-label={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
         >
           {theme === 'light' ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}

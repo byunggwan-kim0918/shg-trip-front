@@ -26,7 +26,7 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
         isSelected ? 'border-accent bg-accent-soft' : 'border-card-border bg-surface-2 hover:bg-surface-hover'
       }`}
     >
-      <span className="h-11 w-11 shrink-0 overflow-hidden rounded-[9px]">
+      <span className="h-11 w-11 shrink-0 overflow-hidden rounded-[10px]">
         {img && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={img} alt={place.name} className="h-full w-full object-cover" loading="lazy" onError={() => setImgError(true)} />
@@ -36,11 +36,12 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[13px] font-bold text-foreground">{place.name}</span>
-        <span className="block text-[11.5px] text-muted-2">
+        <span className="block text-[11px] text-muted-2">
           {place.rating != null && (
             <span className="inline-flex items-center gap-0.5">
-              <Star size={9} className="fill-current text-status-done" aria-hidden="true" />
-              {place.rating}
+              {/* 별점은 상태가 아니라 데이터 — 상태색(완료 초록)을 빌려 쓰지 않는다 */}
+              <Star size={9} className="fill-current text-muted" aria-hidden="true" />
+              <span className="tabular-nums">{place.rating}</span>
             </span>
           )}
           {place.rating != null && alternative.estimatedCost != null && ' · '}

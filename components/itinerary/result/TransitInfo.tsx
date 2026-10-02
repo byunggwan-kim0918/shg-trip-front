@@ -15,14 +15,14 @@ export default function TransitInfo({ mode, duration, distance }: TransitInfoPro
   const isUnrealistic = distance != null && distance > UNREALISTIC_LEG_KM;
 
   return (
-    <div className="flex items-center gap-2 py-2 pl-1 text-[12.5px] font-semibold text-muted-2">
+    <div className="flex items-center gap-2 py-2 pl-1 text-xs font-semibold text-muted-2">
       {React.createElement(IconComponent, { size: 15, 'aria-hidden': 'true' })}
       {duration != null && distance != null ? (
-        <span>차로 {formatDuration(duration)} · {distance.toFixed(1)}km</span>
+        <span className="tabular-nums">차로 {formatDuration(duration)} · {distance.toFixed(1)}km</span>
       ) : (
         <>
           {duration != null && <span>{formatDuration(duration)}</span>}
-          {distance != null && <span>{distance.toFixed(1)}km</span>}
+          {distance != null && <span className="tabular-nums">{distance.toFixed(1)}km</span>}
         </>
       )}
       {isUnrealistic && (

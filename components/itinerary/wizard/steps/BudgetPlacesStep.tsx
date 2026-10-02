@@ -71,7 +71,7 @@ export default function BudgetPlacesStep() {
         <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">예산 · 필수 장소</h2>
         <span className="rounded-full bg-surface-3 px-3 py-1.5 text-xs font-bold text-muted-2">선택 · 건너뛰기</span>
       </div>
-      <p className="-mt-3 text-[13.5px] text-muted">비워두면 AI가 알아서 채워요.</p>
+      <p className="-mt-3 text-[13px] text-muted">비워두면 AI가 알아서 채워요.</p>
 
       {/* 예산 */}
       <div>
@@ -83,12 +83,12 @@ export default function BudgetPlacesStep() {
             value={budgetDisplay}
             onChange={(e) => handleBudgetChange(e.target.value)}
             placeholder="0"
-            className="flex-1 bg-transparent text-[15.5px] font-bold text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
+            className="flex-1 bg-transparent text-[15px] font-bold text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
             aria-label="예산"
           />
           <span className="text-sm font-semibold text-muted-2">원</span>
         </label>
-        <div className="flex gap-[7px]">
+        <div className="flex gap-1.5">
           {BUDGET_QUICK_CHIPS.map((chip) => {
             // null 칩(상관없음)은 사용자가 예산을 만졌을 때만 활성으로 간주
             const active = chip.value === null ? budgetTouched && data.budget === null : data.budget === chip.value;
@@ -97,8 +97,8 @@ export default function BudgetPlacesStep() {
                 key={chip.label}
                 type="button"
                 onClick={() => { setBudgetTouched(true); updateData({ budget: chip.value }); }}
-                className={`rounded-full px-[13px] py-[7px] text-[12.5px] font-semibold transition-colors ${
-                  active ? 'bg-accent text-white' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active ? 'bg-accent text-accent-fg' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
                 }`}
               >
                 {chip.label}
@@ -112,15 +112,20 @@ export default function BudgetPlacesStep() {
       <div className="relative">
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">꼭 가고 싶은 장소</div>
         <div className="flex gap-2">
-          <label className="flex h-11 flex-1 items-center gap-2.5 rounded-[11px] border border-card-border bg-surface-3 px-3.5">
+          <label className="flex h-11 flex-1 items-center gap-2.5 rounded-[10px] border border-card-border bg-surface-3 px-3.5">
             <Search size={15} className="shrink-0 text-muted-2" aria-hidden="true" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && hasNoResults) { e.preventDefault(); addCustomPlace(); } }}
+              onKeyDown={(e) => {
+                // 한글 조합 중 Enter는 "조합 확정"용 — 제출로 처리하면 입력창을 비운 뒤
+                // 잔여 조합("성산일출봉"의 "봉")이 다시 채워져 칩이 두 개 생긴다.
+                if (e.nativeEvent.isComposing) return;
+                if (e.key === 'Enter' && hasNoResults) { e.preventDefault(); addCustomPlace(); }
+              }}
               placeholder="장소 검색 (예: 성산일출봉)"
-              className="w-full bg-transparent text-[13.5px] text-foreground outline-none placeholder:text-muted-2"
+              className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-2"
               aria-label="장소 검색"
             />
           </label>
@@ -129,7 +134,7 @@ export default function BudgetPlacesStep() {
               type="button"
               onClick={addCustomPlace}
               disabled={customPlaceCount >= MAX_CUSTOM_PLACES}
-              className="shrink-0 rounded-[11px] bg-accent px-4 text-[13px] font-bold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="shrink-0 rounded-[10px] bg-accent px-4 text-[13px] font-bold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               직접 추가
             </button>
@@ -157,7 +162,7 @@ export default function BudgetPlacesStep() {
                   <span className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground">{place.name}</span>
                     {place.region && (
-                      <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] text-accent-weak-fg">
+                      <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] text-accent-weak-fg">
                         {place.region}
                       </span>
                     )}

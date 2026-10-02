@@ -59,9 +59,9 @@ export function shortDate(dateStr: string): string {
   return `${d.getMonth() + 1}.${d.getDate()}`;
 }
 
-/** "M.D – M.D" 날짜 범위. */
+/** "M.D - M.D" 날짜 범위. en-dash는 ai-tells §9.G에서 구분자로 금지. */
 export function dateRange(startDate: string, endDate: string): string {
-  return `${shortDate(startDate)} – ${shortDate(endDate)}`;
+  return `${shortDate(startDate)} - ${shortDate(endDate)}`;
 }
 
 /** 표시 상태 판정: DRAFT면 초안, 아니면 날짜로 예정/여행중/완료. */

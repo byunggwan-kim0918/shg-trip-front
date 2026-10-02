@@ -350,12 +350,12 @@ export default function LoadingScreen() {
 
   return (
     <div
-      className={`mx-auto flex min-h-[65vh] w-full max-w-[632px] flex-col justify-center px-4 py-8 transition-all duration-700 ease-out ${
+      className={`mx-auto flex min-h-[65vh] w-full max-w-[632px] flex-col justify-center px-4 py-8 transition-[opacity,transform] duration-700 ease-out ${
         fadeOut ? 'opacity-0 scale-95' : visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 translate-y-4'
       }`}
     >
       {/* 헤더: 점 3개 로딩 + 타이틀 */}
-      <div className="mb-[22px] text-center">
+      <div className="mb-5 text-center">
         <div className="mb-2.5 inline-flex items-center gap-1">
           {[0, 0.2, 0.4].map((delay) => (
             <span
@@ -365,7 +365,7 @@ export default function LoadingScreen() {
             />
           ))}
         </div>
-        <div className="text-xl font-extrabold tracking-[-0.02em] text-foreground">
+        <div className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">
           AI가 일정을 짜고 있어요
         </div>
         <div className="mt-1.5 text-[13px] text-muted">
@@ -414,9 +414,9 @@ export default function LoadingScreen() {
         {Array.from({ length: dayCount }, (_, d) => {
           const daySteps = streamedDays[d + 1];
           return (
-            <div key={d} className="flex flex-col gap-[9px]">
+            <div key={d} className="flex flex-col gap-2">
               <div
-                className={`text-[12.5px] font-extrabold ${
+                className={`text-xs font-extrabold ${
                   d === 0 ? 'text-accent-weak-fg' : 'text-muted-2'
                 }`}
               >
@@ -426,9 +426,9 @@ export default function LoadingScreen() {
                 ? daySteps.slice(0, 5).map((step, r) => (
                     <div
                       key={r}
-                      className="flex min-h-[52px] animate-[shg-fade-in_0.4s_ease-out] flex-col justify-center gap-0.5 rounded-[11px] border border-card-border bg-card-bg px-3 py-2"
+                      className="flex min-h-[52px] animate-[shg-fade-in_0.4s_ease-out] flex-col justify-center gap-0.5 rounded-[10px] border border-card-border bg-card-bg px-3 py-2"
                     >
-                      <div className="truncate text-[12.5px] font-bold text-foreground">{step.name}</div>
+                      <div className="truncate text-xs font-bold text-foreground">{step.name}</div>
                       <div className="truncate text-[11px] font-semibold text-muted-2">
                         {step.startTime ?? ''}
                         {step.startTime && step.category ? ' · ' : ''}
@@ -439,7 +439,7 @@ export default function LoadingScreen() {
                 : [0, 1, 2].map((r) => (
                     <div
                       key={r}
-                      className="h-[52px] rounded-[11px] shg-shimmer"
+                      className="h-[52px] rounded-[10px] shg-shimmer"
                       style={{ animationDelay: `${(d * 0.15 + r * 0.2) % 0.6}s` }}
                     />
                   ))}

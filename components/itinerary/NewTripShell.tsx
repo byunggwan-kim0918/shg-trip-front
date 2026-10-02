@@ -24,10 +24,10 @@ const MIN_PARSE_LEN = 8;
 function UnderstandRow({ label, value, last }: { label: string; value: string | null; last?: boolean }) {
   const filled = !!value;
   return (
-    <div className={`flex items-center justify-between gap-3 py-[13px] ${last ? '' : 'border-b border-divider'}`}>
+    <div className={`flex items-center justify-between gap-3 py-3 ${last ? '' : 'border-b border-divider'}`}>
       <span className="shrink-0 text-[13px] font-semibold text-muted-2">{label}</span>
-      <span className={`truncate text-right text-[14.5px] font-bold ${filled ? 'text-foreground' : 'text-muted-2'}`}>
-        {value ?? '—'}
+      <span className={`truncate text-right text-[15px] font-bold ${filled ? 'text-foreground' : 'text-muted-2'}`}>
+        {value ?? '-'}
       </span>
     </div>
   );
@@ -133,12 +133,18 @@ export default function NewTripShell() {
     : null;
   const paceValue = parsed?.pace ? PACE_LABEL[parsed.pace] ?? parsed.pace : null;
 
+  // 하나라도 인식된 값이 있으면 표를 보여준다. 전부 비었으면 빈 상태 UI.
+  const hasAnyParsed = Boolean(
+    parsed?.destination || periodValue || parsed?.party || themeValue || paceValue,
+  );
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 py-6 lg:flex-row lg:gap-9 lg:py-10">
       {/* 좌: 입력 */}
       <div className="min-w-0 flex-1">
         <div className="mb-2 text-[13px] font-semibold text-muted-2">새 여행</div>
-        <h2 className="mb-[22px] text-[30px] font-extrabold tracking-[-0.02em] text-foreground">
+        {/* 반응형 단계가 없어 390px에서도 30px였다. 짧은 문구라 데스크톱 30px는 유지한다 */}
+        <h2 className="mb-5 text-[23px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[30px]">
           어떤 여행을 꿈꾸세요?
         </h2>
 
@@ -149,25 +155,27 @@ export default function NewTripShell() {
           autoFocus
           rows={4}
           maxLength={500}
-          className="min-h-[150px] w-full resize-none rounded-[18px] border-[1.5px] border-accent bg-card-bg p-[22px] text-[17px] leading-[1.7] text-foreground shadow-[0_14px_34px_-20px_var(--accent)] outline-none placeholder:text-muted-2"
+          className="min-h-[108px] w-full resize-none rounded-2xl border-[1.5px] border-accent bg-card-bg p-5 text-[17px] leading-[1.7] text-foreground shadow-[0_14px_34px_-20px_rgba(20,22,28,0.45)] outline-none placeholder:text-muted-2"
           aria-label="여행 문장 입력"
         />
 
         {/* 예산 넛지 */}
-        <div className="mt-3.5 flex flex-col gap-3 rounded-[14px] border border-warn-border bg-warn-bg px-[18px] py-4 sm:flex-row sm:items-center sm:gap-3.5">
-          <span className="text-[13.5px] font-semibold text-warn-fg">
-            예산도 알려주시면 더 정확해요 →
+        {/* 예산 넛지는 선택적 도움말이지 경고가 아니다. warn 색을 쓰면 아래 '한도 초과' 안내와
+            같은 계열이 되어 위계가 뒤엉킨다(실제로 그랬다). 중립 표면으로 낮춘다. */}
+        <div className="mt-3.5 flex flex-col gap-3 rounded-xl border border-card-border bg-surface-2 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
+          <span className="text-[13px] font-semibold text-text-2">
+            예산도 알려주시면 더 정확해요
           </span>
-          <div className="flex gap-[7px] sm:ml-auto">
+          <div className="flex gap-2 sm:ml-auto">
             {BUDGET_CHIPS.map((chip) => (
               <button
                 key={chip.label}
                 type="button"
                 onClick={() => applyBudgetChip(chip)}
-                className={`rounded-full border px-[13px] py-[7px] text-[12.5px] font-semibold transition-colors ${
+                className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors ${
                   budgetChip === chip.label
-                    ? 'border-warn-fg bg-warn-fg text-white'
-                    : 'border-warn-border bg-card-bg text-warn-fg hover:border-warn-fg'
+                    ? 'border-accent bg-accent text-accent-fg'
+                    : 'border-card-border bg-card-bg text-text-2 hover:border-muted'
                 }`}
               >
                 {chip.label}
@@ -177,18 +185,18 @@ export default function NewTripShell() {
         </div>
 
         {/* CTA */}
-        <div className="mt-[26px] flex gap-3">
+        <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={() => goWizard(true)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-[14px] bg-accent px-4 py-[15px] text-[15.5px] font-bold text-white shadow-[0_10px_24px_-10px_var(--accent)] transition-[filter] hover:brightness-105"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-4 text-[15px] font-bold text-accent-fg shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105"
           >
             <Sparkles size={16} aria-hidden="true" /> AI로 일정 만들기
           </button>
           <button
             type="button"
             onClick={() => goWizard(false)}
-            className="rounded-[14px] border border-card-border bg-card-bg px-[22px] py-[15px] text-[15px] font-semibold text-text-2 transition-colors hover:bg-surface-hover"
+            className="rounded-xl border border-card-border bg-card-bg px-6 py-4 text-[15px] font-semibold text-text-2 transition-colors hover:bg-surface-hover"
           >
             직접 고를래요
           </button>
@@ -203,27 +211,40 @@ export default function NewTripShell() {
       </div>
 
       {/* 우: AI 이해 요약 패널 */}
-      <aside className="w-full shrink-0 self-start rounded-[18px] border border-divider bg-card-bg p-6 lg:w-[400px]">
+      <aside className="w-full shrink-0 self-start rounded-2xl border border-divider bg-card-bg p-6 lg:w-[400px]">
         <div className="mb-1 flex items-center gap-2">
-          <Sparkles size={15} className="text-accent" aria-hidden="true" />
+          <Sparkles size={15} className="text-accent-weak-fg" aria-hidden="true" />
           <span className="text-[15px] font-bold text-foreground">AI가 이렇게 이해했어요</span>
           {parsing && <Loader2 size={14} className="ml-auto animate-spin text-muted-2" aria-hidden="true" />}
         </div>
-        <div className="mb-[18px] text-[12.5px] text-muted-2">
+        <div className="mb-5 text-xs text-muted-2">
           문장을 쓰면 자동으로 인식해요. 다음 단계에서 확인·수정할 수 있어요.
         </div>
 
-        <div className="flex flex-col gap-0.5">
-          <UnderstandRow label="여행지" value={parsed?.destination ?? null} />
-          <UnderstandRow label="기간" value={periodValue} />
-          <UnderstandRow label="인원" value={parsed?.party ?? null} />
-          <UnderstandRow label="테마" value={themeValue} />
-          <UnderstandRow label="페이스" value={paceValue} last />
-        </div>
-
-        <div className="mt-4 rounded-xl bg-surface-3 px-[15px] py-[13px] text-[12.5px] leading-[1.55] text-muted">
-          부족한 부분은 문장을 더 적으면 AI가 알아서 반영해요.
-        </div>
+        {hasAnyParsed ? (
+          <>
+            <div className="flex flex-col gap-0.5">
+              <UnderstandRow label="여행지" value={parsed?.destination ?? null} />
+              <UnderstandRow label="기간" value={periodValue} />
+              <UnderstandRow label="인원" value={parsed?.party ?? null} />
+              <UnderstandRow label="테마" value={themeValue} />
+              <UnderstandRow label="페이스" value={paceValue} last />
+            </div>
+            <div className="mt-4 rounded-xl bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
+              부족한 부분은 문장을 더 적으면 AI가 알아서 반영해요.
+            </div>
+          </>
+        ) : (
+          /* 빈 상태: 5줄이 전부 '—'인 표는 정보가 0인데 자리만 차지한다.
+             무엇을 알아듣는지 알려주는 편이 입력에 도움이 된다. */
+          <ul className="flex flex-wrap gap-2">
+            {['여행지', '기간', '인원', '테마', '페이스'].map((k) => (
+              <li key={k} className="rounded-full bg-surface-3 px-3 py-1.5 text-xs font-semibold text-muted">
+                {k}
+              </li>
+            ))}
+          </ul>
+        )}
       </aside>
     </div>
   );

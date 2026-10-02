@@ -17,12 +17,12 @@ export default function MainLayout({
         <div
           className={`
             flex flex-col flex-1 min-w-0
-            transition-all duration-200 ease-in-out
+            transition-[width] duration-200 ease-in-out
           `}
         >
           <Header />
           <main
-            className="flex-1 overflow-y-auto px-4 py-5 md:px-[30px] md:py-[26px]"
+            className="flex-1 overflow-y-auto px-4 py-5 md:px-7 md:py-6"
             role="main"
             aria-label="메인 콘텐츠"
           >

@@ -41,7 +41,7 @@ export default function AvatarMenu() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-accent text-xs font-bold text-white"
+          className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg"
           aria-label="사용자 메뉴"
         >
           {initial}
@@ -52,7 +52,7 @@ export default function AvatarMenu() {
         <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-card-border bg-card-bg shadow-lg">
           <div className="border-b border-divider px-4 py-3">
             <p className="truncate text-sm font-bold text-foreground">{user?.nickname ?? '사용자'}</p>
-            <p className="truncate text-[11.5px] text-muted-2">{user?.email ?? ''}</p>
+            <p className="truncate text-[11px] text-muted-2">{user?.email ?? ''}</p>
           </div>
           <button
             type="button"
@@ -140,21 +140,24 @@ function NicknameModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!busy) onClose(); }}>
       <div role="dialog" aria-modal="true" aria-label="닉네임 변경" className="w-full max-w-sm rounded-xl border border-card-border bg-card-bg p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-base font-bold text-foreground">닉네임 변경</h2>
+        <h2 className="text-[17px] font-bold text-foreground">닉네임 변경</h2>
         <input
           ref={inputRef}
           type="text"
           value={nickname}
           onChange={(e) => { setNickname(e.target.value); setError(null); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } }}
+          onKeyDown={(e) => {
+            if (e.nativeEvent.isComposing) return;
+            if (e.key === 'Enter') { e.preventDefault(); save(); }
+          }}
           maxLength={20}
           placeholder="닉네임 (2~20자)"
           className="mt-4 w-full rounded-xl border border-card-border bg-surface-3 px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-accent"
         />
         {error && <p className="mt-2 text-xs font-semibold text-danger">{error}</p>}
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={busy} className="min-h-[40px] rounded-lg px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50">취소</button>
-          <button type="button" onClick={save} disabled={!valid || busy} className="min-h-[40px] rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:opacity-50">{busy ? '저장 중...' : '저장'}</button>
+          <button type="button" onClick={onClose} disabled={busy} className="min-h-[40px] rounded-xl px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50">취소</button>
+          <button type="button" onClick={save} disabled={!valid || busy} className="min-h-[40px] rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50">{busy ? '저장 중...' : '저장'}</button>
         </div>
       </div>
     </div>

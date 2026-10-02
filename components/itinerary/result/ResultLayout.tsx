@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AlertTriangle, Share2, Pencil } from 'lucide-react';
+import { normalizeText } from '@/lib/utils/text';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
-import { coverGradient } from '@/lib/utils/coverGradient';
 import { nightsLabel } from '@/lib/utils/tripStatus';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
@@ -151,6 +151,8 @@ export default function ResultLayout() {
   }
 
   const { destination, startDate, endDate, totalBudget, coverImage, tags } = currentItinerary;
+  // 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터에는 없는 필드라 ?? []
+  const qualityNotices = currentItinerary.qualityNotices ?? [];
 
   // 예산 대비 추정 총액 = 장소 비용 + 이동 비용 (대안 선택 시 실시간 반영되도록 steps에서 합산).
   // 이동비를 빼면 렌터카/택시 여행의 실제 지출이 과소 표시돼 여행자가 예산을 오판한다.
@@ -183,36 +185,43 @@ export default function ResultLayout() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={cover}
-              alt={currentItinerary.title ?? destination}
+              alt={normalizeText(currentItinerary.title) || destination}
               className="h-full w-full object-cover"
               onError={() => setCoverError(true)}
             />
           ) : (
-            <div className="h-full w-full" style={{ background: coverGradient(destination) }} />
+            // 사진 없으면 목적지 이니셜만. 큰 그라데이션 블록은 정보가 0이면서 헤더를 지배한다.
+            <div className="flex h-full w-full items-center justify-center bg-surface-3">
+              <span className="text-[15px] font-extrabold tracking-[-0.02em] text-muted">{destination.slice(0, 2)}</span>
+            </div>
           )}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="truncate text-xl font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
-              {currentItinerary.title ?? destination}
+            {/* LLM이 만든 제목은 60자를 넘는 문장이다. 30px + truncate는 1024px에서 17자만 남겨
+                무슨 여행인지 알 수 없었다(폭 390/768/1024/1440 실측).
+                23px + 2줄이면 1024px에서 50자, 1440px에서 제목 전체가 들어간다.
+                30px는 어느 폭에서도 더 많은 정보를 주지 못해 없앴다 — 제목은 배너가 아니라 식별자다. */}
+            <h1 className="line-clamp-2 text-[23px] font-extrabold leading-[1.25] tracking-[-0.03em] text-foreground">
+              {normalizeText(currentItinerary.title) || destination}
             </h1>
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="shrink-0 rounded-lg p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
+              className="shrink-0 rounded-xl p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
               aria-label="제목·태그 편집"
             >
               <Pencil size={15} aria-hidden="true" />
             </button>
           </div>
-          <p className="mt-1.5 text-[13.5px] font-medium text-muted">
-            {startDate} – {endDate} · {nightsLabel(startDate, endDate)}
+          <p className="mt-2 text-[13px] font-medium text-muted">
+            {startDate} - {endDate} · {nightsLabel(startDate, endDate)}
             {totalBudget != null && (
               <span className={overBudget ? 'font-semibold text-danger' : undefined}>
                 {' · 예상 '}
                 <b className="text-foreground">{formatBudget(estimatedTotal)}원</b>
-                {' / 예산 '}{formatBudget(totalBudget)}원{budgetPct != null && ` (${budgetPct}%)`}
+                {' / 예산 '}<span className="tabular-nums">{formatBudget(totalBudget)}원{budgetPct != null && ` (${budgetPct}%)`}</span>
               </span>
             )}
             {totalBudget == null && estimatedTotal > 0 && (
@@ -222,7 +231,7 @@ export default function ResultLayout() {
           {tags && tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-surface-3 px-2.5 py-1 text-[12px] font-semibold text-muted">
+                <span key={tag} className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-muted-2 ring-1 ring-card-border">
                   {tag}
                 </span>
               ))}
@@ -239,7 +248,7 @@ export default function ResultLayout() {
               aria-pressed={editMode}
               className={`min-h-[36px] rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
                 editMode
-                  ? 'border-accent bg-accent text-white hover:brightness-105'
+                  ? 'border-accent bg-accent text-accent-fg hover:brightness-105'
                   : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
               }`}
             >
@@ -259,7 +268,7 @@ export default function ResultLayout() {
                 type="button"
                 disabled={finalizing}
                 onClick={handleFinalize}
-                className="hidden min-h-[36px] rounded-xl bg-accent px-4 py-2 text-[13px] font-bold text-white shadow-[0_8px_18px_-8px_var(--accent)] transition-[filter] hover:brightness-105 disabled:opacity-50 lg:block"
+                className="hidden min-h-[36px] rounded-xl bg-accent px-4 py-2 text-[13px] font-bold text-accent-fg shadow-[0_8px_18px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50 lg:block"
               >
                 {finalizing ? '확정 중...' : '일정 확정'}
               </button>
@@ -271,7 +280,7 @@ export default function ResultLayout() {
           <button
             type="button"
             onClick={() => setShowMap((v) => !v)}
-            className="min-h-[32px] rounded-lg border border-card-border bg-card-bg px-3 py-1.5 text-xs font-semibold text-text-2 transition-colors hover:bg-surface-hover lg:hidden"
+            className="min-h-[32px] rounded-xl border border-card-border bg-card-bg px-3 py-1.5 text-xs font-semibold text-text-2 transition-colors hover:bg-surface-hover lg:hidden"
           >
             {showMap ? '지도 숨기기' : '지도 보기'}
           </button>
@@ -287,6 +296,19 @@ export default function ResultLayout() {
       {shareNotice && (
         <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
           {shareNotice}
+        </div>
+      )}
+
+      {/* 생성 시 끝내 채우지 못한 항목(숙소·식사 등)을 그대로 알린다 — 예전엔 로그로만 남아
+          숙소 없는 일정이 아무 표시 없이 나갔다. */}
+      {qualityNotices.length > 0 && (
+        <div className="px-4 py-2 bg-warn-bg border-b border-warn-border flex items-start gap-2 text-xs text-warn-fg sm:px-6">
+          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <ul className="space-y-0.5">
+            {qualityNotices.map((notice) => (
+              <li key={notice}>{notice}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -338,7 +360,7 @@ export default function ResultLayout() {
             type="button"
             disabled={finalizing}
             onClick={handleFinalize}
-            className="w-full rounded-[13px] bg-accent py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105 disabled:opacity-50"
+            className="w-full rounded-xl bg-accent py-3.5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50"
           >
             {finalizing ? '확정 중...' : '일정 확정'}
           </button>
@@ -402,7 +424,7 @@ export default function ResultLayout() {
       <EditItineraryModal
         key={editOpen ? 'edit-open' : 'edit-closed'}
         open={editOpen}
-        initialTitle={currentItinerary.title ?? destination}
+        initialTitle={normalizeText(currentItinerary.title) || destination}
         initialTags={tags ?? []}
         busy={editBusy}
         error={editError}

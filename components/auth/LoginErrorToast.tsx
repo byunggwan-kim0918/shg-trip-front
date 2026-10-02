@@ -43,13 +43,17 @@ export default function LoginErrorToast() {
   const message = ERROR_MESSAGES[error] ?? ERROR_MESSAGES.auth_failed;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-      <div className="w-full max-w-[340px]">
-        <Toast
-          title={message.title}
-          description={message.description}
-          onClose={() => setError(null)}
-        />
+    // 분할 레이아웃(좌 콜라주 / 우 카드)에서 중앙 정렬하면 토스트가 사진 위에 겹친다.
+    // 데스크톱은 페이지 컨테이너 기준 우측(카드 아래 빈 공간), 모바일은 중앙.
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 px-4">
+      <div className="mx-auto flex w-full max-w-5xl justify-center md:justify-end">
+        <div className="w-full max-w-[340px]">
+          <Toast
+            title={message.title}
+            description={message.description}
+            onClose={() => setError(null)}
+          />
+        </div>
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ export default function TasteStep() {
     <div className="space-y-5">
       <div>
         <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">어떤 취향이세요?</h2>
-        <p className="mt-1 text-[13.5px] text-muted">
+        <p className="mt-1 text-[13px] text-muted">
           테마와 세부 카테고리를 골라주세요. <span className="text-muted-2">(여러 개)</span>
         </p>
       </div>
@@ -43,14 +43,14 @@ export default function TasteStep() {
                 type="button"
                 onClick={() => toggleTheme(t.id)}
                 aria-pressed={active}
-                className={`flex flex-col items-center gap-[7px] rounded-[13px] border px-2 py-3.5 transition-colors ${
+                className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3.5 transition-colors ${
                   active
                     ? 'border-[1.5px] border-accent bg-accent-soft text-accent-weak-fg'
                     : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
                 }`}
               >
                 <t.icon size={20} strokeWidth={1.8} aria-hidden="true" />
-                <span className="text-[12.5px] font-bold">{t.label}</span>
+                <span className="text-xs font-bold">{t.label}</span>
               </button>
             );
           })}
@@ -69,8 +69,8 @@ export default function TasteStep() {
                 type="button"
                 onClick={() => toggleCategory(c.id)}
                 aria-pressed={active}
-                className={`rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                  active ? 'bg-accent text-white' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
+                className={`rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
+                  active ? 'bg-accent text-accent-fg' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
                 }`}
               >
                 {c.label}

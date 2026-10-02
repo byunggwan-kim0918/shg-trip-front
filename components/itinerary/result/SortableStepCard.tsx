@@ -38,7 +38,7 @@ export default function SortableStepCard({ step, onRequestDelete, disabled = fal
     <div ref={setNodeRef} style={style} className="mb-2.5 flex items-center gap-1.5">
       <button
         type="button"
-        className="flex h-9 w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-9 w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-xl text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="드래그로 순서 변경"
         disabled={disabled}
         {...attributes}
@@ -61,7 +61,7 @@ export default function SortableStepCard({ step, onRequestDelete, disabled = fal
         type="button"
         onClick={onRequestDelete}
         disabled={disabled || !deletable}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-2 transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-2 transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
         aria-label={deletable ? '스톱 삭제' : '이 날의 마지막 스톱은 삭제할 수 없어요'}
         title={deletable ? '스톱 삭제' : '이 날의 마지막 스톱은 삭제할 수 없어요'}
       >

@@ -127,7 +127,7 @@ export default function TimelinePanel({
               onClick={() => onDayChange(group.dayNumber)}
               className={`min-h-[40px] shrink-0 rounded-xl px-5 py-2 text-sm font-bold transition-colors ${
                 active
-                  ? 'bg-accent text-white'
+                  ? 'bg-accent text-accent-fg'
                   : 'border border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
               }`}
             >
@@ -142,7 +142,7 @@ export default function TimelinePanel({
         {totalDistanceKm > 0 && (
           <>
             <span className="inline-flex items-center gap-1.5">
-              <ArrowLeftRight size={13} className="text-accent" aria-hidden="true" /> 총 이동 {totalDistanceKm.toFixed(1)}km
+              <ArrowLeftRight size={13} className="text-accent-weak-fg" aria-hidden="true" /> 총 이동 <span className="tabular-nums">{totalDistanceKm.toFixed(1)}km</span>
             </span>
             {totalTransitMin > 0 && (
               <>
@@ -159,7 +159,7 @@ export default function TimelinePanel({
           </>
         )}
         {editMode && !readOnly && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
+          <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-accent-weak-fg">
             <GripVertical size={13} aria-hidden="true" /> 끌어서 순서 변경 · 휴지통으로 삭제
           </span>
         )}
@@ -194,7 +194,7 @@ export default function TimelinePanel({
             <div key={step.id} className="flex gap-3.5">
               {/* 번호 노드 + 연결선 */}
               <div className="flex flex-col items-center">
-                <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
+                <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-fg">
                   {idx + 1}
                 </span>
                 {!isLast && <span className="my-1.5 w-0.5 flex-1 bg-card-border" />}
@@ -226,9 +226,9 @@ export default function TimelinePanel({
                 {next && (
                   <>
                     {gap >= FREE_TIME_THRESHOLD_MIN && (
-                      <div className="my-2 flex items-center gap-2 rounded-lg border border-dashed border-card-border bg-surface-2 px-3 py-2 text-xs text-muted">
+                      <div className="my-2 flex items-center gap-2 rounded-xl border border-dashed border-card-border bg-surface-2 px-3 py-2 text-xs text-muted">
                         <Coffee size={13} aria-hidden="true" />
-                        <span>자유시간 약 {formatGap(gap)} — 주변을 자유롭게 둘러보세요</span>
+                        <span>자유시간 약 {formatGap(gap)}. 주변을 자유롭게 둘러보세요</span>
                       </div>
                     )}
                     {next.transportationMode && (

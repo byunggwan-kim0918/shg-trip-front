@@ -68,7 +68,7 @@ export default function ConfirmStep() {
             }`}
           >
             <span className="shrink-0 text-[13px] font-semibold text-muted-2">{row.label}</span>
-            <span className="text-right text-[13.5px] font-bold text-foreground">{row.value}</span>
+            <span className="text-right text-[13px] font-bold text-foreground">{row.value}</span>
           </button>
         ))}
       </div>
@@ -83,7 +83,7 @@ export default function ConfirmStep() {
           onChange={(e) => useWizardStore.getState().updateData({ description: e.target.value })}
           placeholder="예: 아이가 있어서 이동은 짧게, 저녁은 흑돼지 맛집 꼭이요."
           rows={3}
-          className="w-full resize-none rounded-[13px] border border-card-border bg-surface-3 px-4 py-3.5 text-[13.5px] leading-relaxed text-foreground outline-none placeholder:text-muted-2 focus:border-accent"
+          className="w-full resize-none rounded-xl border border-card-border bg-surface-3 px-4 py-3.5 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-2 focus:border-accent"
         />
       </div>
 
@@ -99,7 +99,7 @@ export default function ConfirmStep() {
         type="button"
         onClick={handleGenerate}
         disabled={!canGenerate}
-        className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-accent py-[15px] text-[15px] font-bold text-white shadow-[0_8px_20px_-8px_var(--accent)] transition-[filter] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
       >
         <Sparkles size={16} aria-hidden="true" />
         {canGenerate ? '이대로 일정 만들기' : '이번 달 생성 한도 초과'}

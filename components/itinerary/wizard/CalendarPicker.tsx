@@ -113,8 +113,8 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
               className={`
                 py-2 text-sm rounded min-h-[36px] transition-colors
                 ${disabled ? 'text-muted/40 cursor-not-allowed' : 'hover:bg-surface-hover cursor-pointer'}
-                ${isStart || isEnd ? 'bg-accent text-white font-semibold' : ''}
-                ${inRange ? 'bg-accent-soft text-accent' : ''}
+                ${isStart || isEnd ? 'bg-accent text-accent-fg font-semibold' : ''}
+                ${inRange ? 'bg-accent-soft text-accent-weak-fg' : ''}
                 ${!isStart && !isEnd && !inRange && !disabled ? 'text-foreground' : ''}
               `}
             >

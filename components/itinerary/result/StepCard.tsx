@@ -7,7 +7,7 @@ import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { getCategoryIcon } from '@/lib/constants/placeIcons';
 import AlternativeList from './AlternativeList';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
-import { coverGradient } from '@/lib/utils/coverGradient';
+import { formatOpeningHours } from '@/lib/utils/openingHours';
 
 interface StepCardProps {
   step: ItineraryStep;
@@ -52,9 +52,9 @@ export default function StepCard({
 
   return (
     <div
-      className={`rounded-2xl bg-card-bg p-4 transition-shadow ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
+      className={`rounded-2xl bg-card-bg p-5 transition-shadow ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
         isExpanded
-          ? 'border-[1.5px] border-accent shadow-[0_10px_26px_-18px_var(--accent)]'
+          ? 'border-[1.5px] border-accent shadow-[0_10px_26px_-18px_rgba(20,22,28,0.45)]'
           : 'border border-card-border hover:shadow-sm'
       }`}
       onClick={editMode ? undefined : onClick}
@@ -66,12 +66,14 @@ export default function StepCard({
         <div className="min-w-0 flex-1">
           {/* 제목 + 평점 */}
           <div className="mb-1.5 flex items-center gap-1.5">
-            {IconComponent && React.createElement(IconComponent, { size: 15, className: 'shrink-0 text-accent', 'aria-hidden': 'true' })}
+            {IconComponent && React.createElement(IconComponent, { size: 15, className: 'shrink-0 text-accent-weak-fg', 'aria-hidden': 'true' })}
             <h3 className="truncate text-[15px] font-bold text-foreground">
               {place?.name ?? '장소 정보 없음'}
             </h3>
+            {/* 별점은 상태가 아니라 데이터다. 이전엔 '완료' 상태색(초록)을 빌려 써서
+                팔레트에 없는 색이 튀었다. 중립 표면 + 본문색으로 되돌린다. */}
             {rating != null && (
-              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-status-done-bg px-1.5 py-0.5 text-[11px] font-bold text-status-done">
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-[10px] bg-surface-3 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-text-2">
                 <Star size={9} className="fill-current" aria-hidden="true" /> {rating}
               </span>
             )}
@@ -79,8 +81,8 @@ export default function StepCard({
 
           {/* 시간 */}
           {(step.startTime || step.endTime) && (
-            <p className="mb-1.5 text-[12.5px] font-bold text-accent">
-              {step.startTime ?? ''}{step.startTime && step.endTime ? ' – ' : ''}{step.endTime ?? ''}
+            <p className="mb-1.5 text-xs font-bold tabular-nums text-accent-weak-fg">
+              {step.startTime ?? ''}{step.startTime && step.endTime ? ' - ' : ''}{step.endTime ?? ''}
             </p>
           )}
 
@@ -93,11 +95,12 @@ export default function StepCard({
             </p>
           ) : null}
 
-          {/* 영업시간 */}
+          {/* 영업시간. 원문은 7요일을 전부 나열해 같은 문장이 7번 반복되고 잘린 채 끝났다.
+              같은 시간대의 연속 요일을 묶어 한 줄에 들어가게 한다(전체 원문은 title 속성에 남긴다). */}
           {place?.openingHours && (
             <p className="mt-2 flex items-center gap-1 text-xs text-muted-2 line-clamp-1" title={place.openingHours}>
               <Clock size={11} className="shrink-0" aria-hidden="true" />
-              <span className="truncate">{place.openingHours}</span>
+              <span className="truncate tabular-nums">{formatOpeningHours(place.openingHours)}</span>
             </p>
           )}
 
@@ -113,14 +116,14 @@ export default function StepCard({
 
           {/* 비용 + 대안 */}
           <div className="mt-3 flex items-center gap-3">
-            <span className="text-[12.5px] font-semibold text-muted">
-              예상 비용 <b className="text-foreground">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
+            <span className="text-xs font-semibold text-muted">
+              예상 비용 <b className="tabular-nums text-foreground">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
             </span>
             {!readOnly && !editMode && step.alternatives.length > 0 && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-                className="inline-flex items-center gap-0.5 text-[12.5px] font-bold text-accent hover:underline"
+                className="inline-flex items-center gap-0.5 text-xs font-bold text-accent-weak-fg hover:underline"
               >
                 {isExpanded ? (
                   <>대안 접기 <ChevronUp size={13} aria-hidden="true" /></>
@@ -132,28 +135,21 @@ export default function StepCard({
           </div>
         </div>
 
-        {/* 썸네일 96 */}
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
-          {imageUrl && !imgError ? (
-            <>
-              {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
-              <img
-                src={imageUrl}
-                alt={place?.name ?? '장소 사진'}
-                className={`h-full w-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-                loading="lazy"
-                onLoad={() => setImgLoaded(true)}
-                onError={() => setImgError(true)}
-              />
-            </>
-          ) : (
-            // 실이미지 없으면 장소명 hue 그라데이션 (일관된 커버)
-            <div
-              className="h-full w-full"
-              style={{ background: coverGradient(place?.name ?? place?.category ?? 'place') }}
+        {/* 썸네일 96. 사진이 있을 때만 렌더한다 — 없을 때 그라데이션 블록으로 채우면
+            정보가 0인 색 덩어리가 타임라인을 지배한다(사진은 보조, 위계는 타이포가 만든다). */}
+        {imageUrl && !imgError && (
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+            {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
+            <img
+              src={imageUrl}
+              alt={place?.name ?? '장소 사진'}
+              className={`h-full w-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {isExpanded && onSelectAlternative && (

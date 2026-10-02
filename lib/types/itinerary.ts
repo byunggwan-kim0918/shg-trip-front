@@ -72,6 +72,8 @@ export interface Itinerary {
   coverImage: string | null;
   tags: string[];
   status: ItineraryStatus;
+  /** 생성 시 해소하지 못한 품질 문제 안내(숙소 미배정·식사 누락 등). 과거 데이터엔 없어 optional. */
+  qualityNotices?: string[];
   steps: ItineraryStep[];
 }
 

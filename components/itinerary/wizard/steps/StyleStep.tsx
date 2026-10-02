@@ -23,14 +23,14 @@ export default function StyleStep() {
                 type="button"
                 onClick={() => updateData({ pace: p.id })}
                 aria-pressed={active}
-                className={`flex flex-col items-center gap-1.5 rounded-[13px] border px-2 py-3.5 text-center transition-colors ${
+                className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3.5 text-center transition-colors ${
                   active
                     ? 'border-[1.5px] border-accent bg-accent-soft text-accent-weak-fg'
                     : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
                 }`}
               >
                 <p.icon size={20} strokeWidth={1.8} aria-hidden="true" />
-                <span className="text-[13.5px] font-bold">{p.label}</span>
+                <span className="text-[13px] font-bold">{p.label}</span>
                 <span className="text-[11px] text-muted-2">{p.desc}</span>
               </button>
             );
@@ -50,14 +50,14 @@ export default function StyleStep() {
                 type="button"
                 onClick={() => updateData({ transportPref: t.id })}
                 aria-pressed={active}
-                className={`flex flex-col items-center gap-1.5 rounded-[13px] border px-2 py-3.5 text-center transition-colors ${
+                className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3.5 text-center transition-colors ${
                   active
                     ? 'border-[1.5px] border-accent bg-accent-soft text-accent-weak-fg'
                     : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
                 }`}
               >
                 <t.icon size={20} strokeWidth={1.8} aria-hidden="true" />
-                <span className="text-[13.5px] font-bold">{t.label}</span>
+                <span className="text-[13px] font-bold">{t.label}</span>
                 <span className="text-[11px] text-muted-2">{t.desc}</span>
               </button>
             );
