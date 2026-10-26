@@ -38,6 +38,9 @@ interface TimelinePanelProps {
   onRequestDeleteStep?: (step: ItineraryStep) => void;
   /** 읽기 전용(공유 공개 뷰): 대안 선택·편집힌트 비활성, StepCard readOnly. */
   readOnly?: boolean;
+  /** 품질 알림이 걸린 일차. 해당 Day 탭에 점으로 표시한다 —
+   *  상단 알림 패널만으로는 "그래서 어느 날을 보면 되나"가 탭과 연결되지 않았다. */
+  warnDays?: number[];
 }
 
 function toMinutes(hhmm: string | null): number | null {
@@ -78,6 +81,7 @@ export default function TimelinePanel({
   editMode = false,
   onRequestDeleteStep,
   readOnly = false,
+  warnDays = [],
 }: TimelinePanelProps) {
   // alternativeError는 ResultLayout의 Toast에서 표시하므로 여기선 구독하지 않는다.
   const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative,
@@ -119,19 +123,28 @@ export default function TimelinePanel({
       <div className="mb-3.5 flex gap-2 overflow-x-auto" role="tablist">
         {dayGroups.map((group) => {
           const active = group.dayNumber === selectedDay;
+          const warned = warnDays.includes(group.dayNumber);
           return (
             <button
               key={group.dayNumber}
               role="tab"
               aria-selected={active}
               onClick={() => onDayChange(group.dayNumber)}
-              className={`min-h-[40px] shrink-0 rounded-xl px-5 py-2 text-sm font-bold transition-colors ${
+              /* 활성에도 border를 둔다(transparent). 없으면 활성/비활성 높이가 보더 1px만큼
+                 달라서 탭 줄이 미세하게 들썩였다. */
+              className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border px-5 py-2 text-sm font-bold transition-colors ${
                 active
-                  ? 'bg-accent text-accent-fg'
-                  : 'border border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
+                  ? 'border-transparent bg-accent text-accent-fg'
+                  : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
               }`}
             >
               Day {group.dayNumber}
+              {warned && (
+                <span
+                  className={`h-[5px] w-[5px] shrink-0 rounded-full ${active ? 'bg-accent-fg/70' : 'bg-warn-fg'}`}
+                  aria-label="확인할 점 있음"
+                />
+              )}
             </button>
           );
         })}
@@ -197,7 +210,9 @@ export default function TimelinePanel({
                 <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-fg">
                   {idx + 1}
                 </span>
-                {!isLast && <span className="my-1.5 w-0.5 flex-1 bg-card-border" />}
+                {/* 번호 배지와 같은 계열로. card-border(#e6e9ef)는 캔버스(#eef0f4) 위에서
+                    거의 보이지 않아 레일이 끊겨 보였다(divider는 더 연하므로 답이 아니다). */}
+                {!isLast && <span className="my-1.5 w-0.5 flex-1 rounded-full bg-accent/25" />}
               </div>
 
               {/* 카드 + 커넥터 */}
@@ -225,8 +240,11 @@ export default function TimelinePanel({
                 {/* 다음 스텝까지 이동 커넥터 + 자유시간 */}
                 {next && (
                   <>
+                    {/* 채움을 두지 않는다. surface-2(#fbfbfd)는 card-bg(#ffffff)와 거의 같아서
+                        스톱이 흰 행이 된 뒤로는 자유시간이 스톱처럼 보인다.
+                        점선 테두리만 캔버스 위에 둬서 "여기는 비어 있다"로 읽히게 한다. */}
                     {gap >= FREE_TIME_THRESHOLD_MIN && (
-                      <div className="my-2 flex items-center gap-2 rounded-xl border border-dashed border-card-border bg-surface-2 px-3 py-2 text-xs text-muted">
+                      <div className="my-2 flex items-center gap-2 rounded-[10px] border border-dashed border-card-border px-3 py-2 text-xs text-muted">
                         <Coffee size={13} aria-hidden="true" />
                         <span>자유시간 약 {formatGap(gap)}. 주변을 자유롭게 둘러보세요</span>
                       </div>

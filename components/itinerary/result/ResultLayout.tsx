@@ -8,12 +8,17 @@ import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { nightsLabel } from '@/lib/utils/tripStatus';
+import { parseQualityNotices } from '@/lib/utils/qualityNotices';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
+import QualityNotices from './QualityNotices';
+
+/** 헤더에 노출할 태그 최대 개수. 나머지는 "+N"으로 접는다. */
+const MAX_VISIBLE_TAGS = 6;
 
 /** 만료일까지 남은 일수 (공유 안내용). */
 function daysUntilExpiry(iso: string): number {
@@ -153,6 +158,9 @@ export default function ResultLayout() {
   const { destination, startDate, endDate, totalBudget, coverImage, tags } = currentItinerary;
   // 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터에는 없는 필드라 ?? []
   const qualityNotices = currentItinerary.qualityNotices ?? [];
+  // 알림이 걸린 일차 → Day 탭에 점으로 표시. 상단 패널만으로는 "어느 날을 보면 되나"가
+  // 탭과 연결되지 않아 알림이 화면에서 겉돌았다.
+  const warnDays = parseQualityNotices(qualityNotices).days;
 
   // 예산 대비 추정 총액 = 장소 비용 + 이동 비용 (대안 선택 시 실시간 반영되도록 steps에서 합산).
   // 이동비를 빼면 렌터카/택시 여행의 실제 지출이 과소 표시돼 여행자가 예산을 오판한다.
@@ -180,7 +188,7 @@ export default function ResultLayout() {
       {/* SummaryHeader (4a) */}
       <div className="flex items-start gap-4 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5">
         {/* 커버 사각 74 */}
-        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-2xl sm:block">
+        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
           {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -198,18 +206,21 @@ export default function ResultLayout() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          {/* items-start. items-center였을 때는 제목이 2줄이면(line-clamp-2, 23px×1.25×2 ≈ 57px)
+              27px짜리 연필이 두 줄 사이 수직 중앙에 놓여 첫 줄 끝도 둘째 줄 끝도 아니었다. */}
+          <div className="flex items-start gap-2">
             {/* LLM이 만든 제목은 60자를 넘는 문장이다. 30px + truncate는 1024px에서 17자만 남겨
                 무슨 여행인지 알 수 없었다(폭 390/768/1024/1440 실측).
                 23px + 2줄이면 1024px에서 50자, 1440px에서 제목 전체가 들어간다.
                 30px는 어느 폭에서도 더 많은 정보를 주지 못해 없앴다 — 제목은 배너가 아니라 식별자다. */}
-            <h1 className="line-clamp-2 text-[23px] font-extrabold leading-[1.25] tracking-[-0.03em] text-foreground">
+            <h1 className="min-w-0 line-clamp-2 text-[23px] font-extrabold leading-[1.25] tracking-[-0.03em] text-foreground">
               {normalizeText(currentItinerary.title) || destination}
             </h1>
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="shrink-0 rounded-xl p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
+              /* mt-px: 첫 줄 높이 28.75px 안에서 27px 버튼을 수직 중앙에 맞춘다. */
+              className="mt-px shrink-0 rounded-[10px] p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
               aria-label="제목·태그 편집"
             >
               <Pencil size={15} aria-hidden="true" />
@@ -218,23 +229,47 @@ export default function ResultLayout() {
           <p className="mt-2 text-[13px] font-medium text-muted">
             {startDate} - {endDate} · {nightsLabel(startDate, endDate)}
             {totalBudget != null && (
-              <span className={overBudget ? 'font-semibold text-danger' : undefined}>
-                {' · 예상 '}
+              <span
+                className={overBudget ? 'font-semibold text-danger' : undefined}
+                title="입장료·식사비 데이터가 없는 항목은 카테고리 평균으로 추정합니다. 실제 지출과 다를 수 있습니다."
+              >
+                {' · 추정 '}
                 <b className="text-foreground">{formatBudget(estimatedTotal)}원</b>
-                {' / 예산 '}<span className="tabular-nums">{formatBudget(totalBudget)}원{budgetPct != null && ` (${budgetPct}%)`}</span>
+                {' / 예산 '}<span className="tabular-nums">{formatBudget(totalBudget)}원{budgetPct != null && ` (약 ${budgetPct}%)`}</span>
               </span>
             )}
             {totalBudget == null && estimatedTotal > 0 && (
-              <span> · 예상 <b className="text-foreground">{formatBudget(estimatedTotal)}원</b></span>
+              <span title="입장료·식사비 데이터가 없는 항목은 카테고리 평균으로 추정합니다.">
+                {' · 추정 '}<b className="text-foreground">{formatBudget(estimatedTotal)}원</b>
+              </span>
             )}
           </p>
+          {/*
+            금액은 추정치다. 입장료(admission_fee)와 가격대(price_level) 데이터가 대부분 비어 있어
+            식사·숙소는 카테고리 기본값(식사 1.3~2.4만, 숙소 12만)으로 계산된다. 예산을 입력해도
+            맞출 근거가 없으므로, 퍼센트를 단정적으로 보여주지 않고 추정임을 함께 밝힌다.
+          */}
+          {estimatedTotal > 0 && (
+            <p className="mt-1 text-[11px] text-muted-2">
+              금액은 추정치입니다. 입장료·실제 가격 정보가 없는 항목은 카테고리 평균으로 계산했습니다.
+            </p>
+          )}
+          {/* 표시는 최대 6개. LLM이 9~10개를 만드는데 앞쪽은 서로 거의 같은 말이고
+              ("제주 로맨틱 / 제주 힐링 / 제주 카페 / 제주 맛집") 뒤쪽은 실제 일정에 없는
+              유명 장소가 섞인다. 두 줄을 넘기면 제목 블록이 헤더를 지배한다.
+              데이터는 그대로 두고 표시만 줄인다 — 편집 모달에서는 전체를 다룬다. */}
           {tags && tags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {tags.map((tag) => (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
                 <span key={tag} className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-muted-2 ring-1 ring-card-border">
                   {tag}
                 </span>
               ))}
+              {tags.length > MAX_VISIBLE_TAGS && (
+                <span className="text-[11px] font-semibold text-muted-2" title={tags.slice(MAX_VISIBLE_TAGS).join(' · ')}>
+                  +{tags.length - MAX_VISIBLE_TAGS}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -246,7 +281,7 @@ export default function ResultLayout() {
               type="button"
               onClick={() => setEditMode((v) => !v)}
               aria-pressed={editMode}
-              className={`min-h-[36px] rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+              className={`min-h-[36px] rounded-lg border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
                 editMode
                   ? 'border-accent bg-accent text-accent-fg hover:brightness-105'
                   : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
@@ -258,7 +293,7 @@ export default function ResultLayout() {
               type="button"
               onClick={handleShare}
               disabled={sharing}
-              className="hidden min-h-[36px] items-center gap-1.5 rounded-xl border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover disabled:opacity-50 sm:inline-flex"
+              className="hidden min-h-[36px] items-center gap-1.5 rounded-lg border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover disabled:opacity-50 sm:inline-flex"
             >
               <Share2 size={14} aria-hidden="true" /> {sharing ? '생성 중...' : '공유'}
             </button>
@@ -268,19 +303,19 @@ export default function ResultLayout() {
                 type="button"
                 disabled={finalizing}
                 onClick={handleFinalize}
-                className="hidden min-h-[36px] rounded-xl bg-accent px-4 py-2 text-[13px] font-bold text-accent-fg shadow-[0_8px_18px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50 lg:block"
+                className="hidden min-h-[36px] rounded-lg bg-accent px-4 py-2 text-[13px] font-bold text-accent-fg shadow-[0_8px_18px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50 lg:block disabled:shadow-none"
               >
                 {finalizing ? '확정 중...' : '일정 확정'}
               </button>
             )}
             {currentItinerary.status === 'FINALIZED' && (
-              <span className="rounded-xl bg-status-done-bg px-3.5 py-2 text-[13px] font-semibold text-status-done">확정됨</span>
+              <span className="rounded-[10px] bg-status-done-bg px-3.5 py-2 text-[13px] font-semibold text-status-done">확정됨</span>
             )}
           </div>
           <button
             type="button"
             onClick={() => setShowMap((v) => !v)}
-            className="min-h-[32px] rounded-xl border border-card-border bg-card-bg px-3 py-1.5 text-xs font-semibold text-text-2 transition-colors hover:bg-surface-hover lg:hidden"
+            className="min-h-[32px] rounded-lg border border-card-border bg-card-bg px-3 py-1.5 text-xs font-semibold text-text-2 transition-colors hover:bg-surface-hover lg:hidden"
           >
             {showMap ? '지도 숨기기' : '지도 보기'}
           </button>
@@ -299,18 +334,9 @@ export default function ResultLayout() {
         </div>
       )}
 
-      {/* 생성 시 끝내 채우지 못한 항목(숙소·식사 등)을 그대로 알린다 — 예전엔 로그로만 남아
-          숙소 없는 일정이 아무 표시 없이 나갔다. */}
-      {qualityNotices.length > 0 && (
-        <div className="px-4 py-2 bg-warn-bg border-b border-warn-border flex items-start gap-2 text-xs text-warn-fg sm:px-6">
-          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
-          <ul className="space-y-0.5">
-            {qualityNotices.map((notice) => (
-              <li key={notice}>{notice}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* 생성 시 끝내 채우지 못한 항목(숙소·식사 등). 예전엔 로그로만 남아 숙소 없는 일정이
+          아무 표시 없이 나갔다 — 알리되, 일정보다 먼저 읽히지 않게 한 줄로 접는다. */}
+      <QualityNotices notices={qualityNotices} />
 
       {(timeAnomaly || unrealisticLeg) && (
         <div className="px-4 py-2 bg-warn-bg border-b border-warn-border flex items-start gap-2 text-xs text-warn-fg">
@@ -328,7 +354,7 @@ export default function ResultLayout() {
       <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* 지도 — 모바일 상단(고정 높이, 토글), lg 우측 */}
         <div
-          className={`w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[45%] lg:shrink lg:border-b-0 lg:border-l ${
+          className={`w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l ${
             showMap ? 'block h-[180px]' : 'hidden lg:block'
           }`}
         >
@@ -340,8 +366,9 @@ export default function ResultLayout() {
           />
         </div>
 
-        {/* 타임라인 */}
-        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[55%]">
+        {/* 타임라인. flex-1(basis 0%)이 폭을 정하므로 비율은 위 지도의 lg:w-[52%]만으로 결정된다 —
+            여기 w-[48%]는 의도를 코드에 남기는 용도다(실효 없음). */}
+        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[48%]">
           <TimelinePanel
             itinerary={currentItinerary}
             selectedDay={selectedDay}
@@ -349,6 +376,7 @@ export default function ResultLayout() {
             onStepClick={setSelectedStep}
             editMode={editMode}
             onRequestDeleteStep={setStepToDelete}
+            warnDays={warnDays}
           />
         </div>
       </div>
@@ -360,7 +388,7 @@ export default function ResultLayout() {
             type="button"
             disabled={finalizing}
             onClick={handleFinalize}
-            className="w-full rounded-xl bg-accent py-3.5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50"
+            className="w-full rounded-[10px] bg-accent py-3.5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:shadow-none"
           >
             {finalizing ? '확정 중...' : '일정 확정'}
           </button>

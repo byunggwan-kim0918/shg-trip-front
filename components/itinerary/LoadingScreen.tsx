@@ -354,22 +354,26 @@ export default function LoadingScreen() {
         fadeOut ? 'opacity-0 scale-95' : visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 translate-y-4'
       }`}
     >
-      {/* 헤더: 점 3개 로딩 + 타이틀 */}
+      {/* 헤더. 깜빡이는 점 3개가 있었는데 정보가 0인 장식이었고, 화면에 로딩 표시가
+          4개(점·퍼센트·스피너 칩·shimmer)나 되게 만들었다. 같은 자리를 실제 진행률을
+          쓰는 바로 바꿔 장식을 정보로 교체한다. */}
       <div className="mb-5 text-center">
-        <div className="mb-2.5 inline-flex items-center gap-1">
-          {[0, 0.2, 0.4].map((delay) => (
-            <span
-              key={delay}
-              className="h-2 w-2 rounded-full bg-accent"
-              style={{ animation: `shg-blink 1.2s infinite`, animationDelay: `${delay}s` }}
-            />
-          ))}
-        </div>
         <div className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">
           AI가 일정을 짜고 있어요
         </div>
         <div className="mt-1.5 text-[13px] text-muted">
-          {stageMessages[stage] ?? stageMessages.ENRICHING} · {clampedProgress}% · 약 20초
+          {stageMessages[stage] ?? stageMessages.ENRICHING} · 약 20초
+        </div>
+        <div className="mx-auto mt-3.5 flex w-[200px] items-center gap-2.5">
+          <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-surface-3">
+            <div
+              className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out"
+              style={{ width: `${clampedProgress}%` }}
+            />
+          </div>
+          <span className="w-[34px] shrink-0 text-left text-[11px] font-bold tabular-nums text-muted-2">
+            {clampedProgress}%
+          </span>
         </div>
       </div>
 
@@ -408,7 +412,7 @@ export default function LoadingScreen() {
 
       {/* Day 보드 — step-stream 수신 시 스켈레톤을 실카드로 교체 (F4) */}
       <div
-        className="grid min-h-0 flex-1 gap-3"
+        className="grid gap-3"
         style={{ gridTemplateColumns: `repeat(${dayCount}, 1fr)` }}
       >
         {Array.from({ length: dayCount }, (_, d) => {
@@ -437,11 +441,21 @@ export default function LoadingScreen() {
                     </div>
                   ))
                 : [0, 1, 2].map((r) => (
+                    // 실카드(min-h-52 / rounded-10 / border / card-bg / px-3 py-2)와 같은 껍데기에
+                    // 장소명·시간 자리만 바로 둔다. 도착하면 바 → 글자만 바뀌고 레이아웃은 안 움직인다.
                     <div
                       key={r}
-                      className="h-[52px] rounded-[10px] shg-shimmer"
-                      style={{ animationDelay: `${(d * 0.15 + r * 0.2) % 0.6}s` }}
-                    />
+                      className="flex min-h-[52px] flex-col justify-center gap-1.5 rounded-[10px] border border-card-border bg-card-bg px-3 py-2"
+                    >
+                      <div
+                        className="h-[9px] w-[72%] rounded-full shg-shimmer"
+                        style={{ animationDelay: `${(d * 0.15 + r * 0.2) % 0.6}s` }}
+                      />
+                      <div
+                        className="h-[7px] w-[42%] rounded-full shg-shimmer"
+                        style={{ animationDelay: `${(d * 0.15 + r * 0.2 + 0.1) % 0.6}s` }}
+                      />
+                    </div>
                   ))}
             </div>
           );

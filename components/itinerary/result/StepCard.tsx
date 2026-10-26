@@ -50,62 +50,81 @@ export default function StepCard({
     || (place.latitude === 0 && place.longitude === 0));
   const rating = place?.rating;
 
+  const timeRange = [step.startTime, step.endTime].filter(Boolean).join(' - ');
+
   return (
     <div
-      className={`rounded-2xl bg-card-bg p-5 transition-shadow ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
-        isExpanded
-          ? 'border-[1.5px] border-accent shadow-[0_10px_26px_-18px_rgba(20,22,28,0.45)]'
-          : 'border border-card-border hover:shadow-sm'
+      /* 평상시 배경을 둔다. 보더·그림자·p-5짜리 카드 박스로 돌아가는 게 아니라
+         캔버스(--background) 위의 흰 행으로만 만든다 — 패딩은 그대로이므로 밀도는 유지된다.
+         배경이 없을 때는 스톱과 그 아래 이동 정보("차로 5분 · 3.0km")의 간격이
+         다음 스톱과의 간격과 거의 같아서, 이동 정보가 어느 스톱에 속하는지 읽히지 않았다. */
+      className={`relative rounded-[10px] px-3.5 py-3 transition-colors ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
+        isExpanded ? 'bg-accent-soft' : 'bg-card-bg hover:bg-surface-hover'
       }`}
       onClick={editMode ? undefined : onClick}
       role={editMode ? undefined : 'button'}
       tabIndex={editMode ? undefined : 0}
       onKeyDown={editMode ? undefined : (e) => e.key === 'Enter' && onClick()}
     >
-      <div className="flex gap-3.5">
-        <div className="min-w-0 flex-1">
-          {/* 제목 + 평점 */}
-          <div className="mb-1.5 flex items-center gap-1.5">
-            {IconComponent && React.createElement(IconComponent, { size: 15, className: 'shrink-0 text-accent-weak-fg', 'aria-hidden': 'true' })}
+      {/* 선택 표시는 테두리가 아니라 왼쪽 띠로. 카드 박스를 없앤 뒤에도 "지금 보는 스톱"이 분명하다. */}
+      {isExpanded && <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent" aria-hidden="true" />}
+
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1 md:max-w-[560px]">
+          {/* 1행: 시작 시각 · 장소명 · 평점. 시각을 제목과 같은 줄에 두면 세로로 훑인다. */}
+          <div className="flex items-baseline gap-2">
+            {step.startTime && (
+              <span className="shrink-0 text-[13px] font-extrabold tabular-nums text-accent-weak-fg">{step.startTime}</span>
+            )}
+            {IconComponent && React.createElement(IconComponent, { size: 14, className: 'shrink-0 translate-y-[2px] text-muted', 'aria-hidden': 'true' })}
             <h3 className="truncate text-[15px] font-bold text-foreground">
               {place?.name ?? '장소 정보 없음'}
             </h3>
-            {/* 별점은 상태가 아니라 데이터다. 이전엔 '완료' 상태색(초록)을 빌려 써서
-                팔레트에 없는 색이 튀었다. 중립 표면 + 본문색으로 되돌린다. */}
             {rating != null && (
-              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-[10px] bg-surface-3 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-text-2">
-                <Star size={9} className="fill-current" aria-hidden="true" /> {rating}
+              <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-bold tabular-nums text-muted">
+                <Star size={9} className="fill-current" aria-hidden="true" />{rating}
               </span>
             )}
           </div>
 
-          {/* 시간 */}
-          {(step.startTime || step.endTime) && (
-            <p className="mb-1.5 text-xs font-bold tabular-nums text-accent-weak-fg">
-              {step.startTime ?? ''}{step.startTime && step.endTime ? ' - ' : ''}{step.endTime ?? ''}
-            </p>
-          )}
-
-          {/* 스토리 */}
+          {/* 2행: 스토리 */}
           {hasStory ? (
-            <p className="text-[13px] leading-relaxed text-text-2 line-clamp-3">{step.notes}</p>
+            <p className="mt-1 line-clamp-2 text-[13px] leading-[1.55] text-text-2">{step.notes}</p>
           ) : storyPending ? (
-            <p className="flex items-center gap-1.5 text-xs italic text-muted-2 animate-pulse">
+            <p className="mt-1 flex items-center gap-1.5 text-xs italic text-muted-2 animate-pulse">
               <Sparkles size={11} aria-hidden="true" /> 가이드 스토리를 작성하고 있어요…
             </p>
           ) : null}
 
-          {/* 영업시간. 원문은 7요일을 전부 나열해 같은 문장이 7번 반복되고 잘린 채 끝났다.
-              같은 시간대의 연속 요일을 묶어 한 줄에 들어가게 한다(전체 원문은 title 속성에 남긴다). */}
-          {place?.openingHours && (
-            <p className="mt-2 flex items-center gap-1 text-xs text-muted-2 line-clamp-1" title={place.openingHours}>
-              <Clock size={11} className="shrink-0" aria-hidden="true" />
-              <span className="truncate tabular-nums">{formatOpeningHours(place.openingHours)}</span>
-            </p>
-          )}
+          {/* 3행: 메타를 한 줄로 압축. 예전엔 시간·영업시간·비용·대안이 각각 한 줄씩 4줄을 먹었다. */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-2">
+            {timeRange && <span className="tabular-nums">{timeRange}</span>}
+            {place?.openingHours && (
+              <span className="inline-flex items-center gap-1 tabular-nums" title={place.openingHours}>
+                <Clock size={10} className="shrink-0" aria-hidden="true" />
+                {formatOpeningHours(place.openingHours)}
+              </span>
+            )}
+            <span className="tabular-nums">
+              예상 <b className="font-bold text-text-2">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
+            </span>
+            {!readOnly && !editMode && step.alternatives.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
+                className="inline-flex items-center gap-0.5 text-[11px] font-bold text-accent-weak-fg hover:underline"
+              >
+                {isExpanded ? (
+                  <>대안 접기 <ChevronUp size={12} aria-hidden="true" /></>
+                ) : (
+                  <>대안 {step.alternatives.length}개 <ChevronDown size={12} aria-hidden="true" /></>
+                )}
+              </button>
+            )}
+          </div>
 
           {step.userNotes && step.userNotes.trim().length > 0 && (
-            <p className="mt-1.5 rounded bg-surface-3 px-2 py-1 text-xs text-text-2">{step.userNotes}</p>
+            <p className="mt-1.5 rounded-lg bg-surface-3 px-2 py-1 text-[11px] text-text-2">{step.userNotes}</p>
           )}
 
           {missingCoords && (
@@ -113,32 +132,11 @@ export default function StepCard({
               <MapPinOff size={11} aria-hidden="true" /> 지도 표시 불가 (위치 정보 없음)
             </span>
           )}
-
-          {/* 비용 + 대안 */}
-          <div className="mt-3 flex items-center gap-3">
-            <span className="text-xs font-semibold text-muted">
-              예상 비용 <b className="tabular-nums text-foreground">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
-            </span>
-            {!readOnly && !editMode && step.alternatives.length > 0 && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-                className="inline-flex items-center gap-0.5 text-xs font-bold text-accent-weak-fg hover:underline"
-              >
-                {isExpanded ? (
-                  <>대안 접기 <ChevronUp size={13} aria-hidden="true" /></>
-                ) : (
-                  <>대안 {step.alternatives.length}개 보기 <ChevronDown size={13} aria-hidden="true" /></>
-                )}
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* 썸네일 96. 사진이 있을 때만 렌더한다 — 없을 때 그라데이션 블록으로 채우면
-            정보가 0인 색 덩어리가 타임라인을 지배한다(사진은 보조, 위계는 타이포가 만든다). */}
+        {/* 썸네일. 사진이 있을 때만 렌더한다 — 없을 때 블록으로 채우면 정보 0인 면이 리스트를 지배한다. */}
         {imageUrl && !imgError && (
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+          <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[10px]">
             {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
             <img
               src={imageUrl}

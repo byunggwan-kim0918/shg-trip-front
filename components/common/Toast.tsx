@@ -21,9 +21,9 @@ export default function Toast({ title, description, actionLabel, onAction, onClo
   return (
     <div
       role="alert"
-      className="pointer-events-auto flex items-center gap-3 rounded-xl bg-[#14161c] px-4 py-3.5 ring-1 ring-white/12 shadow-[0_14px_40px_-12px_rgba(0,0,0,0.5)]"
+      className="pointer-events-auto flex items-center gap-3 rounded-[10px] bg-[#14161c] px-4 py-3.5 ring-1 ring-white/12 shadow-[0_14px_40px_-12px_rgba(0,0,0,0.5)]"
     >
-      <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] bg-danger/25 text-danger">
+      <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-danger/25 text-danger">
         <AlertTriangle size={15} aria-hidden="true" />
       </span>
       <div className="flex-1">

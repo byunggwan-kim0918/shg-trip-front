@@ -155,14 +155,14 @@ export default function NewTripShell() {
           autoFocus
           rows={4}
           maxLength={500}
-          className="min-h-[108px] w-full resize-none rounded-2xl border-[1.5px] border-accent bg-card-bg p-5 text-[17px] leading-[1.7] text-foreground shadow-[0_14px_34px_-20px_rgba(20,22,28,0.45)] outline-none placeholder:text-muted-2"
+          className="min-h-[108px] w-full resize-none rounded-xl border-[1.5px] border-accent bg-card-bg p-5 focus:ring-2 focus:ring-accent/25 text-[17px] leading-[1.7] text-foreground shadow-[0_14px_34px_-20px_rgba(20,22,28,0.45)] outline-none placeholder:text-muted-2"
           aria-label="여행 문장 입력"
         />
 
         {/* 예산 넛지 */}
         {/* 예산 넛지는 선택적 도움말이지 경고가 아니다. warn 색을 쓰면 아래 '한도 초과' 안내와
             같은 계열이 되어 위계가 뒤엉킨다(실제로 그랬다). 중립 표면으로 낮춘다. */}
-        <div className="mt-3.5 flex flex-col gap-3 rounded-xl border border-card-border bg-surface-2 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
+        <div className="mt-3.5 flex flex-col gap-3 rounded-[10px] border border-card-border bg-surface-2 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
           <span className="text-[13px] font-semibold text-text-2">
             예산도 알려주시면 더 정확해요
           </span>
@@ -189,14 +189,14 @@ export default function NewTripShell() {
           <button
             type="button"
             onClick={() => goWizard(true)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-4 text-[15px] font-bold text-accent-fg shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105"
+            className="flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-accent px-5 py-4 text-[15px] font-bold text-accent-fg shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105"
           >
             <Sparkles size={16} aria-hidden="true" /> AI로 일정 만들기
           </button>
           <button
             type="button"
             onClick={() => goWizard(false)}
-            className="rounded-xl border border-card-border bg-card-bg px-6 py-4 text-[15px] font-semibold text-text-2 transition-colors hover:bg-surface-hover"
+            className="rounded-[10px] border border-card-border bg-card-bg px-6 py-4 text-[15px] font-semibold text-text-2 transition-colors hover:bg-surface-hover"
           >
             직접 고를래요
           </button>
@@ -211,7 +211,7 @@ export default function NewTripShell() {
       </div>
 
       {/* 우: AI 이해 요약 패널 */}
-      <aside className="w-full shrink-0 self-start rounded-2xl border border-divider bg-card-bg p-6 lg:w-[400px]">
+      <aside className="w-full shrink-0 self-start rounded-xl border border-divider bg-card-bg p-6 lg:w-[400px]">
         <div className="mb-1 flex items-center gap-2">
           <Sparkles size={15} className="text-accent-weak-fg" aria-hidden="true" />
           <span className="text-[15px] font-bold text-foreground">AI가 이렇게 이해했어요</span>
@@ -230,7 +230,7 @@ export default function NewTripShell() {
               <UnderstandRow label="테마" value={themeValue} />
               <UnderstandRow label="페이스" value={paceValue} last />
             </div>
-            <div className="mt-4 rounded-xl bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
+            <div className="mt-4 rounded-[10px] bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
               부족한 부분은 문장을 더 적으면 AI가 알아서 반영해요.
             </div>
           </>

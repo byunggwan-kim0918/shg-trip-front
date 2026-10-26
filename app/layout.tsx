@@ -11,10 +11,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SHG trip · AI 여행 플래너",
+  title: "SHG trip · 여행 플래너",
   description: "말 한마디면, 여행이 완성됩니다. AI가 동선·시간·예산까지 한 번에.",
   openGraph: {
-    title: "SHG trip · AI 여행 플래너",
+    title: "SHG trip · 여행 플래너",
     description: "말 한마디면, 여행이 완성됩니다. AI가 동선·시간·예산까지 한 번에.",
     siteName: "SHG trip",
     type: "website",

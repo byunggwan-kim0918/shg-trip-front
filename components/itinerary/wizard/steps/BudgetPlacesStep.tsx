@@ -76,7 +76,7 @@ export default function BudgetPlacesStep() {
       {/* 예산 */}
       <div>
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">예산</div>
-        <label className="mb-2 flex h-12 items-center rounded-xl border border-card-border bg-surface-3 px-4">
+        <label className="mb-2 flex h-12 items-center rounded-lg border border-card-border bg-surface-3 px-4 focus-within:ring-2 focus-within:ring-accent/25">
           <input
             type="text"
             inputMode="numeric"
@@ -112,7 +112,7 @@ export default function BudgetPlacesStep() {
       <div className="relative">
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">꼭 가고 싶은 장소</div>
         <div className="flex gap-2">
-          <label className="flex h-11 flex-1 items-center gap-2.5 rounded-[10px] border border-card-border bg-surface-3 px-3.5">
+          <label className="flex h-11 flex-1 items-center gap-2.5 rounded-lg border border-card-border bg-surface-3 px-3.5 focus-within:ring-2 focus-within:ring-accent/25">
             <Search size={15} className="shrink-0 text-muted-2" aria-hidden="true" />
             <input
               type="text"
@@ -151,7 +151,7 @@ export default function BudgetPlacesStep() {
         )}
 
         {results.length > 0 && (
-          <ul className="absolute z-10 mt-1.5 max-h-60 w-full overflow-y-auto rounded-xl border border-card-border bg-card-bg shadow-lg">
+          <ul className="absolute z-10 mt-1.5 max-h-60 w-full overflow-y-auto rounded-[10px] border border-card-border bg-card-bg shadow-lg">
             {results.map((place) => (
               <li key={place.id}>
                 <button

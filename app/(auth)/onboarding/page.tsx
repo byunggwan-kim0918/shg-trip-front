@@ -82,7 +82,7 @@ export default function OnboardingPage() {
             }}
             placeholder="닉네임 (2~20자)"
             maxLength={20}
-            className="w-full px-4 py-3.5 rounded-xl border border-card-border focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 text-sm transition-[border-color,box-shadow] bg-card-bg text-foreground placeholder:text-muted-2"
+            className="w-full px-4 py-3.5 rounded-[10px] border border-card-border focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 text-sm transition-[border-color,box-shadow] bg-card-bg text-foreground placeholder:text-muted-2"
           />
           {error && (
             <p className="mt-2 text-xs text-danger">{error}</p>
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
         <button
           type="submit"
           disabled={!isValid || isSubmitting}
-          className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover disabled:bg-muted/30 disabled:cursor-not-allowed text-accent-fg font-bold text-sm transition-colors cursor-pointer shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)]"
+          className="w-full py-3.5 rounded-[10px] bg-accent hover:bg-accent-hover disabled:bg-muted/30 disabled:cursor-not-allowed disabled:shadow-none text-accent-fg font-bold text-sm transition-colors cursor-pointer shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)]"
         >
           {isSubmitting ? '설정 중...' : '시작하기'}
         </button>

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import type { Itinerary } from '@/lib/types/itinerary';
 import { nightsLabel } from '@/lib/utils/tripStatus';
-import { coverGradient } from '@/lib/utils/coverGradient';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import TimelinePanel from '@/components/itinerary/result/TimelinePanel';
 import MapPanel from '@/components/itinerary/result/MapPanel';
@@ -32,12 +31,16 @@ export default function SharedItineraryView({ itinerary }: Props) {
     <div className="flex h-screen flex-col bg-background">
       {/* 헤더 (ResultLayout 헤더 축약, 액션 없음) */}
       <div className="flex items-start gap-4 border-b border-card-border bg-card-bg px-4 py-4 sm:px-6 sm:py-5">
-        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-2xl sm:block">
+        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
           {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover} alt={itinerary.title ?? destination} className="h-full w-full object-cover" onError={() => setCoverError(true)} />
           ) : (
-            <div className="h-full w-full" style={{ background: coverGradient(destination) }} />
+            // 사진 없으면 목적지 이니셜만. 형제 화면(ResultLayout)과 같은 처리 —
+            // 글자 없는 그라데이션 사각형은 정보가 0이면서 헤더 좌측을 차지한다.
+            <div className="flex h-full w-full items-center justify-center bg-surface-3">
+              <span className="text-[15px] font-extrabold tracking-[-0.02em] text-muted">{destination.slice(0, 2)}</span>
+            </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -64,7 +67,8 @@ export default function SharedItineraryView({ itinerary }: Props) {
 
       {/* 본문: 모바일 지도 상단, lg 좌 타임라인 우 지도 */}
       <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-        <div className="h-[180px] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[45%] lg:shrink lg:border-b-0 lg:border-l">
+        {/* 비율은 ResultLayout과 같이 유지한다 — 두 화면이 같은 레이아웃 문자열을 복제하고 있다. */}
+        <div className="h-[180px] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l">
           <MapPanel
             steps={itinerary.steps}
             selectedDay={selectedDay}
@@ -72,7 +76,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
             onMarkerClick={setSelectedStepId}
           />
         </div>
-        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[55%]">
+        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[48%]">
           <TimelinePanel
             itinerary={itinerary}
             selectedDay={selectedDay}

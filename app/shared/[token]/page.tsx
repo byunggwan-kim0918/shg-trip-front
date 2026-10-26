@@ -33,7 +33,7 @@ async function fetchShared(token: string): Promise<Itinerary | null> {
  * 공유 링크 미리보기.
  *
  * 이게 없어서 카카오톡·슬랙·iMessage에 붙인 모든 공유 링크가 사이트 기본 제목
- * ("SHG trip · AI 여행 플래너")으로 똑같이 떴다. 공유는 이 제품이 앱 밖으로 나가는
+ * ("SHG trip · 여행 플래너")으로 똑같이 떴다. 공유는 이 제품이 앱 밖으로 나가는
  * 유일한 표면인데, 링크 카드만 보면 어느 여행인지 분간이 안 됐다.
  *
  * SSR에서 이미 일정을 받아오므로(fetchShared) 같은 호출을 재사용한다.

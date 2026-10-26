@@ -18,7 +18,7 @@ export default function EmptyDashboard() {
 
   return (
     <div className="flex min-h-[65vh] flex-col items-center justify-center px-4 text-center">
-      <div className="mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-2xl bg-accent-soft text-accent-weak-fg">
+      <div className="mb-5 flex h-[76px] w-[76px] items-center justify-center rounded-xl bg-accent-soft text-accent-weak-fg">
         <Zap size={34} strokeWidth={1.7} aria-hidden="true" />
       </div>
       <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">
@@ -33,7 +33,7 @@ export default function EmptyDashboard() {
       {/* 자연어 입력 */}
       <form
         onSubmit={(e) => { e.preventDefault(); start(); }}
-        className="mt-7 flex w-full max-w-[560px] flex-col gap-3 rounded-2xl border-[1.5px] border-accent bg-card-bg p-4 shadow-[0_14px_34px_-18px_rgba(20,22,28,0.45)] sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-5 sm:pr-2"
+        className="mt-7 flex w-full max-w-[560px] flex-col gap-3 rounded-xl border-[1.5px] border-accent bg-card-bg p-4 focus-within:ring-2 focus-within:ring-accent/25 shadow-[0_14px_34px_-18px_rgba(20,22,28,0.45)] sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-5 sm:pr-2"
       >
         <input
           type="text"
@@ -45,7 +45,7 @@ export default function EmptyDashboard() {
         />
         <button
           type="submit"
-          className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-accent px-5 py-3 text-[13px] font-bold text-accent-fg transition-[filter] hover:brightness-105"
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-accent px-5 py-3 text-[13px] font-bold text-accent-fg transition-[filter] hover:brightness-105"
         >
           만들기 <ArrowRight size={14} aria-hidden="true" />
         </button>

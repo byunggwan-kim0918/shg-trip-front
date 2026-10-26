@@ -65,7 +65,7 @@ export default function Sidebar() {
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-1.5 rounded-xl text-muted hover:bg-surface-hover transition-colors"
+            className="p-1.5 rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
             aria-label="사이드바 접기"
           >
             <PanelLeftClose size={17} aria-hidden="true" />
@@ -76,7 +76,7 @@ export default function Sidebar() {
         <div className="px-3.5 mb-5">
           <button
             onClick={() => router.push('/main/plan/new')}
-            className="flex w-full items-center gap-2 rounded-xl border border-card-border bg-surface-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-accent hover:text-accent-weak-fg"
+            className="flex w-full items-center gap-2 rounded-[10px] border border-card-border bg-surface-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-accent hover:text-accent-weak-fg"
           >
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
             <span>새 여행</span>
@@ -92,7 +92,7 @@ export default function Sidebar() {
           <div className="flex flex-col gap-0.5">
             {itineraries.length === 0 ? (
               <div className="flex flex-col items-center gap-2.5 px-5 py-6 text-center">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-3 text-muted-2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-3 text-muted-2">
                   <MapPin size={18} aria-hidden="true" />
                 </span>
                 <span className="text-xs leading-relaxed text-muted-2">
