@@ -14,7 +14,7 @@
 | UI | React 19.2.3 |
 | Styling | Tailwind CSS 4 (CSS 변수 기반 다크모드) |
 | State | Zustand 5.0.11 |
-| Map | @vis.gl/react-google-maps (Google Maps) |
+| Map | react-leaflet 5 + leaflet 1.9 + maplibre-gl (OpenFreeMap 벡터 타일, 키 불필요) |
 | Drag & Drop | @dnd-kit (core / sortable / utilities) |
 | Icons | lucide-react |
 | E2E Test | Playwright |
@@ -22,7 +22,7 @@
 ## 주요 기능
 
 - **자연어로 일정 요청** — "3월에 오사카 2박 3일, 미식 위주로" 같은 문장을 입력하면 백엔드가 목적지·기간·테마 등 구조화된 필드로 파싱해 마법사에 채워줍니다.
-- **AI 일정 생성 (실시간 스트리밍)** — 생성이 진행되는 동안 Day 카드가 SSE로 실시간 렌더링됩니다. 완성된 일정은 타임라인과 Google 지도로 함께 확인할 수 있습니다.
+- **AI 일정 생성 (실시간 스트리밍)** — 생성이 진행되는 동안 Day 카드가 SSE로 실시간 렌더링됩니다. 완성된 일정은 타임라인과 지도(OpenStreetMap 기반)로 함께 확인할 수 있습니다.
 - **일정 편집** — 같은 날짜 안에서 방문지를 드래그로 재정렬하거나 개별 스톱을 삭제할 수 있습니다.
 - **내 일정함 / 상세 보기** — 생성한 일정을 목록에서 관리하고, 제목·태그를 수정하며, 일정을 확정(finalize)할 수 있습니다.
 - **공유** — 공유 링크를 만들면 로그인 없이 볼 수 있는 공개 페이지(`/shared/[token]`)가 열립니다.
@@ -98,7 +98,6 @@ e2e/                       # Playwright E2E 테스트
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID |
 | `NEXT_PUBLIC_KAKAO_CLIENT_ID` | Kakao OAuth 클라이언트 ID (REST API 키) |
 | `NEXT_PUBLIC_NAVER_CLIENT_ID` | Naver OAuth 클라이언트 ID |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | 결과 화면 지도 렌더링용 Google Maps JavaScript API 키 |
 | `NEXT_PUBLIC_DEMO_MODE` | `true`면 AuthGuard 인증을 우회 (기본 `false`) |
 
 `SESSION_SECRET` 생성:
