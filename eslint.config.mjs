@@ -17,6 +17,9 @@ const eslintConfig = defineConfig([
     "playwright.config.ts",
     "playwright-report/**",
     "test-results/**",
+    // predev/prebuild가 node_modules에서 복사해 오는 maplibre 워커(518KB 번들).
+    // 우리 코드가 아니고, 린트하면 경고 1,100건이 실제 경고를 덮는다.
+    "public/maplibre-gl-worker.mjs",
   ]),
   {
     rules: {

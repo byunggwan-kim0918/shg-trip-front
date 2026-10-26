@@ -23,8 +23,17 @@ Font: Geist Sans + Geist Mono (next/font/google)
 - 서버 상태: TanStack Query 미설치 → fetch + Zustand로 관리 중
 - HTTP: axios 미설치 → fetch API 사용
 - 폼: React Hook Form + Zod 미설치
-- 지도: Mapbox/Google Maps 미설치
-- DnD: @dnd-kit 미설치
+
+### 설치돼 있음 (문서가 "미설치"로 잘못 적고 있었음 — 2026-10-08 정정)
+- 지도: **`react-leaflet` + `leaflet`** (OSM 기반, API 키 불필요). Google Maps·Mapbox는 쓰지 않는다.
+  베이스맵은 **OpenFreeMap** 벡터 타일(positron/dark) — `maplibre-gl` +
+  `@maplibre/maplibre-gl-leaflet`로 Leaflet 위에 얹는다. 어트리뷰션 표기 필수.
+  (2026-10-23 Google Maps JS에서 전환. 과금 제거 + Maps 약관 3.2.3(a) 캐싱 제약 회피)
+  - **CARTO는 쓰지 않는다** — 이제 API 키를 요구하고, 키 없이 호출하면 "API KEY REQUIRED"
+    워터마크 타일을 **HTTP 200 + image/png**로 돌려준다(코드는 성공으로 보고 지도만 빈 회색).
+  - `predev`/`prebuild`가 maplibre 워커를 `public/`으로 복사하고 `setWorkerUrl`로 고정한다.
+    이게 없으면 **베이스맵만 백지**가 된다 — `MapPanelInner.tsx` 주석 참고.
+- DnD: **`@dnd-kit/core` + `sortable` + `utilities`** (일정 편집 모드의 스톱 재정렬)
 
 ---
 
