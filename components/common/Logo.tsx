@@ -14,13 +14,13 @@
 interface Props {
   /** 바깥 정사각형 한 변 px. */
   size?: number;
-  /** 모서리 반경 클래스. 아이콘 스케일 규약(28px 이하 `rounded-[10px]`, 그 이상 `rounded-2xl`). */
+  /** 모서리 반경 클래스. 아이콘 스케일 규약(28px 이하 `rounded-[10px]`, 그 이상 `rounded-xl`). */
   radiusClassName?: string;
   className?: string;
 }
 
 export default function Logo({ size = 28, radiusClassName, className = '' }: Props) {
-  const radius = radiusClassName ?? (size <= 28 ? 'rounded-[10px]' : 'rounded-2xl');
+  const radius = radiusClassName ?? (size <= 28 ? 'rounded-[10px]' : 'rounded-xl');
   const markSize = Math.round(size * 0.78);
 
   return (

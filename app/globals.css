@@ -7,18 +7,19 @@
 
 :root {
   /* accent */
-  --accent: #1c1c1e;               /* 주요 액션 = 잉크. 사진이 컬러를 담당 */
-  --accent-fg: #ffffff;            /* accent 위 텍스트. 라이트=흰색(잉크 배경 17.01) */
+  --accent: #5f6a1e;               /* 주요 액션 = 올리브. 다크(#c8d158)와 같은 색상대 → 양 테마가 한 브랜드로 읽힌다. 흰 글자 5.89 / 캔버스 분리 5.16 */
+  --accent-fg: #ffffff;            /* accent 위 텍스트. 라이트=흰색(올리브 배경 5.89) */
   --accent-grad-to: #7a8729;       /* 프로그레스 바 그라데이션 종점(글자가 없어 대비 무관). 로고는 단색 */
-  --accent-hover: #33343b;
+  --accent-hover: #6e7a24;
   --accent-soft: #eef0e2;          /* accent-weak 배경 (샤르트뢰즈 틴트) */
   --accent-weak-fg: #5f6a1e;       /* accent-weak 텍스트(칩) */
 
   /* text */
   --foreground: #14161c;           /* 기본 텍스트 */
   --text-2: #23262e;               /* 보조 텍스트 */
-  --muted: #5f6875;                /* 보조 텍스트. 캔버스 4.94 / surface 5.64 (AA) */
-  --muted-2: #727a87;              /* placeholder·캡션. UI 3:1 기준 */
+  --muted: #565e6b;                /* 보조 텍스트. 캔버스 5.60 / surface 6.39 (AA) */
+  --muted-2: #636a77;              /* 캡션·날짜. 실제 텍스트로 쓰이므로 UI 3:1이 아니라 AA 4.5 기준:
+                                      캔버스 4.77 / 흰 5.44 / surface-2 5.27 */
 
   /* surface */
   --background: #eef0f4;           /* 페이지 배경(canvas) */
@@ -29,7 +30,12 @@
   --surface-hover: #f4f5f8;
 
   /* line */
-  --card-border: #e4e7ec;          /* border */
+  --card-border: #e6e9ef;          /* hairline. 구획은 긋되 무게는 싣지 않는다(레퍼런스 실측: 0.5px solid 68곳) */
+  /* 스켈레톤 바. 흰 카드 위에 얹히므로 캔버스가 아니라 카드 기준으로 대비를 잡는다.
+     이전엔 surface-2(#fbfbfd)↔surface-3(#f4f5f8)을 써서 진폭이 7/255밖에 안 돼
+     shimmer가 움직이는 게 보이지 않았다. */
+  --skeleton: #e2e6ec;
+  --skeleton-sheen: #f4f6f9;
   --divider: #f0f1f4;              /* 구분선 */
 
   /* sidebar / header (surface 계열에 정렬) */
@@ -39,13 +45,16 @@
   --header-border: #eceef2;
 
   /* status */
-  --success: #12996b;              /* 완료(done) */
-  --danger: #e0563e;
-  --status-ongoing: #7a8729;       /* 여행 중 */
+  --success: #0d7a53;              /* 완료(done). 11px 라벨로 쓰이므로 흰 배경 5.35 (이전 #12996b는 3.62로 미달) */
+  --danger: #c23d22;               /* 흰 글자 5.27 / 흰 배경 위 텍스트 5.27 / 캔버스 4.62.
+                                      이전 #e0563e는 흰 글자 3.77로 미달 — 배경(ConfirmModal 삭제 버튼)과
+                                      텍스트(text-danger 10곳) 양쪽에 쓰이므로 두 조건을 다 만족해야 한다 */
+  --status-ongoing: #5f6a1e;       /* 여행 중 = '지금'. 브랜드 accent와 같은 값으로 맞춘다.
+                                      이전 #7a8729는 흰 배경 3.94로 AA 미달이었다(11px 라벨) */
   --status-ongoing-bg: #eef0e2;
   --status-draft: #5f6875;         /* 초안 = 미완성. 경고가 아니므로 무채색. 앰버는 --warn 전용 */
   --status-draft-bg: #f2f4f7;
-  --status-done: #12996b;          /* 완료 */
+  --status-done: #0d7a53;          /* 완료 */
   --status-done-bg: #eaf7f0;
   --status-upcoming: #14161c;      /* 예정 = 확정된 미래. 무채색 중 가장 진하게 */
   --status-upcoming-bg: #f2f4f7;
@@ -53,11 +62,11 @@
   /* warn (예산 유도 넛지) */
   --warn-bg: #fff8ec;
   --warn-border: #f6e6c4;
-  --warn-fg: #a8791f;
+  --warn-fg: #8a6117;              /* warn-bg 위 5.23 (이전 #a8791f는 3.67로 미달) */
 
   /* 캘린더 요일 헤더 (일=빨강, 토=파랑) */
-  --calendar-sun: #c86a6a;
-  --calendar-sat: #6a86c8;
+  --calendar-sun: #a94747;              /* 흰 5.71 / 캔버스 5.00 (이전 #c86a6a는 3.67로 미달) */
+  --calendar-sat: #4760a9;              /* 흰 5.98 / 캔버스 5.24 (이전 #6a86c8는 3.59로 미달) */
 }
 
 .dark {
@@ -81,6 +90,8 @@
   --surface-hover: #23272f;
 
   --card-border: #2a2e38;
+  --skeleton: #252932;
+  --skeleton-sheen: #343a45;
   --divider: #262a33;
 
   --sidebar-bg: #15171d;
@@ -159,11 +170,32 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* 한글은 어절(띄어쓰기) 단위로 끊어야 읽힌다. 기본값(break-word 성격)이면
+     "자동 배치합 / 니다"처럼 단어 중간에서 잘린다. 영문·URL은 keep-all 영향을 받지 않는다. */
+  word-break: keep-all;
 }
 
 h1, h2, h3 {
   letter-spacing: -0.025em;
   font-weight: 800;
+}
+
+/* 포커스는 디자인의 일부다. 이 선언이 생기기 전까지 코드베이스에 focus-visible 스타일이
+   0곳이었고, 대신 `outline-none`이 12곳 있었다 — 그중 6곳은 대체 스타일이 없어
+   키보드 사용자에게 포커스 표시가 **아예 없었다**(WCAG 2.4.7). 나머지는 브라우저 기본
+   파란 링이 나왔는데, 그건 팔레트에 없는 유일한 파랑이고 브라우저·OS마다 달라진다.
+
+   `:where()`로 특정도를 0으로 두어 컴포넌트가 언제든 덮어쓸 수 있게 한다.
+   Tailwind 유틸은 레이어 안에 있고 이 규칙은 레이어 밖이라 `outline-none`보다 우선한다
+   (포커스일 때만 — 평상시 outline은 그대로 없다).
+   대비: accent 라이트 5.16~5.89 / 다크 10.85~11.68 (WCAG 2.2 포커스 표시 3:1 요건 충족).
+
+   **input·textarea는 뺐다.** 이 코드베이스의 입력은 전부 자체 `focus:border-accent`를 갖거나
+   장식된 래퍼 안에 있어서, 전역 아웃라인을 걸면 둥근 래퍼 안에 각진 사각 링이 겹쳐 그려진다
+   (실제로 헤더 검색창에서 이중 링이 났다). 입력의 포커스는 **래퍼가 `focus-within`으로** 표시한다. */
+:where(a, button, select, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ============================================================
@@ -202,7 +234,7 @@ h1, h2, h3 {
 .shg-blink { animation: shg-blink 1.2s infinite; }
 .shg-spin { animation: shg-spin 0.7s linear infinite; }
 .shg-shimmer {
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background: linear-gradient(90deg, var(--skeleton) 25%, var(--skeleton-sheen) 37%, var(--skeleton) 63%);
   background-size: 400px 100%;
   animation: shg-shimmer 1.4s linear infinite;
 }
@@ -234,17 +266,7 @@ h1, h2, h3 {
   animation-timing-function: ease;
 }
 
-/* 다크모드 지도 타일. Google Cloud 맵 스타일(mapId) 등록 없이 코드만으로 다크를 만든다.
-   타일 이미지 레이어에만 반전+색상보정을 걸고, 우리가 그린 마커·폴리라인·InfoWindow는 제외한다. */
-.map-dark .gm-style > div:first-child > div:first-child {
-  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.7);
-}
-.map-dark .gm-style img[src*="gstatic"],
-.map-dark .gm-style .gmnoprint,
-.map-dark .gm-style-cc {
-  filter: invert(1) hue-rotate(180deg);
-}
-
+/* 모션을 줄이기로 한 사용자에게는 크로스페이드를 끈다(테마는 즉시 전환된다). */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
   ::view-transition-new(root) {

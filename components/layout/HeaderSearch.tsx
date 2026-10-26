@@ -54,7 +54,7 @@ export default function HeaderSearch() {
 
   return (
     <div ref={boxRef} className="relative max-w-[360px] flex-1">
-      <label className="flex h-9 items-center gap-2 rounded-[10px] border border-transparent bg-surface-3 px-3 transition-colors focus-within:border-accent">
+      <label className="flex h-9 items-center gap-2 rounded-lg border border-transparent bg-surface-3 px-3 transition-colors focus-within:border-accent">
         <Search size={14} className="shrink-0 text-muted-2" aria-hidden="true" />
         <input
           type="search"
@@ -74,7 +74,7 @@ export default function HeaderSearch() {
       </label>
 
       {open && query.trim() && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-xl border border-card-border bg-card-bg shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-[10px] border border-card-border bg-card-bg shadow-lg">
           {results.length === 0 ? (
             <p className="px-4 py-3 text-[13px] text-muted-2">일치하는 여행이 없어요.</p>
           ) : (

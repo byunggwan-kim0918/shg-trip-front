@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Portal from '@/components/common/Portal';
 
 interface Props {
   open: boolean;
@@ -43,44 +44,46 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!busy) onCancel();
-      }}
-    >
+    <Portal>
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="w-full max-w-sm rounded-xl bg-card-bg border border-card-border shadow-xl p-5"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!busy) onCancel();
+        }}
       >
-        <h2 className="text-[17px] font-semibold text-foreground">{title}</h2>
-        {message && <p className="mt-2 text-sm text-muted">{message}</p>}
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onCancel(); }}
-            disabled={busy}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 min-h-[40px]"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            ref={confirmRef}
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onConfirm(); }}
-            disabled={busy}
-            className={`px-4 py-2 rounded-xl text-sm font-medium text-accent-fg transition-colors disabled:opacity-50 min-h-[40px] ${
-              danger ? 'bg-danger hover:opacity-90' : 'bg-accent hover:bg-accent-hover'
-            }`}
-          >
-            {busy ? '처리 중...' : confirmLabel}
-          </button>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          className="w-full max-w-sm rounded-[10px] bg-card-bg border border-card-border shadow-xl p-5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="text-[17px] font-semibold text-foreground">{title}</h2>
+          {message && <p className="mt-2 text-sm text-muted">{message}</p>}
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onCancel(); }}
+              disabled={busy}
+              className="px-4 py-2 rounded-[10px] text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 min-h-[40px]"
+            >
+              {cancelLabel}
+            </button>
+            <button
+              ref={confirmRef}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onConfirm(); }}
+              disabled={busy}
+              className={`px-4 py-2 rounded-[10px] text-sm font-medium text-accent-fg transition-colors disabled:opacity-50 min-h-[40px] ${
+                danger ? 'bg-danger hover:opacity-90' : 'bg-accent hover:bg-accent-hover'
+              }`}
+            >
+              {busy ? '처리 중...' : confirmLabel}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Portal>
   );
 }

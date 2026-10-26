@@ -16,8 +16,6 @@ interface Props {
   labelSize?: number;
   /** 어둠 스크림(히어로 좌측 그라데) 오버레이. */
   scrim?: boolean;
-  /** 큰 타일(콜라주)용 고채도 그라데이션. 여럿이 나란히 놓일 때 저채도는 물빠져 보인다. */
-  rich?: boolean;
   className?: string;
   children?: React.ReactNode;
 }
@@ -33,7 +31,6 @@ export default function DestinationCover({
   showLabel = true,
   labelSize = 40,
   scrim = false,
-  rich = false,
   className = '',
   children,
 }: Props) {
@@ -68,7 +65,7 @@ export default function DestinationCover({
       ) : (
         <div
           className="absolute inset-0"
-          style={{ background: coverGradient(destination, isDark ? 'dark' : 'light', seedOffset, rich) }}
+          style={{ background: coverGradient(destination, isDark ? 'dark' : 'light', seedOffset) }}
         />
       )}
 
@@ -91,14 +88,20 @@ export default function DestinationCover({
 
       {showLabel && (
         <span
-          className="absolute right-3 bottom-1.5 font-extrabold leading-none"
+          className={
+            onPhoto
+              ? 'absolute right-3 bottom-1.5 font-extrabold leading-none'
+              : 'absolute left-3.5 top-3 font-semibold leading-none text-muted'
+          }
           style={{
-            fontSize: labelSize,
-            // 사진 위: 스크림이 있어 흰색.
-            // 그라데이션 위(폴백): 타일에 사진이 없으면 목적지 이름이 유일한 내용물이다.
-            // 알파 0.28~0.30은 워터마크로 읽혀서 타일이 "빈 색 블록"이 됐다. 내용물 수준으로 올린다.
-            color: onPhoto ? 'rgba(255,255,255,0.88)' : isDark ? 'rgba(255,255,255,0.62)' : 'rgba(20,22,28,0.52)',
-            letterSpacing: '-0.03em',
+            // 사진 위에서는 종전처럼 우하단 큰 글자(스크림이 받쳐준다).
+            // 사진이 없을 때는 **워터마크를 그리지 않는다.** 커버가 종이로 바뀌면서
+            // 거대 글자는 (a) 바로 옆 카드 제목과 같은 정보를 반복하고
+            // (b) 긴 목적지명이 잘리며 (c) 종이 위에서 유일하게 시끄러운 요소가 된다.
+            // 좌상단에 작은 식별 라벨로만 남긴다.
+            fontSize: onPhoto ? labelSize : Math.max(11, Math.round(labelSize * 0.3)),
+            color: onPhoto ? 'rgba(255,255,255,0.88)' : undefined,
+            letterSpacing: onPhoto ? '-0.03em' : '-0.01em',
           }}
         >
           {destination}

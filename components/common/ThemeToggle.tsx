@@ -17,7 +17,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
     <button
       type="button"
       onClick={toggleThemeWithTransition}
-      className={`rounded-xl p-2 text-muted transition-colors hover:bg-surface-hover hover:text-foreground ${className}`}
+      className={`rounded-[10px] p-2 text-muted transition-colors hover:bg-surface-hover hover:text-foreground ${className}`}
       aria-label={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
     >
       {theme === 'light' ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}

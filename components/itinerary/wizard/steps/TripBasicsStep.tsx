@@ -44,7 +44,7 @@ export default function TripBasicsStep() {
 
       {/* 여행지 검색 */}
       <div>
-        <label className="flex h-[50px] items-center gap-2.5 rounded-xl border-[1.5px] border-accent bg-surface-3 px-4">
+        <label className="flex h-[50px] items-center gap-2.5 rounded-[10px] border-[1.5px] border-accent bg-surface-3 px-4 focus-within:ring-2 focus-within:ring-accent/25">
           <Search size={16} className="shrink-0 text-accent-weak-fg" aria-hidden="true" />
           <input
             type="text"
