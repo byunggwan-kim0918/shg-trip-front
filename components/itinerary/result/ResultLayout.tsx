@@ -1,21 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { AlertTriangle, Share2, Pencil } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { AlertTriangle, Share2, Pencil, Trash2 } from 'lucide-react';
 import { normalizeText } from '@/lib/utils/text';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { nightsLabel } from '@/lib/utils/tripStatus';
-import { parseQualityNotices } from '@/lib/utils/qualityNotices';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
-import QualityNotices from './QualityNotices';
 
 /** 헤더에 노출할 태그 최대 개수. 나머지는 "+N"으로 접는다. */
 const MAX_VISIBLE_TAGS = 6;
@@ -54,13 +53,18 @@ function hasTimeAnomaly(steps: ItineraryStep[]): boolean {
 }
 
 export default function ResultLayout() {
+  const router = useRouter();
   const { currentItinerary, selectedDay, selectedStepId, setSelectedDay, setSelectedStep, setCurrentItinerary,
     alternativeError, clearAlternativeError,
-    deleteStepAction, isEditingSteps, stepError, clearStepError } = useItineraryStore();
+    deleteStepAction, isEditingSteps, stepError, clearStepError,
+    patchItinerarySummary, removeItinerary, isDeleting } = useItineraryStore();
   const [showMap, setShowMap] = useState(true);
   const [coverError, setCoverError] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
+  const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   // F3: 편집 모드(드래그 재정렬·삭제) 토글 + 삭제 확인 대상
   const [editMode, setEditMode] = useState(false);
   const [stepToDelete, setStepToDelete] = useState<ItineraryStep | null>(null);
@@ -104,15 +108,16 @@ export default function ResultLayout() {
     try {
       const updated = await updateItinerary(currentItinerary.id, payload);
       setCurrentItinerary(updated);
+      patchItinerarySummary(updated.id, { title: updated.title, tags: updated.tags });
       setEditOpen(false);
     } catch (e) {
       // 409(Optimistic Lock 충돌) 등 — 모달에 에러 표시
       setEditError(e instanceof Error ? e.message : '수정에 실패했어요. 새로고침 후 다시 시도해주세요.');
     }
     setEditBusy(false);
-  }, [currentItinerary, setCurrentItinerary]);
+  }, [currentItinerary, setCurrentItinerary, patchItinerarySummary]);
 
-  // 확정: 헤더 버튼 + 모바일 고정 바가 공유하는 단일 콜백
+  // 확정: 헤더 버튼 + 모바일 고정 바가 확인 모달을 거쳐 공유하는 단일 콜백
   const handleFinalize = useCallback(async () => {
     if (!currentItinerary) return;
     setFinalizing(true);
@@ -120,13 +125,29 @@ export default function ResultLayout() {
     try {
       const updated = await finalizeItinerary(currentItinerary.id);
       setCurrentItinerary(updated);
+      patchItinerarySummary(updated.id, { status: updated.status });
+      setEditMode(false);
     } catch (e) {
       // 확정 실패(낙관락 충돌·네트워크 등)를 사용자에게 알린다.
       // (과거엔 조용히 삼켜, 버튼을 눌러도 아무 반응 없는 것처럼 보였음)
       setFinalizeError(e instanceof Error ? e.message : '일정 확정에 실패했어요. 잠시 후 다시 시도해주세요.');
     }
     setFinalizing(false);
-  }, [currentItinerary, setCurrentItinerary]);
+    setFinalizeConfirmOpen(false);
+  }, [currentItinerary, setCurrentItinerary, patchItinerarySummary]);
+
+  const handleDeleteItinerary = useCallback(async () => {
+    if (!currentItinerary) return;
+    setDeleteError(null);
+    try {
+      await removeItinerary(currentItinerary.id);
+      setDeleteConfirmOpen(false);
+      router.push('/main/my-trips');
+    } catch (e) {
+      setDeleteConfirmOpen(false);
+      setDeleteError(e instanceof Error ? e.message : '일정 삭제에 실패했어요.');
+    }
+  }, [currentItinerary, removeItinerary, router]);
 
   const handleConfirmDeleteStep = useCallback(async () => {
     if (!currentItinerary || !stepToDelete) return;
@@ -156,11 +177,10 @@ export default function ResultLayout() {
   }
 
   const { destination, startDate, endDate, totalBudget, coverImage, tags } = currentItinerary;
+  const finalized = currentItinerary.status === 'FINALIZED';
+  const hasSteps = currentItinerary.steps.length > 0;
   // 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터에는 없는 필드라 ?? []
   const qualityNotices = currentItinerary.qualityNotices ?? [];
-  // 알림이 걸린 일차 → Day 탭에 점으로 표시. 상단 패널만으로는 "어느 날을 보면 되나"가
-  // 탭과 연결되지 않아 알림이 화면에서 겉돌았다.
-  const warnDays = parseQualityNotices(qualityNotices).days;
 
   // 예산 대비 추정 총액 = 장소 비용 + 이동 비용 (대안 선택 시 실시간 반영되도록 steps에서 합산).
   // 이동비를 빼면 렌터카/택시 여행의 실제 지출이 과소 표시돼 여행자가 예산을 오판한다.
@@ -279,16 +299,27 @@ export default function ResultLayout() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setEditMode((v) => !v)}
-              aria-pressed={editMode}
-              className={`min-h-[36px] rounded-lg border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-                editMode
-                  ? 'border-accent bg-accent text-accent-fg hover:brightness-105'
-                  : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
-              }`}
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="min-h-[36px] rounded-lg p-2 text-muted-2 transition-colors hover:bg-surface-hover hover:text-danger"
+              aria-label="일정 삭제"
+              title="일정 삭제"
             >
-              {editMode ? '편집 완료' : '일정 편집'}
+              <Trash2 size={15} aria-hidden="true" />
             </button>
+            {!finalized && hasSteps && (
+              <button
+                type="button"
+                onClick={() => setEditMode((v) => !v)}
+                aria-pressed={editMode}
+                className={`min-h-[36px] rounded-lg border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+                  editMode
+                    ? 'border-accent bg-accent text-accent-fg hover:brightness-105'
+                    : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
+                }`}
+              >
+                {editMode ? '편집 완료' : '일정 편집'}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleShare}
@@ -301,8 +332,9 @@ export default function ResultLayout() {
               // 모바일은 하단 고정 확정 바가 담당 → 헤더 버튼은 lg 이상에서만
               <button
                 type="button"
-                disabled={finalizing}
-                onClick={handleFinalize}
+                disabled={finalizing || !hasSteps}
+                title={hasSteps ? undefined : '장소가 없는 일정은 확정할 수 없어요'}
+                onClick={() => setFinalizeConfirmOpen(true)}
                 className="hidden min-h-[36px] rounded-lg bg-accent px-4 py-2 text-[13px] font-bold text-accent-fg shadow-[0_8px_18px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50 lg:block disabled:shadow-none"
               >
                 {finalizing ? '확정 중...' : '일정 확정'}
@@ -333,10 +365,6 @@ export default function ResultLayout() {
           {shareNotice}
         </div>
       )}
-
-      {/* 생성 시 끝내 채우지 못한 항목(숙소·식사 등). 예전엔 로그로만 남아 숙소 없는 일정이
-          아무 표시 없이 나갔다 — 알리되, 일정보다 먼저 읽히지 않게 한 줄로 접는다. */}
-      <QualityNotices notices={qualityNotices} />
 
       {(timeAnomaly || unrealisticLeg) && (
         <div className="px-4 py-2 bg-warn-bg border-b border-warn-border flex items-start gap-2 text-xs text-warn-fg">
@@ -374,9 +402,10 @@ export default function ResultLayout() {
             selectedDay={selectedDay}
             onDayChange={setSelectedDay}
             onStepClick={setSelectedStep}
-            editMode={editMode}
+            editMode={editMode && !finalized}
             onRequestDeleteStep={setStepToDelete}
-            warnDays={warnDays}
+            qualityNotices={qualityNotices}
+            readOnly={finalized}
           />
         </div>
       </div>
@@ -386,8 +415,8 @@ export default function ResultLayout() {
         <div className="shrink-0 border-t border-card-border bg-card-bg px-4 py-3 lg:hidden">
           <button
             type="button"
-            disabled={finalizing}
-            onClick={handleFinalize}
+            disabled={finalizing || !hasSteps}
+            onClick={() => setFinalizeConfirmOpen(true)}
             className="w-full rounded-[10px] bg-accent py-3.5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:shadow-none"
           >
             {finalizing ? '확정 중...' : '일정 확정'}
@@ -433,6 +462,39 @@ export default function ResultLayout() {
           </div>
         </div>
       )}
+
+      {deleteError && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+          <div className="w-full max-w-md">
+            <Toast
+              title="일정을 삭제하지 못했어요"
+              description={deleteError}
+              onClose={() => setDeleteError(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={finalizeConfirmOpen}
+        title="이 일정을 확정할까요?"
+        message="확정하면 스톱 순서 변경·삭제와 대안 선택을 더 이상 할 수 없어요. 제목과 태그는 계속 고칠 수 있어요."
+        confirmLabel="확정"
+        busy={finalizing}
+        onConfirm={handleFinalize}
+        onCancel={() => { if (!finalizing) setFinalizeConfirmOpen(false); }}
+      />
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        title="이 일정을 삭제할까요?"
+        message="삭제한 일정은 되돌릴 수 없고, 공유 링크도 더 이상 열리지 않아요."
+        confirmLabel="삭제"
+        danger
+        busy={isDeleting}
+        onConfirm={handleDeleteItinerary}
+        onCancel={() => { if (!isDeleting) setDeleteConfirmOpen(false); }}
+      />
 
       {/* 스톱 삭제 확인 */}
       <ConfirmModal

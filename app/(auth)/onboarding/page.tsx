@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores';
 import Logo from '@/components/common/Logo';
+import { consumeReturnTo } from '@/lib/auth/returnTo';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (user?.nickname) {
-      router.replace('/main');
+      router.replace(consumeReturnTo() ?? '/main');
     }
   }, [user, router]);
 
@@ -53,7 +54,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      router.replace('/main');
+      router.replace(consumeReturnTo() ?? '/main');
     } catch {
       setError('네트워크 오류가 발생했습니다.');
     } finally {

@@ -52,18 +52,24 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
     }
   };
 
-  const isDisabled = (date: Date) => {
+  const disabledReason = (date: Date): 'past' | 'beforeStart' | 'overRange' | null => {
     const d = date.getTime();
-    if (d < effectiveMin.getTime()) return true;
-    if (normalizedStart && !normalizedEnd && d < normalizedStart.getTime()) return true;
+    if (d < effectiveMin.getTime()) return 'past';
+    if (normalizedStart && !normalizedEnd && d < normalizedStart.getTime()) return 'beforeStart';
     // 종료일 선택 중: 시작일 + (maxRangeDays-1)일을 넘는 날짜는 비활성 (백엔드 상한과 동일)
     if (maxRangeDays && normalizedStart && !normalizedEnd) {
       const maxEnd = new Date(normalizedStart);
       maxEnd.setDate(maxEnd.getDate() + maxRangeDays - 1);
-      if (d > maxEnd.getTime()) return true;
+      if (d > maxEnd.getTime()) return 'overRange';
     }
-    return false;
+    return null;
   };
+
+  const reasonTitle = {
+    past: '지난 날짜예요',
+    beforeStart: '시작일보다 앞선 날짜예요',
+    overRange: `여행은 최대 ${maxRangeDays}일까지 선택할 수 있어요`,
+  } as const;
 
   const isInRange = (date: Date) => {
     if (!normalizedStart || !normalizedEnd) return false;
@@ -98,8 +104,9 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
       </div>
       <div className="grid grid-cols-7 gap-0.5">
         {calendarDays.map((date, i) => {
-          if (!date) return <div key={`e-${i}`} />;
-          const disabled = isDisabled(date);
+          if (!date) return <div key={`e-${i}`} aria-hidden="true" />;
+          const reason = disabledReason(date);
+          const disabled = reason !== null;
           const isStart = normalizedStart && isSameDay(date, normalizedStart);
           const isEnd = normalizedEnd && isSameDay(date, normalizedEnd);
           const inRange = isInRange(date);
@@ -109,10 +116,13 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
               key={date.toISOString()}
               type="button"
               disabled={disabled}
+              title={reason ? reasonTitle[reason] : undefined}
               onClick={() => handleClick(date)}
               className={`
                 py-2 text-sm rounded min-h-[36px] transition-colors
-                ${disabled ? 'text-muted/40 cursor-not-allowed' : 'hover:bg-surface-hover cursor-pointer'}
+                ${reason === 'past' ? 'text-muted-2/70 line-through decoration-muted-2/50 cursor-not-allowed' : ''}
+                ${reason === 'beforeStart' || reason === 'overRange' ? 'bg-surface-3/60 text-muted-2 cursor-not-allowed' : ''}
+                ${!disabled ? 'hover:bg-surface-hover cursor-pointer' : ''}
                 ${isStart || isEnd ? 'bg-accent text-accent-fg font-semibold' : ''}
                 ${inRange ? 'bg-accent-soft text-accent-weak-fg' : ''}
                 ${!isStart && !isEnd && !inRange && !disabled ? 'text-foreground' : ''}

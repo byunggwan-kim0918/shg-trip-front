@@ -20,9 +20,11 @@ import type { AlternativeOption, DayGroup, Itinerary, ItineraryStep } from '@/li
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { formatDuration } from '@/lib/utils/format';
+import { parseQualityNotices } from '@/lib/utils/qualityNotices';
 import StepCard from './StepCard';
 import SortableStepCard from './SortableStepCard';
 import TransitInfo from './TransitInfo';
+import QualityNotices from './QualityNotices';
 
 const FREE_TIME_THRESHOLD_MIN = 90;
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -36,11 +38,11 @@ interface TimelinePanelProps {
   editMode?: boolean;
   /** 스톱 삭제 요청 — 상위(ResultLayout)가 ConfirmModal로 처리. */
   onRequestDeleteStep?: (step: ItineraryStep) => void;
-  /** 읽기 전용(공유 공개 뷰): 대안 선택·편집힌트 비활성, StepCard readOnly. */
+  /** 읽기 전용(공유 공개 뷰·확정된 일정): 대안 선택·편집힌트 비활성, StepCard readOnly. */
   readOnly?: boolean;
-  /** 품질 알림이 걸린 일차. 해당 Day 탭에 점으로 표시한다 —
-   *  상단 알림 패널만으로는 "그래서 어느 날을 보면 되나"가 탭과 연결되지 않았다. */
-  warnDays?: number[];
+  /** 품질 알림 원문. 걸린 Day 탭에는 점을, 선택된 Day에는 그날 항목을 보인다.
+   *  공유 공개 뷰는 넘기지 않는다 — 보는 사람이 고칠 수 없는 정보다. */
+  qualityNotices?: string[];
 }
 
 function toMinutes(hhmm: string | null): number | null {
@@ -81,7 +83,7 @@ export default function TimelinePanel({
   editMode = false,
   onRequestDeleteStep,
   readOnly = false,
-  warnDays = [],
+  qualityNotices = [],
 }: TimelinePanelProps) {
   // alternativeError는 ResultLayout의 Toast에서 표시하므로 여기선 구독하지 않는다.
   const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative,
@@ -116,6 +118,9 @@ export default function TimelinePanel({
   const totalDistanceKm = currentGroup.steps.reduce((sum, s) => sum + (s.transportationDistance ?? 0), 0);
   const totalTransitMin = currentGroup.steps.reduce((sum, s) => sum + (s.transportationDuration ?? 0), 0);
   const dateLabel = dayDateLabel(itinerary.startDate, currentGroup.dayNumber);
+  const { items: noticeItems, days: warnDays } = parseQualityNotices(qualityNotices);
+  // 일차를 못 읽은 원문은 어느 날에 속하는지 모르므로 모든 Day에 보인다.
+  const dayNotices = noticeItems.filter((n) => n.day === currentGroup.dayNumber || n.day == null);
 
   return (
     <div className="p-4 sm:p-5">
@@ -177,6 +182,8 @@ export default function TimelinePanel({
           </span>
         )}
       </div>
+
+      <QualityNotices items={dayNotices} />
 
       {/* 편집 모드: 같은 day 내 드래그 재정렬 + 삭제 (단순 리스트) */}
       {editMode && !readOnly ? (

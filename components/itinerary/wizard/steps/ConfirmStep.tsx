@@ -10,6 +10,8 @@ import {
   THEME_LABEL, CATEGORY_LABEL, PACE_LABEL, TRANSPORT_LABEL,
 } from '@/lib/constants/wizardOptions';
 import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
+import { DESCRIPTION_MAX_LENGTH } from '@/lib/constants/newTrip';
+import { clearShellDraft } from '@/components/itinerary/NewTripShell';
 
 /** 5단계: 확인 → 생성 (6e). 요약 + "AI에게 한마디"(선택) + 생성. */
 export default function ConfirmStep() {
@@ -44,11 +46,19 @@ export default function ConfirmStep() {
     },
   ];
 
+  // ?step=4로 바로 들어오면 앞 단계를 거치지 않아 필수값이 비어 있을 수 있다
+  const missing: string[] = [];
+  if (!data.destination.trim()) missing.push('여행지');
+  if (!data.startDate || !data.endDate) missing.push('기간');
+  if (data.themes.length === 0 || data.categories.length === 0) missing.push('취향');
+  const firstMissingStep = !data.destination.trim() || !data.startDate || !data.endDate ? 0 : 1;
+
   const handleGenerate = () => {
-    if (!data.startDate || !data.endDate) {
-      setStep(0);
+    if (missing.length > 0) {
+      setStep(firstMissingStep);
       return;
     }
+    clearShellDraft();
     router.push('/main/itinerary/loading');
   };
 
@@ -68,7 +78,7 @@ export default function ConfirmStep() {
             }`}
           >
             <span className="shrink-0 text-[13px] font-semibold text-muted-2">{row.label}</span>
-            <span className="text-right text-[13px] font-bold text-foreground">{row.value}</span>
+            <span className="min-w-0 line-clamp-2 break-all text-right text-[13px] font-bold text-foreground">{row.value || '미설정'}</span>
           </button>
         ))}
       </div>
@@ -83,6 +93,7 @@ export default function ConfirmStep() {
           onChange={(e) => useWizardStore.getState().updateData({ description: e.target.value })}
           placeholder="예: 아이가 있어서 이동은 짧게, 저녁은 흑돼지 맛집 꼭이요."
           rows={3}
+          maxLength={DESCRIPTION_MAX_LENGTH}
           className="w-full resize-none rounded-[10px] border border-card-border bg-surface-3 px-4 py-3.5 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-2 focus:border-accent"
         />
       </div>
@@ -94,11 +105,21 @@ export default function ConfirmStep() {
         </div>
       )}
 
+      {missing.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setStep(firstMissingStep)}
+          className="w-full rounded-[10px] bg-surface-3 px-4 py-3 text-left text-xs font-semibold text-muted transition-colors hover:bg-surface-hover"
+        >
+          {missing.join(' · ')}을(를) 먼저 정해주세요 →
+        </button>
+      )}
+
       {/* 생성 CTA — 소진/차단 시 비활성 */}
       <button
         type="button"
         onClick={handleGenerate}
-        disabled={!canGenerate}
+        disabled={!canGenerate || missing.length > 0}
         className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-accent py-3.5 text-[15px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 disabled:shadow-none"
       >
         <Sparkles size={16} aria-hidden="true" />

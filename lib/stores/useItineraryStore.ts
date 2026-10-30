@@ -84,6 +84,8 @@ interface ItineraryActions {
   loadItineraries: (size?: number) => Promise<void>;
   /** 일정 삭제 — 서버 soft delete 후 목록 재조회. 중복 클릭은 isDeleting으로 무시 */
   removeItinerary: (id: number) => Promise<void>;
+  /** 상세에서 바꾼 제목·태그·상태를 사이드바·목록용 요약에도 반영 */
+  patchItinerarySummary: (id: number, patch: Partial<ItinerarySummary>) => void;
 }
 
 /** 백엔드 buildDraftTitle이 만드는 임시 제목("서울 1박 2일", "서울 당일치기", "서울 여행")인지. */
@@ -243,4 +245,9 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
       set({ isDeleting: false });
     }
   },
+
+  patchItinerarySummary: (id, patch) =>
+    set((state) => ({
+      itineraries: state.itineraries.map((it) => (it.id === id ? { ...it, ...patch } : it)),
+    })),
 }));

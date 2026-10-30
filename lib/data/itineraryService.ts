@@ -20,6 +20,12 @@ export interface ApiResponse<T> {
   error: null | { code: string; message: string };
 }
 
+/** 비2xx 응답의 서버 메시지(ApiResponse.error.message). 본문이 없거나 JSON이 아니면 fallback. */
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  const body = (await res.json().catch(() => null)) as ApiResponse<unknown> | null;
+  return body?.error?.message ?? fallback;
+}
+
 async function parseJson<T>(res: Response): Promise<T> {
   const body: ApiResponse<T> = await res.json();
   if (!body.success) {
@@ -92,7 +98,7 @@ export async function fetchMyItineraries(page = 0, size = 20): Promise<PageRespo
 /** DELETE /api/itineraries/{id} — soft delete. 204 No Content이므로 본문 파싱하지 않는다. */
 export async function deleteItinerary(id: number): Promise<void> {
   const res = await authFetch(`/api/itineraries/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('일정 삭제에 실패했습니다.');
+  if (!res.ok) throw new Error(await errorMessage(res, '일정 삭제에 실패했습니다.'));
 }
 
 /** PATCH /api/itineraries/{id}/steps/{stepId}/select-alternative */
@@ -109,7 +115,7 @@ export async function selectAlternative(
       body: JSON.stringify({ alternativeId }),
     },
   );
-  if (!res.ok) throw new Error('대안 선택에 실패했습니다.');
+  if (!res.ok) throw new Error(await errorMessage(res, '대안 선택에 실패했습니다.'));
   return parseJson<Itinerary>(res);
 }
 
@@ -127,7 +133,7 @@ export async function reorderSteps(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dayNumber, orderedStepIds }),
   });
-  if (!res.ok) throw new Error('순서 변경에 실패했습니다.');
+  if (!res.ok) throw new Error(await errorMessage(res, '순서 변경에 실패했습니다.'));
   return parseJson<Itinerary>(res);
 }
 
@@ -136,7 +142,7 @@ export async function deleteStep(itineraryId: number, stepId: number): Promise<I
   const res = await authFetch(`/api/itineraries/${itineraryId}/steps/${stepId}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error('일정 삭제에 실패했습니다.');
+  if (!res.ok) throw new Error(await errorMessage(res, '일정 삭제에 실패했습니다.'));
   return parseJson<Itinerary>(res);
 }
 
@@ -150,7 +156,7 @@ export async function updateItinerary(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('일정 수정에 실패했습니다.');
+  if (!res.ok) throw new Error(await errorMessage(res, '일정 수정에 실패했습니다.'));
   return parseJson<Itinerary>(res);
 }
 
@@ -215,19 +221,19 @@ export interface ParsedTrip {
 /**
  * POST /api/itineraries/parse — 문장 → 구조화 필드.
  * 콘텐츠 실패는 백엔드가 200 + empty()로 반환하므로 2xx면 항상 파싱된다.
- * 비2xx는 null 반환(패널 미갱신). abort 시 AbortError를 던지므로 호출부에서 잡는다.
+ * 비2xx(500자 초과 400 등)는 서버 메시지로 throw. abort 시 AbortError를 던지므로 호출부에서 잡는다.
  */
 export async function parseTripSentence(
   sentence: string,
   signal?: AbortSignal,
-): Promise<ParsedTrip | null> {
+): Promise<ParsedTrip> {
   const res = await authFetch('/api/itineraries/parse', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sentence }),
     signal,
   });
-  if (!res.ok) return null;
+  if (!res.ok) throw new Error(await errorMessage(res, '문장을 분석하지 못했어요.'));
   return parseJson<ParsedTrip>(res);
 }
 
@@ -236,6 +242,6 @@ export async function finalizeItinerary(id: number): Promise<Itinerary> {
   const res = await authFetch(`/api/itineraries/${id}/finalize`, {
     method: 'POST',
   });
-  if (!res.ok) throw new Error('일정 확정에 실패했습니다.');
+  if (!res.ok) throw new Error(await errorMessage(res, '일정 확정에 실패했습니다.'));
   return parseJson<Itinerary>(res);
 }

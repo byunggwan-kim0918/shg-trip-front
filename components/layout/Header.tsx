@@ -13,9 +13,10 @@ export default function Header() {
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const theme = useAppStore((s) => s.theme);
 
+  // 모바일 드로어 backdrop(z-30)보다 위 — 드로어가 열린 채 아바타·검색을 누르면 첫 클릭이 backdrop에 먹혔다
   return (
     <header
-      className="sticky top-0 z-20 flex h-[60px] items-center gap-4 border-b border-header-border bg-header-bg px-5 backdrop-blur-xl"
+      className="sticky top-0 z-[35] flex h-[60px] items-center gap-4 border-b border-header-border bg-header-bg px-5 backdrop-blur-xl"
       role="banner"
     >
       {/* 왼쪽: 사이드바 닫혀있을 때 로고 + 열기 버튼 */}

@@ -22,26 +22,39 @@ const HIDDEN = 'motion-safe:opacity-0';
  * 재생이 끝나 아무도 보지 못한다. 그래서 IntersectionObserver로 실제로
  * 보이는 순간에 발화시키고, 한 번 재생 후 관찰을 끊는다.
  *
+ * 숨김은 observer의 첫 보고에서 "아직 아래에 있다"가 확인된 요소에만 건다. 처음부터 숨겨 두면
+ * JS가 늦거나 observer가 발화하지 않을 때 섹션이 빈 칸으로 남는다.
+ *
  * prefers-reduced-motion 처리는 상태가 아니라 CSS(motion-safe)에 맡긴다.
  * 그래서 모션 비선호 사용자는 숨김도 애니메이션도 적용받지 않는다.
  */
 export default function Reveal({ children, delay = 0, className = '' }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
+  const [phase, setPhase] = useState<'static' | 'hidden' | 'shown'>('static');
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setShown(true);
+    let first = true;
+    const io = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      // 빠르게 스크롤해 이미 지나친 요소도 보인 것으로 친다
+      const reached = entry.isIntersecting || entry.boundingClientRect.top < 0;
+      if (first) {
+        first = false;
+        if (reached) {
           io.disconnect();
+          return;
         }
-      },
-      { rootMargin: '0px 0px -80px 0px' },
-    );
+        setPhase('hidden');
+        return;
+      }
+      if (reached) {
+        setPhase('shown');
+        io.disconnect();
+      }
+    });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -50,8 +63,8 @@ export default function Reveal({ children, delay = 0, className = '' }: Props) {
     <div
       ref={ref}
       data-reveal=""
-      className={`${shown ? ENTER : HIDDEN} ${className}`}
-      style={shown && delay ? { animationDelay: `${delay}ms` } : undefined}
+      className={`${phase === 'shown' ? ENTER : phase === 'hidden' ? HIDDEN : ''} ${className}`}
+      style={phase === 'shown' && delay ? { animationDelay: `${delay}ms` } : undefined}
     >
       {children}
     </div>

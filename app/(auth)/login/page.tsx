@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import SocialLoginGroup from '@/components/auth/SocialLoginGroup';
 import LoginErrorToast from '@/components/auth/LoginErrorToast';
+import LoginReturnHint from '@/components/auth/LoginReturnHint';
 import Logo from '@/components/common/Logo';
 
 /**
@@ -28,7 +29,7 @@ export default function LoginPage() {
         <LoginErrorToast />
       </Suspense>
 
-      {/* 분할 인증: 좌 콜라주 / 우 카드. 모바일은 세로 스택(콜라주 위, 카드 아래). */}
+      {/* 분할 인증: 좌 콜라주 / 우 카드. 세로 스택일 땐 카드를 먼저 둬서 로그인 버튼이 첫 화면에 들어오게 한다. */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_1fr] md:items-center md:gap-14">
         {/* 좌: 입력 → 결과 데모.
             예전엔 목적지 타일 4개를 깔았는데, 이 제품에는 커버 사진이 없어서 늘 그라데이션
@@ -70,10 +71,12 @@ export default function LoginPage() {
         </div>
 
         {/* 우: 로그인 카드. 좌측 정렬. */}
-        <div className={`${ENTER_TEXT} motion-safe:[animation-delay:80ms] flex w-full max-w-[380px] flex-col items-start text-left`}>
+        <div className={`${ENTER_TEXT} motion-safe:[animation-delay:80ms] order-first flex w-full max-w-[380px] flex-col items-start text-left md:order-none`}>
           <Logo size={62} className="mb-5" />
           <h1 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">SHG trip</h1>
           <p className="mt-1.5 text-sm text-text-2">한 문장으로 시작하세요</p>
+
+          <LoginReturnHint />
 
           <div className="mt-8 w-full">
             <SocialLoginGroup />

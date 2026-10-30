@@ -7,6 +7,7 @@ import { searchPlaces } from '@/lib/data/itineraryService';
 import { formatBudget, parseBudget } from '@/lib/utils/format';
 import { BUDGET_QUICK_CHIPS, MAX_BUDGET, MAX_CUSTOM_PLACES } from '@/lib/constants/wizardOptions';
 import type { WizardPlace } from '@/lib/types/itinerary';
+import { MANUAL_PLACE_NAME_MAX_LENGTH } from '@/lib/constants/newTrip';
 
 /** 4단계: 예산 · 필수 장소 (6d) — 선택 · 건너뛰기 가능. */
 export default function BudgetPlacesStep() {
@@ -17,14 +18,26 @@ export default function BudgetPlacesStep() {
   // budget=null은 "미입력"과 "상관없음" 둘 다를 의미해 애매하다.
   // 사용자가 예산을 명시적으로 만졌을 때만 null-칩("상관없음")을 활성 표시한다.
   const [budgetTouched, setBudgetTouched] = useState(data.budget !== null);
+  const [budgetHint, setBudgetHint] = useState<string | null>(null);
 
   const budgetDisplay = data.budget ? formatBudget(data.budget) : '';
 
   const handleBudgetChange = (raw: string) => {
     setBudgetTouched(true);
+    // 숫자 외 문자를 버리고 남은 숫자만 쓰면 1e5 → 15, -5000 → 5000처럼 조용히 다른 값이 된다
+    if (/[^0-9,\s]/.test(raw)) {
+      setBudgetHint('숫자만 입력할 수 있어요.');
+      return;
+    }
     const digits = raw.replace(/[^0-9]/g, '');
     const parsed = digits ? parseBudget(digits) : null;
-    updateData({ budget: parsed !== null ? Math.min(parsed, MAX_BUDGET) : null });
+    if (parsed !== null && parsed > MAX_BUDGET) {
+      setBudgetHint(`최대 ${formatBudget(MAX_BUDGET)}원까지 입력할 수 있어요.`);
+      updateData({ budget: MAX_BUDGET });
+      return;
+    }
+    setBudgetHint(null);
+    updateData({ budget: parsed });
   };
 
   const search = useCallback(async (q: string) => {
@@ -53,11 +66,12 @@ export default function BudgetPlacesStep() {
 
   const customPlaceCount = data.selectedPlaces.filter((p) => p.id < 0).length;
   const hasNoResults = !isSearching && query.trim().length > 0 && results.length === 0;
+  const isDuplicateName = data.selectedPlaces.some((p) => p.name.trim() === query.trim());
 
   // 검색 결과 없을 때 이름만으로 직접 추가 — 생성 시 백엔드가 Google 검색으로 실제 장소로 변환
   const addCustomPlace = () => {
     const name = query.trim();
-    if (!name || customPlaceCount >= MAX_CUSTOM_PLACES) return;
+    if (!name || customPlaceCount >= MAX_CUSTOM_PLACES || isDuplicateName) return;
     addPlace({ id: -(Date.now()), name, address: '', latitude: 0, longitude: 0, category: 'attraction' });
   };
 
@@ -88,6 +102,7 @@ export default function BudgetPlacesStep() {
           />
           <span className="text-sm font-semibold text-muted-2">원</span>
         </label>
+        {budgetHint && <p className="-mt-1 mb-2 text-xs text-warn-fg" role="status">{budgetHint}</p>}
         <div className="flex gap-1.5">
           {BUDGET_QUICK_CHIPS.map((chip) => {
             // null 칩(상관없음)은 사용자가 예산을 만졌을 때만 활성으로 간주
@@ -96,7 +111,7 @@ export default function BudgetPlacesStep() {
               <button
                 key={chip.label}
                 type="button"
-                onClick={() => { setBudgetTouched(true); updateData({ budget: chip.value }); }}
+                onClick={() => { setBudgetTouched(true); setBudgetHint(null); updateData({ budget: chip.value }); }}
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                   active ? 'bg-accent text-accent-fg' : 'bg-surface-3 text-text-2 hover:bg-surface-hover'
                 }`}
@@ -124,6 +139,7 @@ export default function BudgetPlacesStep() {
                 if (e.nativeEvent.isComposing) return;
                 if (e.key === 'Enter' && hasNoResults) { e.preventDefault(); addCustomPlace(); }
               }}
+              maxLength={MANUAL_PLACE_NAME_MAX_LENGTH}
               placeholder="장소 검색 (예: 성산일출봉)"
               className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-2"
               aria-label="장소 검색"
@@ -133,7 +149,7 @@ export default function BudgetPlacesStep() {
             <button
               type="button"
               onClick={addCustomPlace}
-              disabled={customPlaceCount >= MAX_CUSTOM_PLACES}
+              disabled={customPlaceCount >= MAX_CUSTOM_PLACES || isDuplicateName}
               className="shrink-0 rounded-[10px] bg-accent px-4 text-[13px] font-bold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               직접 추가
@@ -146,7 +162,9 @@ export default function BudgetPlacesStep() {
           <p className="mt-1.5 text-xs text-muted-2">
             {customPlaceCount >= MAX_CUSTOM_PLACES
               ? `직접 입력은 최대 ${MAX_CUSTOM_PLACES}개까지 가능합니다`
-              : '직접 입력한 장소는 생성 시 실제 장소로 검색돼요'}
+              : isDuplicateName
+                ? '이미 추가한 장소예요'
+                : '직접 입력한 장소는 생성 시 실제 장소로 검색돼요'}
           </p>
         )}
 
@@ -181,7 +199,7 @@ export default function BudgetPlacesStep() {
           {data.selectedPlaces.map((place) => (
             <span
               key={place.id}
-              className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-2 text-[13px] font-semibold text-accent-weak-fg"
+              className="inline-flex max-w-full items-center gap-1.5 break-all rounded-full bg-accent-soft px-3 py-2 text-[13px] font-semibold text-accent-weak-fg"
             >
               {place.name}
               {place.latitude === 0 && <span className="text-[11px] opacity-70">(직접입력)</span>}

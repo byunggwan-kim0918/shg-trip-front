@@ -117,7 +117,7 @@ function NicknameModal({
   if (!open) return null;
 
   const trimmed = nickname.trim();
-  const valid = trimmed.length >= 2 && trimmed.length <= 20;
+  const valid = trimmed.length >= 2 && trimmed.length <= 20 && trimmed !== current.trim();
 
   const save = async () => {
     if (!valid || busy) return;

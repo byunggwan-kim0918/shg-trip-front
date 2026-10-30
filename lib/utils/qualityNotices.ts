@@ -22,12 +22,12 @@ export interface ParsedNotice {
   day: number | null;
   /** 일차를 뗀 본문. 끝의 마침표는 제거한다. */
   text: string;
+  /** 본문 뒤에 붙은 원인 문장. 여러 항목이 공유하므로 화면에서 한 번만 모아 보인다. */
+  cause: string | null;
 }
 
 export interface QualityNoticeSummary {
   items: ParsedNotice[];
-  /** 여러 항목이 공유하는 원인 문장. 중복 제거 후 목록. */
-  causes: string[];
   /** 영향받은 일차(오름차순, 중복 제거). */
   days: number[];
 }
@@ -39,7 +39,6 @@ function trimPeriod(s: string): string {
 
 export function parseQualityNotices(notices: string[]): QualityNoticeSummary {
   const items: ParsedNotice[] = [];
-  const causes: string[] = [];
 
   for (const raw of notices) {
     const source = raw.trim();
@@ -47,23 +46,19 @@ export function parseQualityNotices(notices: string[]): QualityNoticeSummary {
 
     const m = source.match(/^(\d+)일차(?:에)?\s*(.+)$/);
     if (!m) {
-      items.push({ day: null, text: trimPeriod(source) });
+      items.push({ day: null, text: trimPeriod(source), cause: null });
       continue;
     }
 
     const day = Number(m[1]);
-    // "본문. 원인." 형태면 뒤 문장은 원인으로 따로 모은다.
+    // "본문. 원인." 형태면 뒤 문장은 원인으로 따로 둔다.
     const sentences = m[2].split(/(?<=\.)\s+/).map((x) => x.trim()).filter(Boolean);
-    items.push({ day, text: trimPeriod(sentences[0] ?? m[2]) });
-
-    for (const rest of sentences.slice(1)) {
-      const cause = trimPeriod(rest);
-      if (cause && !causes.includes(cause)) causes.push(cause);
-    }
+    const cause = trimPeriod(sentences.slice(1).join(' '));
+    items.push({ day, text: trimPeriod(sentences[0] ?? m[2]), cause: cause || null });
   }
 
   const days = [...new Set(items.map((i) => i.day).filter((d): d is number => d != null))]
     .sort((a, b) => a - b);
 
-  return { items, causes, days };
+  return { items, days };
 }

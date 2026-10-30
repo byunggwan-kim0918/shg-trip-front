@@ -61,11 +61,21 @@ export default function HeaderSearch() {
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
+          onBlur={(e) => {
+            const next = e.relatedTarget as Node | null;
+            if (next && boxRef.current?.contains(next)) return;
+            // Safari는 버튼 클릭에 포커스를 주지 않아 relatedTarget이 null이다. 결과 클릭이 끊기지 않게
+            // 그 경우는 외부 클릭 핸들러에 맡기고, 결과가 없을 때만 바로 닫는다.
+            if (next || results.length === 0) setOpen(false);
+          }}
           onKeyDown={(e) => {
             // 조합 중 Escape는 조합 취소, Enter는 조합 확정 — 둘 다 IME가 먼저 가져간다.
             if (e.nativeEvent.isComposing) return;
             if (e.key === 'Escape') { setOpen(false); (e.target as HTMLInputElement).blur(); }
-            if (e.key === 'Enter' && results[0]) go(results[0].id);
+            if (e.key === 'Enter') {
+              if (results[0]) go(results[0].id);
+              else setOpen(false);
+            }
           }}
           placeholder="여행 검색"
           className="w-full bg-transparent text-[13px] text-text-2 outline-none placeholder:text-muted-2"
