@@ -86,6 +86,11 @@ interface ItineraryActions {
   removeItinerary: (id: number) => Promise<void>;
 }
 
+/** 백엔드 buildDraftTitle이 만드는 임시 제목("서울 1박 2일", "서울 당일치기", "서울 여행")인지. */
+function isDraftTitle(title: string | null | undefined): boolean {
+  return !title || /(\d+박 \d+일|당일치기| 여행)$/.test(title);
+}
+
 export const useItineraryStore = create<ItineraryState & ItineraryActions>((set) => ({
   currentItinerary: null,
   itineraries: [],
@@ -119,7 +124,17 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
           s.place && f.place ? { ...s.place, imageUrl: f.place.imageUrl ?? s.place.imageUrl } : s.place;
         return { ...s, notes: f.notes ?? s.notes, place };
       });
-      return { currentItinerary: { ...cur, coverImage: fresh.coverImage ?? cur.coverImage, steps } };
+      // 제목도 비동기로 채워진다 — 저장 직후엔 임시 제목("서울 1박 2일")이고 story가 끝나면 서버가 교체한다.
+      // 화면 제목이 아직 임시 제목일 때만 따른다. 사용자가 고친 직후 도착한 이전 폴링 응답이 되돌리지 않게.
+      const title = fresh.title && isDraftTitle(cur.title) ? fresh.title : cur.title;
+      return {
+        currentItinerary: {
+          ...cur,
+          title,
+          coverImage: fresh.coverImage ?? cur.coverImage,
+          steps,
+        },
+      };
     }),
 
   setSelectedDay: (day) => set({ selectedDay: day, selectedStepId: null }),
