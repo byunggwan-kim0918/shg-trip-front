@@ -68,7 +68,7 @@ export default function BudgetPlacesStep() {
   const hasNoResults = !isSearching && query.trim().length > 0 && results.length === 0;
   const isDuplicateName = data.selectedPlaces.some((p) => p.name.trim() === query.trim());
 
-  // 검색 결과 없을 때 이름만으로 직접 추가 — 생성 시 백엔드가 Google 검색으로 실제 장소로 변환
+  // 검색 결과가 없을 때 이름만으로 추가한다. 백엔드가 저장된 장소에서 이름으로 찾고, 못 찾으면 뺀다
   const addCustomPlace = () => {
     const name = query.trim();
     if (!name || customPlaceCount >= MAX_CUSTOM_PLACES || isDuplicateName) return;
@@ -164,7 +164,7 @@ export default function BudgetPlacesStep() {
               ? `직접 입력은 최대 ${MAX_CUSTOM_PLACES}개까지 가능합니다`
               : isDuplicateName
                 ? '이미 추가한 장소예요'
-                : '직접 입력한 장소는 생성 시 실제 장소로 검색돼요'}
+                : '직접 입력한 장소는 이름으로 찾아 넣어요. 못 찾으면 빠질 수 있어요'}
           </p>
         )}
 

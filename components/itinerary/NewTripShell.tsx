@@ -181,7 +181,7 @@ export default function NewTripShell() {
             같은 계열이 되어 위계가 뒤엉킨다(실제로 그랬다). 중립 표면으로 낮춘다. */}
         <div className="mt-3.5 flex flex-col gap-3 rounded-[10px] border border-card-border bg-surface-2 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
           <span className="text-[13px] font-semibold text-text-2">
-            예산도 알려주시면 더 정확해요
+            예산이 있으면 알려주세요 · 일행 전체, 숙박 포함
           </span>
           <div className="flex gap-2 sm:ml-auto">
             {BUDGET_CHIPS.map((chip) => (
@@ -250,7 +250,7 @@ export default function NewTripShell() {
               <UnderstandRow label="페이스" value={paceValue} last />
             </div>
             <div className="mt-4 rounded-[10px] bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
-              표에 없는 취향(좋아하는 음식 등)도 문장 그대로 &lsquo;AI에게 한마디&rsquo;로 전달돼 일정에 반영돼요.
+              표에 없는 취향(좋아하는 음식 등)도 문장 그대로 &lsquo;AI에게 한마디&rsquo;로 전달돼 장소를 고를 때 참고해요.
             </div>
           </>
         ) : parseError || understoodNothing ? (

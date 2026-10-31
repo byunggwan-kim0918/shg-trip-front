@@ -91,7 +91,7 @@ export default function ConfirmStep() {
         <textarea
           value={data.description}
           onChange={(e) => useWizardStore.getState().updateData({ description: e.target.value })}
-          placeholder="예: 아이가 있어서 이동은 짧게, 저녁은 흑돼지 맛집 꼭이요."
+          placeholder="예: 아이가 있어서 걷는 건 짧게, 회는 못 먹어요."
           rows={3}
           maxLength={DESCRIPTION_MAX_LENGTH}
           className="w-full resize-none rounded-[10px] border border-card-border bg-surface-3 px-4 py-3.5 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-muted-2 focus:border-accent"

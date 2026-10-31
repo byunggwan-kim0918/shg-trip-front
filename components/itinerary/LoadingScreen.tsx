@@ -192,7 +192,7 @@ export default function LoadingScreen() {
         selectedPlaceIds: data.selectedPlaces
           .filter((p) => p.id > 0)
           .map((p) => p.id),
-        // 자유입력(음수 임시 ID) 장소는 이름으로 전달 — 백엔드가 Google 검색으로 실장소화.
+        // 자유입력(음수 임시 ID) 장소는 이름으로 넘긴다. 백엔드가 저장된 장소에서 이름으로 찾는다.
         customPlaceNames: data.selectedPlaces
           .filter((p) => p.id < 0)
           .map((p) => p.name)

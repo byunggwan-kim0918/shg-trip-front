@@ -40,7 +40,6 @@ const THEME_DEFAULT_CATEGORIES: Record<string, Category[]> = {
   pet: ['cafe', 'nature', 'attraction'],
 };
 const DEFAULT_CATEGORIES: Category[] = ['attraction', 'restaurant', 'cafe'];
-const DEFAULT_THEME: Theme[] = ['healing'];
 
 /** 파싱된 테마에서 기본 카테고리 유도(최대 4개). 매핑이 없으면 무난한 기본 세트. */
 function deriveCategories(themes: Theme[]): Category[] {
@@ -52,8 +51,7 @@ function deriveCategories(themes: Theme[]): Category[] {
 
 /**
  * 파싱 결과 + 원문 문장을 마법사 필드로 프리필한다.
- * 자연어 흐름의 핵심: 문장에 없던 필수 필드(테마/카테고리)를 AI 이해값 기반으로 자동 보강해
- * 선택 화면 없이 곧장 확인(ConfirmStep, 요약)으로 보낸다. (여행지+기간이 있을 때만 — 없으면 마법사)
+ * 여행지·기간·테마가 있으면 확인 단계로, 테마만 없으면 취향 단계로, 그 외엔 마법사 처음으로.
  */
 function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
   // 랜딩·대시보드 입력창은 길이 제한이 없어 서버 상한보다 긴 문장이 넘어올 수 있다
@@ -71,15 +69,17 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
   }
   useWizardStore.getState().updateData(partial);
 
-  // 여행지+기간이 있으면 확인 화면으로 직행. 테마/카테고리(생성 필수 @NotEmpty)가 비면
-  // AI가 이해한 테마 기반으로 자동 보강 → 사용자는 선택 화면 없이 요약을 확인하고 생성.
+  // 여행지+기간이 있으면 확인 화면으로 직행한다. 테마를 못 읽었으면 대신 정하지 않고 취향 단계로 보낸다
+  // (기본 테마를 넣으면 사용자가 고르지 않은 테마가 요약에 고른 것처럼 보인다).
   const d = useWizardStore.getState().data;
   if (d.destination && d.startDate && d.endDate) {
-    const boost: Partial<WizardData> = {};
-    if (d.themes.length === 0) boost.themes = DEFAULT_THEME;
-    const effectiveThemes = boost.themes ?? d.themes;
-    if (d.categories.length === 0) boost.categories = deriveCategories(effectiveThemes);
-    if (Object.keys(boost).length > 0) useWizardStore.getState().updateData(boost);
+    if (d.themes.length === 0) {
+      useWizardStore.getState().setStep(1);
+      return;
+    }
+    if (d.categories.length === 0) {
+      useWizardStore.getState().updateData({ categories: deriveCategories(d.themes) });
+    }
     useWizardStore.getState().setStep(4);
   }
 }
