@@ -1,12 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { MapPinned, Sparkles } from 'lucide-react';
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import type { Itinerary } from '@/lib/types/itinerary';
 import { nightsLabel } from '@/lib/utils/tripStatus';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import TimelinePanel from '@/components/itinerary/result/TimelinePanel';
 import MapPanel from '@/components/itinerary/result/MapPanel';
+import Logo from '@/components/common/Logo';
+import EmptyState from '@/components/common/EmptyState';
 
 interface Props {
   itinerary: Itinerary;
@@ -29,6 +33,20 @@ export default function SharedItineraryView({ itinerary }: Props) {
 
   return (
     <div className="flex h-screen flex-col bg-background">
+      {/* 링크를 받은 사람이 서비스로 들어올 수 있는 유일한 입구 */}
+      <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-card-border bg-card-bg px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+          <Logo size={24} />
+          <span className="text-[13px] font-extrabold tracking-[-0.02em] text-foreground">SHG trip</span>
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-3 py-1.5 text-xs font-bold text-accent-fg transition-[filter] hover:brightness-105"
+        >
+          <Sparkles size={13} aria-hidden="true" /> 나도 AI로 여행 일정 만들기
+        </Link>
+      </div>
+
       {/* 헤더 (ResultLayout 헤더 축약, 액션 없음) */}
       <div className="flex items-start gap-4 border-b border-card-border bg-card-bg px-4 py-4 sm:px-6 sm:py-5">
         <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
@@ -66,26 +84,37 @@ export default function SharedItineraryView({ itinerary }: Props) {
       </div>
 
       {/* 본문: 모바일 지도 상단, lg 좌 타임라인 우 지도 */}
-      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* 비율은 ResultLayout과 같이 유지한다 — 두 화면이 같은 레이아웃 문자열을 복제하고 있다. */}
-        <div className="h-[180px] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l">
-          <MapPanel
-            steps={itinerary.steps}
-            selectedDay={selectedDay}
-            selectedStepId={selectedStepId}
-            onMarkerClick={setSelectedStepId}
+      {itinerary.steps.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center px-4">
+          <EmptyState
+            icon={MapPinned}
+            title="아직 담긴 장소가 없어요"
+            description="이 일정에는 방문할 장소가 없어요."
+            className="w-full max-w-sm"
           />
         </div>
-        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[48%]">
-          <TimelinePanel
-            itinerary={itinerary}
-            selectedDay={selectedDay}
-            onDayChange={setSelectedDay}
-            onStepClick={setSelectedStepId}
-            readOnly
-          />
+      ) : (
+        <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+          {/* 비율은 ResultLayout과 같이 유지한다 — 두 화면이 같은 레이아웃 문자열을 복제하고 있다. */}
+          <div className="h-[180px] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l">
+            <MapPanel
+              steps={itinerary.steps}
+              selectedDay={selectedDay}
+              selectedStepId={selectedStepId}
+              onMarkerClick={setSelectedStepId}
+            />
+          </div>
+          <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[48%]">
+            <TimelinePanel
+              itinerary={itinerary}
+              selectedDay={selectedDay}
+              onDayChange={setSelectedDay}
+              onStepClick={setSelectedStepId}
+              readOnly
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

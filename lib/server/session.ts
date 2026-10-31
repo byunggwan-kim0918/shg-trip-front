@@ -5,6 +5,9 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 const COOKIE_NAME = '__session';
+// refresh_token(7일)과 수명을 맞춘다. 안에 든 access token(30분)이 만료되면 백엔드 401 → refresh로 갱신되는데,
+// 쿠키가 30분에 먼저 사라지면 미들웨어가 refresh 기회 없이 /login으로 보낸다.
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 function getSecretKey(): Buffer {
   const hex = process.env.SESSION_SECRET;
@@ -61,7 +64,7 @@ export function createSessionCookie(accessToken: string): string {
   const payload: SessionPayload = { accessToken };
   const value = encrypt(payload);
 
-  return `${COOKIE_NAME}=${value}; HttpOnly; Path=/; SameSite=Lax; Max-Age=1800${
+  return `${COOKIE_NAME}=${value}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}${
     process.env.NODE_ENV === 'production' ? '; Secure' : ''
   }`;
 }

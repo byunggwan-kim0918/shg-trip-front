@@ -70,7 +70,7 @@ export default function StepCard({
       {isExpanded && <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent" aria-hidden="true" />}
 
       <div className="flex gap-3">
-        <div className="min-w-0 flex-1 md:max-w-[560px]">
+        <div className="min-w-0 flex-1">
           {/* 1행: 시작 시각 · 장소명 · 평점. 시각을 제목과 같은 줄에 두면 세로로 훑인다. */}
           <div className="flex items-baseline gap-2">
             {step.startTime && (
@@ -89,7 +89,7 @@ export default function StepCard({
 
           {/* 2행: 스토리 */}
           {hasStory ? (
-            <p className="mt-1 line-clamp-2 text-[13px] leading-[1.55] text-text-2">{step.notes}</p>
+            <p className="mt-1 line-clamp-2 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{step.notes}</p>
           ) : storyPending ? (
             <p className="mt-1 flex items-center gap-1.5 text-xs italic text-muted-2 animate-pulse">
               <Sparkles size={11} aria-hidden="true" /> 가이드 스토리를 작성하고 있어요…

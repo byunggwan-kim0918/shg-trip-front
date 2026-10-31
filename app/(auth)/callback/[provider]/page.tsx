@@ -3,6 +3,28 @@
 import { useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { RETURN_TO_PARAM, consumeReturnTo } from '@/lib/auth/returnTo';
+
+/** BFF 콜백 응답 status → LoginErrorToast 에러 코드 */
+function errorCodeFor(status: number): string {
+  if (status === 400) return 'state_mismatch';
+  if (status === 401 || status === 403) return 'auth_failed';
+  return 'server_error';
+}
+
+class CallbackError extends Error {
+  constructor(readonly code: string) {
+    super(code);
+  }
+}
+
+/** 실패해도 returnTo를 로그인 URL로 되돌려 재시도 때 다시 저장되게 한다 */
+function loginErrorUrl(code: string): string {
+  const params = new URLSearchParams({ error: code });
+  const returnTo = consumeReturnTo();
+  if (returnTo) params.set(RETURN_TO_PARAM, returnTo);
+  return `/login?${params}`;
+}
 
 export default function OAuthCallbackPage() {
   const params = useParams();
@@ -20,12 +42,12 @@ export default function OAuthCallbackPage() {
     const error = searchParams.get('error');
 
     if (error) {
-      router.replace('/login?error=denied');
+      router.replace(loginErrorUrl('denied'));
       return;
     }
 
     if (!code) {
-      router.replace('/login?error=no_code');
+      router.replace(loginErrorUrl('no_code'));
       return;
     }
 
@@ -37,20 +59,23 @@ export default function OAuthCallbackPage() {
       body: JSON.stringify({ provider, code, state }),
     })
       .then((res) => {
-        if (!res.ok) throw new Error('auth_failed');
+        if (!res.ok) throw new CallbackError(errorCodeFor(res.status));
         return res.json();
       })
       .then((response) => {
         const { isNewUser } = response.data;
 
+        // 신규 가입자는 returnTo를 남겨 두고 온보딩이 닉네임 저장 후 꺼내 쓴다
         if (isNewUser) {
           router.replace('/onboarding');
         } else {
-          router.replace('/main');
+          router.replace(consumeReturnTo() ?? '/main');
         }
       })
-      .catch(() => {
-        router.replace('/login?error=auth_failed');
+      .catch((e: unknown) => {
+        // fetch 자체가 실패하면(네트워크·서버 다운) TypeError로 온다
+        const code = e instanceof CallbackError ? e.code : 'server_error';
+        router.replace(loginErrorUrl(code));
       });
   }, []);
 

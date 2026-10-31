@@ -20,6 +20,14 @@ const BUDGET_CHIPS: Array<{ label: string; phrase: string }> = [
 const DEBOUNCE_MS = 600;
 const MIN_PARSE_LEN = 8;
 
+// 셸→마법사는 같은 라우트의 쿼리 전환이라 뒤로가기로 돌아오면 셸이 새로 마운트된다.
+// 입력하던 문장을 되살리려고 모듈 범위에 둔다(새로고침이면 비워지는 게 맞다).
+let shellDraft = '';
+
+export function clearShellDraft() {
+  shellDraft = '';
+}
+
 /** "이해했어요" 패널 한 줄. */
 function UnderstandRow({ label, value, last }: { label: string; value: string | null; last?: boolean }) {
   const filled = !!value;
@@ -40,10 +48,11 @@ function UnderstandRow({ label, value, last }: { label: string; value: string | 
  */
 export default function NewTripShell() {
   const router = useRouter();
-  const [sentence, setSentence] = useState('');
+  const [sentence, setSentence] = useState(() => shellDraft);
   const [budgetChip, setBudgetChip] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedTrip | null>(null);
   const [parsing, setParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
   const { quota } = useGenerationQuota();
 
   // 스테일 응답 드롭용 단조증가 seq (BFF 경유 abort 레이스 대비) + 진행중 요청 취소.
@@ -64,6 +73,7 @@ export default function NewTripShell() {
       parsedForRef.current = '';
       setParsed(null);
       setParsing(false);
+      setParseError(null);
       return;
     }
     debounceRef.current = setTimeout(async () => {
@@ -76,15 +86,19 @@ export default function NewTripShell() {
         const result = await parseTripSentence(trimmed, controller.signal);
         // 최신 요청만 반영 (stale 드롭)
         if (seq === seqRef.current) {
-          if (result) {
-            setParsed(result);
-            parsedForRef.current = trimmed;
-          }
+          setParsed(result);
+          parsedForRef.current = trimmed;
+          setParseError(null);
           setParsing(false);
         }
-      } catch {
-        // AbortError 또는 네트워크 실패 — 조용히 무시(패널 유지)
-        if (seq === seqRef.current) setParsing(false);
+      } catch (e) {
+        if (seq !== seqRef.current) return;
+        setParsing(false);
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        // 이전 문장의 결과를 남겨 두면 지금 문장을 그렇게 이해한 것처럼 보인다
+        setParsed(null);
+        parsedForRef.current = '';
+        setParseError(e instanceof Error ? e.message : '문장을 분석하지 못했어요.');
       }
     }, DEBOUNCE_MS);
 
@@ -121,7 +135,8 @@ export default function NewTripShell() {
         sessionStorage.setItem(NEW_TRIP_SENTENCE_KEY, trimmed);
       }
     }
-    router.replace('/main/plan/new?builder=1');
+    shellDraft = sentence;
+    router.push('/main/plan/new?builder=1');
   }, [sentence, parsed, router]);
 
   // 패널 표시값 (미추론은 null → "—")
@@ -137,6 +152,8 @@ export default function NewTripShell() {
   const hasAnyParsed = Boolean(
     parsed?.destination || periodValue || parsed?.party || themeValue || paceValue,
   );
+  const sentenceEmpty = sentence.trim().length === 0;
+  const understoodNothing = !parsing && parsed != null && !hasAnyParsed;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 py-6 lg:flex-row lg:gap-9 lg:py-10">
@@ -189,7 +206,9 @@ export default function NewTripShell() {
           <button
             type="button"
             onClick={() => goWizard(true)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-accent px-5 py-4 text-[15px] font-bold text-accent-fg shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105"
+            disabled={sentenceEmpty}
+            title={sentenceEmpty ? '여행 문장을 먼저 적어주세요' : undefined}
+            className="flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-accent px-5 py-4 text-[15px] font-bold text-accent-fg shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
           >
             <Sparkles size={16} aria-hidden="true" /> AI로 일정 만들기
           </button>
@@ -231,19 +250,26 @@ export default function NewTripShell() {
               <UnderstandRow label="페이스" value={paceValue} last />
             </div>
             <div className="mt-4 rounded-[10px] bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
-              부족한 부분은 문장을 더 적으면 AI가 알아서 반영해요.
+              표에 없는 취향(좋아하는 음식 등)도 문장 그대로 &lsquo;AI에게 한마디&rsquo;로 전달돼 일정에 반영돼요.
             </div>
           </>
+        ) : parseError || understoodNothing ? (
+          <div role="status" className="rounded-[10px] bg-warn-bg px-4 py-3 text-xs leading-[1.55] text-warn-fg">
+            {parseError ?? '이해하지 못했어요. 여행지와 기간을 넣어 다시 적어주세요.'}
+          </div>
         ) : (
           /* 빈 상태: 5줄이 전부 '—'인 표는 정보가 0인데 자리만 차지한다.
              무엇을 알아듣는지 알려주는 편이 입력에 도움이 된다. */
-          <ul className="flex flex-wrap gap-2">
-            {['여행지', '기간', '인원', '테마', '페이스'].map((k) => (
-              <li key={k} className="rounded-full bg-surface-3 px-3 py-1.5 text-xs font-semibold text-muted">
-                {k}
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="flex flex-wrap gap-2">
+              {['여행지', '기간', '인원', '테마', '페이스'].map((k) => (
+                <li key={k} className="rounded-full bg-surface-3 px-3 py-1.5 text-xs font-semibold text-muted">
+                  {k}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs leading-[1.55] text-muted-2">{SENTENCE_PLACEHOLDER}</p>
+          </>
         )}
       </aside>
     </div>

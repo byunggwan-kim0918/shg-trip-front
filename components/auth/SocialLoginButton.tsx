@@ -1,6 +1,6 @@
 'use client';
 
-import { type Provider, getOAuthUrl } from '@/lib/auth/oauthConfig';
+import type { Provider } from '@/lib/auth/oauthConfig';
 import KakaoIcon from '@/components/icons/KakaoIcon';
 import GoogleIcon from '@/components/icons/GoogleIcon';
 import NaverIcon from '@/components/icons/NaverIcon';
@@ -36,30 +36,34 @@ const PROVIDER_STYLES: Record<Provider, {
 
 interface SocialLoginButtonProps {
   provider: Provider;
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
 }
 
-export default function SocialLoginButton({ provider }: SocialLoginButtonProps) {
+export default function SocialLoginButton({ provider, onClick, disabled = false, loading = false }: SocialLoginButtonProps) {
   const style = PROVIDER_STYLES[provider];
   const Icon = style.icon;
 
-  const handleClick = async () => {
-    window.location.href = await getOAuthUrl(provider);
-  };
-
   return (
     <button
-      onClick={handleClick}
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-busy={loading}
       className={`
         flex w-full cursor-pointer items-center justify-center gap-2
         rounded-[10px] px-6 py-3.5
         text-[15px]
-        transition-[background-color,transform] duration-200
+        transition-[background-color,transform,opacity] duration-200
         hover:scale-[1.01] active:scale-[0.99]
+        disabled:cursor-default disabled:hover:scale-100 disabled:active:scale-100
+        ${disabled && !loading ? 'opacity-50' : ''}
         ${style.container}
       `}
     >
       <Icon className={`h-[18px] w-[18px] shrink-0 ${style.iconClass ?? ''}`} />
-      <span>{style.label}</span>
+      <span>{loading ? '로그인 화면으로 이동 중…' : style.label}</span>
     </button>
   );
 }

@@ -51,7 +51,8 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
           style={{ transform: `translateX(-${currentStep * 100}%)` }}
         >
           {children.map((child, i) => (
-            <div key={i} className="w-full flex-shrink-0 overflow-y-auto px-4 py-4">
+            // translateX로만 숨기므로 inert 없이는 화면 밖 단계의 입력이 Tab 포커스·스크린리더에 잡힌다
+            <div key={i} inert={i !== currentStep} className="w-full flex-shrink-0 overflow-y-auto px-4 py-4">
               {child}
             </div>
           ))}

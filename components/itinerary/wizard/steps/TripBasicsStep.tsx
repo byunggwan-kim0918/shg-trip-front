@@ -7,6 +7,7 @@ import CalendarPicker from '@/components/itinerary/wizard/CalendarPicker';
 import FieldError from '@/components/common/FieldError';
 import { POPULAR_DESTINATIONS, MAX_TRIP_DAYS } from '@/lib/constants/wizardOptions';
 import { nightsLabel } from '@/lib/utils/tripStatus';
+import { DESTINATION_MAX_LENGTH } from '@/lib/constants/newTrip';
 
 function toLocalDateStr(d: Date) {
   const y = d.getFullYear();
@@ -54,6 +55,7 @@ export default function TripBasicsStep() {
               if (e.nativeEvent.isComposing) return;
               if (e.key === 'Enter' && isStepValid) { e.preventDefault(); nextStep(); }
             }}
+            maxLength={DESTINATION_MAX_LENGTH}
             placeholder="여행지를 입력하세요 (예: 제주도)"
             className="w-full bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
             aria-label="여행지"

@@ -3,7 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useWizardStore } from '@/lib/stores/useWizardStore';
-import { NEW_TRIP_SENTENCE_KEY, NEW_TRIP_PARSED_KEY } from '@/lib/constants/newTrip';
+import {
+  NEW_TRIP_SENTENCE_KEY, NEW_TRIP_PARSED_KEY, DESCRIPTION_MAX_LENGTH, DESTINATION_MAX_LENGTH,
+} from '@/lib/constants/newTrip';
 import { parseTripSentence, type ParsedTrip } from '@/lib/data/itineraryService';
 import type { WizardData, Theme, Category, TripPace, TransportPref } from '@/lib/types/itinerary';
 import NewTripShell from '@/components/itinerary/NewTripShell';
@@ -54,9 +56,10 @@ function deriveCategories(themes: Theme[]): Category[] {
  * 선택 화면 없이 곧장 확인(ConfirmStep, 요약)으로 보낸다. (여행지+기간이 있을 때만 — 없으면 마법사)
  */
 function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
-  const partial: Partial<WizardData> = { description: sentence };
+  // 랜딩·대시보드 입력창은 길이 제한이 없어 서버 상한보다 긴 문장이 넘어올 수 있다
+  const partial: Partial<WizardData> = { description: sentence.slice(0, DESCRIPTION_MAX_LENGTH) };
   if (parsed) {
-    if (parsed.destination) partial.destination = parsed.destination;
+    if (parsed.destination) partial.destination = parsed.destination.slice(0, DESTINATION_MAX_LENGTH);
     if (parsed.startDate) partial.startDate = parsed.startDate;
     if (parsed.endDate) partial.endDate = parsed.endDate;
     if (parsed.themes?.length) partial.themes = parsed.themes as Theme[];
@@ -132,7 +135,7 @@ export default function PlanNewPage() {
     if (!sentence) return;
     sessionStorage.removeItem(NEW_TRIP_SENTENCE_KEY);
     // 문장이 있으면 우선 description만 프리필(파싱 실패 대비)
-    useWizardStore.getState().updateData({ description: sentence });
+    useWizardStore.getState().updateData({ description: sentence.slice(0, DESCRIPTION_MAX_LENGTH) });
 
     // didInit 가드로 논리적 1회 실행 보장. applyPrefill은 Zustand 스토어만 변경하므로
     // 언마운트 후 늦게 도착해도 안전(다음 마법사 진입 시 reset). 그래서 abort로 취소하지 않는다

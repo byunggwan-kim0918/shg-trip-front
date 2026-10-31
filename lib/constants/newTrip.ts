@@ -33,3 +33,8 @@ export const EXAMPLE_CHIPS: Array<{ label: string; sentence: string }> = [
     sentence: '경주로 1박 2일, 유적지랑 박물관 위주로 역사 테마 여행',
   },
 ];
+
+/** 서버 DTO 상한과 맞춘 입력 길이 — 넘기면 생성 버튼을 눌러야 400을 본다. */
+export const DESCRIPTION_MAX_LENGTH = 500;
+export const DESTINATION_MAX_LENGTH = 50;
+export const MANUAL_PLACE_NAME_MAX_LENGTH = 100;

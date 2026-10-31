@@ -82,7 +82,7 @@ export default function EditItineraryModal({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              maxLength={60}
+              maxLength={100}
               placeholder="여행 제목"
               className="w-full rounded-[10px] border border-card-border bg-surface-3 px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-accent"
             />

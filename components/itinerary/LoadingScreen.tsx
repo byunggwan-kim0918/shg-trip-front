@@ -28,6 +28,12 @@ const STAGES: { key: string; label: string }[] = [
 
 const SESSION_KEY = 'shg_active_job_id';
 
+// 서버 heartbeat는 SSE 주석이라 EventSource에 보이지 않는다. fallback 경로의 Sonnet 호출 하나가
+// 2분 가까이 진행 이벤트 없이 걸릴 수 있어 그보다 길게 잡는다.
+const STALL_TIMEOUT_MS = 150_000;
+const MAX_RECONNECT_ATTEMPTS = 3;
+const ESTIMATE_SEC = 60;
+
 // 백엔드는 최적화 경로(OptimizedGenerationExecutor)와 fallback 경로
 // (ItineraryGenerationExecutor)에서 서로 다른 stage 문자열을 보낸다.
 // 모든 backend stage를 리디자인 4단계 칩으로 매핑한다.
@@ -37,7 +43,7 @@ const STAGE_BUCKET: Record<string, number> = {
   FALLBACK: 0,
   SYNCING: 0,
   SELECTING: 0,
-  GENERATING: 1,
+  GENERATING: 0,
   OPTIMIZING: 1,
   VALIDATING: 2,
   SAVING: 3,
@@ -99,15 +105,15 @@ function getNextTarget(current: number): number {
 }
 
 const stageMessages: Record<string, string> = {
-  ENRICHING: '여행지 정보를 분석하고 있어요',
+  ENRICHING: '어떤 장소가 어울릴지 분석하고 있어요',
   SEARCHING: '어울리는 장소를 찾고 있어요',
   FALLBACK: '다른 방식으로 장소를 다시 찾고 있어요',
-  GENERATING: 'AI가 최적의 장소를 찾고 있어요',
+  GENERATING: 'AI가 최적의 장소를 고르고 있어요',
   SYNCING: '최신 장소 정보를 확인하고 있어요',
   SELECTING: '일자별로 장소를 배치하고 있어요',
   OPTIMIZING: '동선과 이동 시간을 다듬고 있어요',
-  VALIDATING: '동선과 일정을 검증하고 있어요',
-  SAVING: '맞춤 일정을 저장하고 있어요',
+  VALIDATING: '시간 배분과 동선을 검증하고 있어요',
+  SAVING: '예산을 정리하고 일정을 저장하고 있어요',
   COMPLETE: '일정이 완성됐어요!',
 };
 
@@ -130,11 +136,19 @@ export default function LoadingScreen() {
   const completedRef = useRef(false);
   // Day 보드 열 수 — 새로고침 재연결 시 wizard 데이터가 없으면 3열 기본
   const dayCountRef = useRef(3);
+  const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 진행 중 작업을 놓친 경우(재연결·응답 없음) 서버에서 끝나 저장됐을 수 있어 목록으로 안내한다
+  const [lostJob, setLostJob] = useState(false);
+  const reconnectAttemptsRef = useRef(0);
+  const [overEstimate, setOverEstimate] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(t);
+    const e = setTimeout(() => setOverEstimate(true), ESTIMATE_SEC * 1000);
+    return () => { clearTimeout(t); clearTimeout(e); };
   }, []);
+
+  useEffect(() => () => { if (stallTimerRef.current) clearTimeout(stallTimerRef.current); }, []);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -151,6 +165,7 @@ export default function LoadingScreen() {
 
       // 새로고침 케이스: wizard 데이터는 없지만 진행 중인 jobId가 있음
       if (!hasWizardData && savedJobId) {
+        setLostJob(true);
         reconnectToJob(savedJobId);
         return;
       }
@@ -230,14 +245,43 @@ export default function LoadingScreen() {
       });
   }
 
+  function clearStallTimer() {
+    if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+    stallTimerRef.current = null;
+  }
+
+  function armStallTimer(jobId: string, eventSource: EventSource) {
+    clearStallTimer();
+    stallTimerRef.current = setTimeout(async () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      eventSource.close();
+      try {
+        const res = await fetch(`/api/proxy/itineraries/generate/${jobId}/result`, { credentials: 'include' });
+        if (res.ok) {
+          const body = await res.json() as { success: boolean; data: number };
+          if (body.success) {
+            await handleComplete(jobId, body.data);
+            return;
+          }
+        }
+      } catch { /* 아래 안내로 */ }
+      sessionStorage.removeItem(SESSION_KEY);
+      setLostJob(true);
+      setError('서버 응답이 오래 없어요. 일정이 완성되면 내 여행에 저장돼요.');
+    }, STALL_TIMEOUT_MS);
+  }
+
   /** SSE 연결 및 이벤트 핸들러 등록 */
   function connectToJob(jobId: string) {
     completedRef.current = false;
     const sseUrl = `/api/proxy/itineraries/generate/${jobId}/stream`;
     const eventSource = new EventSource(sseUrl, { withCredentials: true });
     esRef.current = eventSource;
+    armStallTimer(jobId, eventSource);
 
     eventSource.addEventListener('progress', (e) => {
+      armStallTimer(jobId, eventSource);
       const payload = JSON.parse(e.data) as { percentage: number; message: string; stage: string };
       setTarget(payload.percentage);
       setStage(payload.stage);
@@ -245,6 +289,7 @@ export default function LoadingScreen() {
 
     // F4: 확정된 뼈대(장소·시간)를 day별로 수신 → 해당 Day 스켈레톤을 실카드로 교체.
     eventSource.addEventListener('step-stream', (e) => {
+      armStallTimer(jobId, eventSource);
       try {
         const payload = JSON.parse((e as MessageEvent).data) as { dayNumber: number; steps: StreamStep[] };
         if (payload?.dayNumber && Array.isArray(payload.steps)) {
@@ -257,6 +302,7 @@ export default function LoadingScreen() {
     // 비동기로 채워지는 중이므로 여기서 곧바로 결과 화면으로 이동한다.
     eventSource.addEventListener('complete', async () => {
       completedRef.current = true;
+      clearStallTimer();
       setTarget(100);
       setStage('COMPLETE');
 
@@ -289,20 +335,37 @@ export default function LoadingScreen() {
     });
 
     eventSource.addEventListener('error', (e) => {
+      // 연결 끊김도 같은 이름('error')으로 들어온다 — 본문이 있는 서버 이벤트만 여기서 처리하고
+      // 끊김은 onerror의 재연결로 넘긴다.
+      if (!(e instanceof MessageEvent) || !e.data) return;
       completedRef.current = true;
+      clearStallTimer();
       eventSource.close();
-      const payload = (e as MessageEvent).data
-        ? (JSON.parse((e as MessageEvent).data) as { message: string; errorCode?: string })
-        : null;
+      let payload: { message?: string; errorCode?: string } | null = null;
+      try {
+        const raw = (e as MessageEvent).data;
+        if (raw) payload = JSON.parse(raw);
+      } catch { /* 본문이 JSON이 아니면 기본 문구 */ }
       setError(payload?.message ?? 'AI 일정 생성 중 오류가 발생했습니다.');
       setErrorCode(payload?.errorCode ?? null);
+      // 서버가 작업을 모름(재배포·만료) — 이미 저장됐을 수 있으니 목록으로 안내한다
+      if (payload?.errorCode === 'PLANNING_006') setLostJob(true);
       sessionStorage.removeItem(SESSION_KEY);
     });
 
     // onerror: 서버 complete 후 브라우저가 재연결 시도할 때도 발화함
     eventSource.onerror = () => {
       if (completedRef.current) return;
+      clearStallTimer();
       eventSource.close();
+      // 서버는 작업을 계속 돌리고 다시 붙으면 기록을 재전송한다. 바로 실패로 끝내면 사용자가
+      // "다시 시도"로 같은 일정을 한 번 더 생성해 쿼터를 두 번 쓴다.
+      if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttemptsRef.current += 1;
+        setTimeout(() => reconnectToJob(jobId), 1500 * reconnectAttemptsRef.current);
+        return;
+      }
+      setLostJob(true);
       setError('서버 연결이 끊어졌습니다. 다시 시도해주세요.');
       sessionStorage.removeItem(SESSION_KEY);
     };
@@ -337,8 +400,8 @@ export default function LoadingScreen() {
           errorCode={errorCode ?? undefined}
           retryLabel={isValidationError ? '조건 수정' : '다시 시도'}
           onRetry={isBlocked ? undefined : () => router.push(`/main/plan/new?builder=1&step=${targetStep}`)}
-          secondaryLabel={isBlocked ? '확인' : '처음으로'}
-          onSecondary={() => router.push('/main')}
+          secondaryLabel={isBlocked ? '확인' : lostJob ? '내 여행 보기' : '처음으로'}
+          onSecondary={() => router.push(lostJob && !isBlocked ? '/main/my-trips' : '/main')}
         />
       </div>
     );
@@ -362,7 +425,7 @@ export default function LoadingScreen() {
           AI가 일정을 짜고 있어요
         </div>
         <div className="mt-1.5 text-[13px] text-muted">
-          {stageMessages[stage] ?? stageMessages.ENRICHING} · 약 20초
+          {stageMessages[stage] ?? stageMessages.ENRICHING} · {overEstimate ? '조금 더 걸리고 있어요' : '약 1분'}
         </div>
         <div className="mx-auto mt-3.5 flex w-[200px] items-center gap-2.5">
           <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-surface-3">

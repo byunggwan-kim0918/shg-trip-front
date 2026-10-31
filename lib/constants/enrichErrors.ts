@@ -12,6 +12,8 @@ export const ENRICH_ERROR_STEP: Record<string, number> = {
   INVALID_DATE_RANGE: 0,   // 기간(=여행지 단계에 함께)
   // 백엔드가 errorCode 누락 시 대체하는 일반 코드 — 특정 단계 불명이라 여행지 단계로.
   INVALID_INPUT: 0,
+  // 여행지 장소 데이터 부족(PLANNING_005) — 같은 조건으로 재시도해도 같은 결과라 여행지 단계로.
+  PLANNING_005: 0,
 };
 
 /** 해당 errorCode가 "사용자 입력 조건" 문제라 마법사 수정으로 해결 가능한지. */
