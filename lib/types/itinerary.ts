@@ -130,7 +130,7 @@ export interface ItineraryGenerateRequest {
   endDate: string;
   description: string | null;
   selectedPlaceIds: number[];
-  /** 자유입력 장소명 — 백엔드가 생성 시 Google Places(ko)로 실장소화 (최대 5개) */
+  /** 자유입력 장소명(최대 5개). 백엔드가 저장된 장소에서 이름으로 찾고, 못 찾으면 뺀다 */
   customPlaceNames: string[];
 }
 
