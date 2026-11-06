@@ -50,9 +50,9 @@ export const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
 ];
 
 export const PACE_OPTIONS: { id: TripPace; label: string; icon: LucideIcon; desc: string }[] = [
-  { id: 'tight', label: '알차게', icon: Zap, desc: '하루 5~7곳' },
-  { id: 'normal', label: '보통', icon: Footprints, desc: '하루 4~5곳' },
-  { id: 'relaxed', label: '여유롭게', icon: Coffee, desc: '하루 2~3곳' },
+  { id: 'tight', label: '알차게', icon: Zap, desc: '하루 관광 3~5곳' },
+  { id: 'normal', label: '보통', icon: Footprints, desc: '하루 관광 2~3곳' },
+  { id: 'relaxed', label: '여유롭게', icon: Coffee, desc: '하루 관광 1~2곳' },
 ];
 
 export const TRANSPORT_OPTIONS: { id: TransportPref; label: string; icon: LucideIcon; desc: string }[] = [

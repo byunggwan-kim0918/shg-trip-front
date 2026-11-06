@@ -110,6 +110,7 @@ export default function StyleStep() {
             );
           })}
         </div>
+        <p className="mt-2 text-[11px] text-muted-2">점심·저녁 식사는 빼고 센 숫자예요.</p>
       </div>
 
       {/* 이동 방법 */}
