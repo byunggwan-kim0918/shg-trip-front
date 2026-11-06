@@ -5,7 +5,6 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { RETURN_TO_PARAM, consumeReturnTo } from '@/lib/auth/returnTo';
 
-/** BFF 콜백 응답 status → LoginErrorToast 에러 코드 */
 function errorCodeFor(status: number): string {
   if (status === 400) return 'state_mismatch';
   if (status === 401 || status === 403) return 'auth_failed';
@@ -51,7 +50,7 @@ export default function OAuthCallbackPage() {
       return;
     }
 
-    // BFF에 인가 코드 전달 (state 검증은 서버에서 처리)
+    // state 검증은 BFF 서버에서 한다.
     fetch('/api/auth/callback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,7 +72,7 @@ export default function OAuthCallbackPage() {
         }
       })
       .catch((e: unknown) => {
-        // fetch 자체가 실패하면(네트워크·서버 다운) TypeError로 온다
+        // fetch 자체가 실패하면(네트워크·서버 다운) CallbackError가 아니라 TypeError로 온다.
         const code = e instanceof CallbackError ? e.code : 'server_error';
         router.replace(loginErrorUrl(code));
       });

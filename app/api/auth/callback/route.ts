@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { backendFetch } from '@/lib/server/backendFetch';
 import { createSessionCookie } from '@/lib/server/session';
 
-// NOTE: response.cookies API와 headers.append('Set-Cookie')를 혼용하면 덮어쓰기 이슈 발생 (Next.js 버그)
+// response.cookies와 headers.append('Set-Cookie')를 섞으면 Next.js가 쿠키를 덮어쓴다.
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ provider, code }),
     });
   } catch {
-    // 백엔드 미기동/네트워크 오류 (ECONNREFUSED 등) — 스택트레이스 노출 없이 502 반환
+    // 백엔드 미기동(ECONNREFUSED 등)은 스택트레이스를 노출하지 않고 502로 응답한다.
     return NextResponse.json(
       { error: 'Unable to reach authentication server' },
       { status: 502 },

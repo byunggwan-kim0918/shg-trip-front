@@ -16,7 +16,7 @@ import StyleStep from '@/components/itinerary/wizard/steps/StyleStep';
 import BudgetPlacesStep from '@/components/itinerary/wizard/steps/BudgetPlacesStep';
 import ConfirmStep from '@/components/itinerary/wizard/steps/ConfirmStep';
 
-/** 테마 → 기본 카테고리 (문장에 카테고리 키워드가 없을 때 AI 이해값으로 보강용). */
+/** 문장에 카테고리 키워드가 없을 때 테마로 카테고리를 채운다. */
 const THEME_DEFAULT_CATEGORIES: Record<string, Category[]> = {
   food: ['restaurant', 'cafe', 'street_food'],
   healing: ['cafe', 'nature', 'attraction'],
@@ -41,7 +41,6 @@ const THEME_DEFAULT_CATEGORIES: Record<string, Category[]> = {
 };
 const DEFAULT_CATEGORIES: Category[] = ['attraction', 'restaurant', 'cafe'];
 
-/** 파싱된 테마에서 기본 카테고리 유도(최대 4개). 매핑이 없으면 무난한 기본 세트. */
 function deriveCategories(themes: Theme[]): Category[] {
   const set = new Set<Category>();
   for (const t of themes) for (const c of THEME_DEFAULT_CATEGORIES[t] ?? []) set.add(c);
@@ -49,12 +48,8 @@ function deriveCategories(themes: Theme[]): Category[] {
   return derived.length > 0 ? derived : DEFAULT_CATEGORIES;
 }
 
-/**
- * 파싱 결과 + 원문 문장을 마법사 필드로 프리필한다.
- * 여행지·기간·테마가 있으면 확인 단계로, 테마만 없으면 취향 단계로, 그 외엔 마법사 처음으로.
- */
 function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
-  // 랜딩·대시보드 입력창은 길이 제한이 없어 서버 상한보다 긴 문장이 넘어올 수 있다
+  // 랜딩·대시보드 입력창은 길이 제한이 없어 서버 상한보다 긴 문장이 넘어올 수 있다.
   const partial: Partial<WizardData> = { description: sentence.slice(0, DESCRIPTION_MAX_LENGTH) };
   if (parsed) {
     if (parsed.destination) partial.destination = parsed.destination.slice(0, DESTINATION_MAX_LENGTH);
@@ -75,8 +70,8 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
   }
   useWizardStore.getState().updateData(partial);
 
-  // 여행지+기간이 있으면 확인 화면으로 직행한다. 테마를 못 읽었으면 대신 정하지 않고 취향 단계로 보낸다
-  // (기본 테마를 넣으면 사용자가 고르지 않은 테마가 요약에 고른 것처럼 보인다).
+  // 테마를 못 읽었으면 기본 테마를 넣지 않고 취향 단계로 보낸다.
+  // 넣으면 사용자가 고르지 않은 테마가 요약에 고른 것처럼 보인다.
   const d = useWizardStore.getState().data;
   if (d.destination && d.startDate && d.endDate) {
     if (d.themes.length === 0) {
@@ -91,27 +86,25 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
 }
 
 /**
- * 통합 새 여행 진입점.
  * - `?builder=1` 없음 → NewTripShell(자연어 입력 + 실시간 파싱).
  * - `?builder=1` → 5단계 마법사. 파싱 결과 프리필 + ConfirmStep 점프.
  */
 export default function PlanNewPage() {
   const searchParams = useSearchParams();
   const builder = searchParams.get('builder') === '1';
-  // "조건 수정" 재진입(LoadingScreen 에러): 기존 입력을 보존한 채 지정 단계로 점프.
+  // LoadingScreen 에러의 "조건 수정"은 기존 입력을 보존한 채 지정 단계로 돌아온다.
   const stepParam = searchParams.get('step');
   const { reset } = useWizardStore();
-  // consume-once 가드: StrictMode(dev) 이중 실행 시 2회차가 프리필을 지우는 것을 방지.
+  // StrictMode(dev) 이중 실행에서 2회차가 프리필을 지우지 않게 한 번만 소비한다.
   const didInit = useRef(false);
 
   useEffect(() => {
-    // shell로 돌아오면 가드를 풀어준다 — 같은 라우트(?builder 토글)라 PlanNewPage가 리마운트되지
-    // 않으므로, 리셋 없이는 두 번째 builder 진입에서 새 프리필/파싱 소비가 스킵돼 이전 여행이 남는다.
+    // ?builder 토글은 같은 라우트라 리마운트되지 않으므로, 가드를 풀지 않으면
+    // 두 번째 builder 진입에서 프리필 소비가 스킵돼 이전 여행이 남는다.
     if (!builder) { didInit.current = false; return; }
     if (didInit.current) return;
     didInit.current = true;
 
-    // (0) step 파라미터가 있으면 reset·파싱 없이 기존 마법사 데이터 유지 + 해당 단계로 점프.
     if (stepParam != null) {
       const n = Number(stepParam);
       if (Number.isFinite(n)) useWizardStore.getState().setStep(n);
@@ -120,7 +113,6 @@ export default function PlanNewPage() {
 
     reset();
 
-    // (1) NewTripShell에서 구조화 파싱 결과가 넘어온 경우 → 동기 프리필
     const rawParsed = sessionStorage.getItem(NEW_TRIP_PARSED_KEY);
     if (rawParsed) {
       sessionStorage.removeItem(NEW_TRIP_PARSED_KEY);
@@ -131,21 +123,20 @@ export default function PlanNewPage() {
           applyPrefill(payload.sentence, (payload.parsed ?? null) as ParsedTrip | null);
         }
       } catch {
-        /* 손상된 페이로드 무시 → 빈 마법사 */
+        /* 손상된 페이로드는 버리고 빈 마법사로 시작한다 */
       }
       return;
     }
 
-    // (2) 랜딩/대시보드에서 문장만 넘어온 경우(비로그인 → 파싱 불가였음) → 로그인된 지금 파싱
+    // 비로그인 상태에서 넘어온 문장은 파싱되지 않았으므로 로그인한 지금 파싱한다.
     const sentence = sessionStorage.getItem(NEW_TRIP_SENTENCE_KEY);
     if (!sentence) return;
     sessionStorage.removeItem(NEW_TRIP_SENTENCE_KEY);
-    // 문장이 있으면 우선 description만 프리필(파싱 실패 대비)
+    // 파싱이 실패해도 description은 남게 먼저 채운다.
     useWizardStore.getState().updateData({ description: sentence.slice(0, DESCRIPTION_MAX_LENGTH) });
 
-    // didInit 가드로 논리적 1회 실행 보장. applyPrefill은 Zustand 스토어만 변경하므로
-    // 언마운트 후 늦게 도착해도 안전(다음 마법사 진입 시 reset). 그래서 abort로 취소하지 않는다
-    // — abort하면 StrictMode(dev) 2회차 조기 return과 겹쳐 구조화 프리필이 유실된다.
+    // abort하면 StrictMode(dev) 2회차의 조기 return과 겹쳐 구조화 프리필이 유실된다.
+    // applyPrefill은 스토어만 바꾸므로 언마운트 뒤 늦게 도착해도 다음 진입에서 reset된다.
     parseTripSentence(sentence)
       .then((parsed) => { if (parsed) applyPrefill(sentence, parsed); })
       .catch(() => { /* 파싱 실패 → description만 유지 */ });

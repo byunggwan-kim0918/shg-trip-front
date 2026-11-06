@@ -34,10 +34,7 @@ async function parseJson<T>(res: Response): Promise<T> {
   return body.data;
 }
 
-/**
- * 생성이 정책(rate-limit·쿼터)으로 거부됐을 때 던지는 에러 — errorCode(PLANNING_003/004)를 담는다.
- * 호출부가 일반 실패와 구분해 차단 안내를 띄우게 한다.
- */
+/** rate-limit·쿼터 거부(PLANNING_003/004)를 일반 실패와 구분해 호출부가 차단 안내를 띄우게 한다. */
 export class GenerationRejectedError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -70,11 +67,11 @@ export async function startItineraryGeneration(req: ItineraryGenerateRequest): P
 export interface GenerationQuota {
   used: number;
   limit: number;
-  resetAt: string | null;      // ISO — 쿼터 창 리셋(첫 생성 +30일)
-  blockedUntil: string | null; // ISO — R1 검증 실패 차단 해제 시각
+  resetAt: string | null;  // ISO. 쿼터 창 리셋(첫 생성 +30일)
+  blockedUntil: string | null;  // ISO. 검증 실패 차단 해제 시각
 }
 
-/** GET /api/itineraries/generation-quota — 배지·차단 안내용 잔여 조회. */
+/** GET /api/itineraries/generation-quota */
 export async function fetchGenerationQuota(): Promise<GenerationQuota> {
   const res = await authFetch('/api/itineraries/generation-quota');
   if (!res.ok) throw new Error('생성 한도를 불러오지 못했습니다.');
@@ -95,7 +92,7 @@ export async function fetchMyItineraries(page = 0, size = 20): Promise<PageRespo
   return parseJson<PageResponse<ItinerarySummary>>(res);
 }
 
-/** DELETE /api/itineraries/{id} — soft delete. 204 No Content이므로 본문 파싱하지 않는다. */
+/** DELETE /api/itineraries/{id}. 204 No Content라 본문을 파싱하지 않는다. */
 export async function deleteItinerary(id: number): Promise<void> {
   const res = await authFetch(`/api/itineraries/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(await errorMessage(res, '일정 삭제에 실패했습니다.'));
@@ -120,7 +117,7 @@ export async function selectAlternative(
 }
 
 /**
- * PATCH /api/itineraries/{id}/steps/reorder — 같은 day 내 스텝 재정렬.
+ * PATCH /api/itineraries/{id}/steps/reorder
  * orderedStepIds는 해당 day 전체 스텝 id를 새 순서대로. 응답은 갱신된 전체 일정.
  */
 export async function reorderSteps(
@@ -137,7 +134,7 @@ export async function reorderSteps(
   return parseJson<Itinerary>(res);
 }
 
-/** DELETE /api/itineraries/{id}/steps/{stepId} — 스텝(스톱) 삭제. 응답은 갱신된 전체 일정. */
+/** DELETE /api/itineraries/{id}/steps/{stepId}. 응답은 갱신된 전체 일정. */
 export async function deleteStep(itineraryId: number, stepId: number): Promise<Itinerary> {
   const res = await authFetch(`/api/itineraries/${itineraryId}/steps/${stepId}`, {
     method: 'DELETE',
@@ -146,7 +143,7 @@ export async function deleteStep(itineraryId: number, stepId: number): Promise<I
   return parseJson<Itinerary>(res);
 }
 
-/** PUT /api/itineraries/{id} — 순서 변경 시 title/tags 포함 전송 */
+/** PUT /api/itineraries/{id} */
 export async function updateItinerary(
   id: number,
   payload: { title?: string | null; tags?: string[] },
@@ -167,7 +164,7 @@ interface PlaceSearchItem {
   address: string;
   latitude: number;   // BigDecimal → JSON number
   longitude: number;
-  category: string;    // Foursquare 원시 계층 문자열 — 표시/분기용으로 신뢰 금지
+  category: string;  // Foursquare 원시 계층 문자열이라 프론트 Category와 다르다. 표시/분기에 쓰지 않는다
   region: string | null;
 }
 
@@ -186,7 +183,6 @@ export async function searchPlaces(keyword: string): Promise<WizardPlace[]> {
     address: p.address,
     latitude: Number(p.latitude),
     longitude: Number(p.longitude),
-    // category는 "Dining and Drinking > ..." 형태의 원시 taxonomy — 프론트 Category enum과 불일치, 표시/분기 금지
     category: p.category,
     region: p.region ?? undefined,
   }));
@@ -198,7 +194,7 @@ export interface ShareLink {
   expiresAt: string; // OffsetDateTime → ISO 문자열
 }
 
-/** POST /api/itineraries/{id}/share — 공유 링크(토큰+만료) 발급 */
+/** POST /api/itineraries/{id}/share. 토큰+만료를 발급한다. */
 export async function shareItinerary(id: number): Promise<ShareLink> {
   const res = await authFetch(`/api/itineraries/${id}/share`, { method: 'POST' });
   if (!res.ok) throw new Error('공유 링크 생성에 실패했습니다.');
@@ -223,9 +219,8 @@ export interface ParsedTrip {
 }
 
 /**
- * POST /api/itineraries/parse — 문장 → 구조화 필드.
- * 콘텐츠 실패는 백엔드가 200 + empty()로 반환하므로 2xx면 항상 파싱된다.
- * 비2xx(500자 초과 400 등)는 서버 메시지로 throw. abort 시 AbortError를 던지므로 호출부에서 잡는다.
+ * POST /api/itineraries/parse. 콘텐츠 실패도 백엔드가 200 + empty()로 주므로 2xx면 항상 파싱된다.
+ * 비2xx(500자 초과 400 등)는 서버 메시지로 throw하고, abort 시 AbortError를 던진다.
  */
 export async function parseTripSentence(
   sentence: string,
@@ -241,7 +236,7 @@ export async function parseTripSentence(
   return parseJson<ParsedTrip>(res);
 }
 
-/** POST /api/itineraries/{id}/finalize — 일정 확정 */
+/** POST /api/itineraries/{id}/finalize */
 export async function finalizeItinerary(id: number): Promise<Itinerary> {
   const res = await authFetch(`/api/itineraries/${id}/finalize`, {
     method: 'POST',

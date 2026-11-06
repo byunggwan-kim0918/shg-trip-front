@@ -4,13 +4,7 @@ import { Sun, Moon } from 'lucide-react';
 import { useAppStore } from '@/lib/stores';
 import { toggleThemeWithTransition } from '@/lib/theme';
 
-/**
- * 테마 토글 버튼.
- *
- * 원래 Header(=/main 레이아웃)에만 있어서 비로그인 방문자는 랜딩·로그인·온보딩에서
- * 테마를 바꿀 수 없었다. 테마는 적용되는데 전환 수단만 없는 상태였다.
- * 같은 컴포넌트를 세 진입 화면이 공유해 아이콘·크기·전환이 화면마다 달라지지 않게 한다.
- */
+/** 진입 화면들과 Header가 같은 컴포넌트를 써야 화면마다 아이콘·크기·전환이 달라지지 않는다. */
 export default function ThemeToggle({ className = '' }: { className?: string }) {
   const theme = useAppStore((s) => s.theme);
   return (

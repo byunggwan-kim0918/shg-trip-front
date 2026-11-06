@@ -56,7 +56,7 @@ export default function CalendarPicker({ startDate, endDate, onDateChange, minDa
     const d = date.getTime();
     if (d < effectiveMin.getTime()) return 'past';
     if (normalizedStart && !normalizedEnd && d < normalizedStart.getTime()) return 'beforeStart';
-    // 종료일 선택 중: 시작일 + (maxRangeDays-1)일을 넘는 날짜는 비활성 (백엔드 상한과 동일)
+    // 백엔드 기간 상한과 같은 범위다.
     if (maxRangeDays && normalizedStart && !normalizedEnd) {
       const maxEnd = new Date(normalizedStart);
       maxEnd.setDate(maxEnd.getDate() + maxRangeDays - 1);

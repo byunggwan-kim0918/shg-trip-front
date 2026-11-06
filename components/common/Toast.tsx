@@ -12,10 +12,8 @@ interface Props {
 }
 
 /**
- * 하단 고정 토스트 (4e). 라이트에선 의도된 반전(어두운) 표면.
- * 다크에선 배경(#0d0e12)과 명도가 가까워 가장자리가 사라지므로 ring-white/12로 테두리를 만든다.
- * (그림자는 다크 배경에서 분리 효과가 없다.)
- * 네트워크 끊김/일시 오류 안내용. 전역 토스트 시스템 대신 소비처에서 조건부 렌더한다.
+ * 다크에선 배경과 명도가 가깝고 그림자로는 분리되지 않아 ring-white/12로 테두리를 만든다.
+ * 전역 토스트 시스템 없이 소비처에서 조건부 렌더한다.
  */
 export default function Toast({ title, description, actionLabel, onAction, onClose }: Props) {
   return (

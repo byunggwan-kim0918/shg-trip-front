@@ -3,7 +3,7 @@ import { AlertCircle, RotateCcw } from 'lucide-react';
 interface Props {
   title?: string;
   description?: string;
-  /** 오류 코드 (예: GEN_TIMEOUT_504). */
+  /** 예: GEN_TIMEOUT_504 */
   errorCode?: string;
   retryLabel?: string;
   onRetry?: () => void;
@@ -12,7 +12,6 @@ interface Props {
   className?: string;
 }
 
-/** 생성 실패 등 전면 에러 (4e). ! 아이콘 카드 + 액션 2개 + 오류코드. */
 export default function ErrorState({
   title = '일정을 만들지 못했어요',
   description = 'AI 응답에 문제가 생겼어요. 잠시 후 다시 시도하거나 조건을 조금 바꿔보세요.',

@@ -8,13 +8,11 @@ async function handleProxy(
   const { path } = await params;
   const backendPath = `/api/${path.join('/')}`;
 
-  // 요청 body 추출 (GET/HEAD는 body 없음)
   let body: string | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     body = await request.text();
   }
 
-  // Content-Type 전달
   const headers: Record<string, string> = {};
   const contentType = request.headers.get('content-type');
   if (contentType) {
@@ -31,9 +29,8 @@ async function handleProxy(
     request,
   );
 
-  // Spring 응답을 그대로 전달
-  // SSE(text/event-stream)는 body를 버퍼링하지 않고 스트리밍으로 전달
-  // 이미지 등 바이너리 응답은 arrayBuffer로 전달 (text 변환 시 깨짐 방지)
+  // SSE는 버퍼링하면 이벤트가 늦게 도착하므로 스트림 그대로 넘긴다.
+  // 바이너리는 text로 바꾸면 깨지므로 arrayBuffer로 넘긴다.
   const resContentType = springRes.headers.get('content-type') || 'application/json';
   const isSSE = resContentType.includes('text/event-stream');
   const isBinary = resContentType.startsWith('image/') || resContentType === 'application/octet-stream';
@@ -47,7 +44,7 @@ async function handleProxy(
     responseBody = await springRes.text();
   }
 
-  // 204/205/304는 스펙상 body를 가질 수 없음 — 전달 시 Response 생성자가 예외를 던진다
+  // 204/205/304에 body를 넘기면 Response 생성자가 예외를 던진다.
   const isNoBodyStatus = springRes.status === 204 || springRes.status === 205 || springRes.status === 304;
 
   const response = new NextResponse(isNoBodyStatus ? null : responseBody, {
@@ -56,15 +53,14 @@ async function handleProxy(
       'Content-Type': resContentType,
       ...(isSSE && {
         'Cache-Control': 'no-cache',
-        'X-Accel-Buffering': 'no',  // nginx 버퍼링 비활성화
+        'X-Accel-Buffering': 'no',  // nginx가 SSE를 버퍼링하지 않게 한다
       }),
       ...(isBinary && {
-        'Cache-Control': 'public, max-age=86400',  // 이미지 1일 캐싱
+        'Cache-Control': 'public, max-age=86400',
       }),
     },
   });
 
-  // refresh 과정에서 발생한 Set-Cookie 전달
   for (const cookie of cookies) {
     response.headers.append('Set-Cookie', cookie);
   }

@@ -8,19 +8,15 @@ import StepCard from './StepCard';
 
 interface Props {
   step: ItineraryStep;
-  /** 삭제 요청(상위에서 ConfirmModal 처리) */
+  /** 확인은 상위가 ConfirmModal로 한다. */
   onRequestDelete: () => void;
-  /** 재정렬/삭제 in-flight — 드래그 핸들·삭제 비활성 */
+  /** 재정렬/삭제 in-flight이면 핸들·삭제를 막는다. */
   disabled?: boolean;
-  /** day에 스텝이 1개뿐이면 삭제 불가(백엔드 규칙과 일치) */
+  /** day에 스텝이 1개뿐이면 false(백엔드 규칙과 같다). */
   deletable?: boolean;
 }
 
-/**
- * 편집 모드 전용 드래그 가능한 스텝 행 (F3).
- * dnd-kit useSortable로 같은 day 내 재정렬. 좌측 그립 핸들 + StepCard(비클릭) + 우측 삭제 버튼.
- * 번호노드/커넥터가 있는 리치 타임라인 대신 단순 리스트로 전환해 드래그 중 시각 혼란을 없앤다(홀21).
- */
+/** 드래그 중 시각 혼란을 줄이려고 번호노드/커넥터 없는 단순 리스트로 그린다. */
 export default function SortableStepCard({ step, onRequestDelete, disabled = false, deletable = true }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id,

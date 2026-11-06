@@ -9,15 +9,12 @@ interface Props {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** 위험한 동작(삭제 등)이면 확인 버튼을 danger 색으로 */
   danger?: boolean;
-  /** 확인 처리 중 버튼 비활성화 */
   busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-/** 간단한 확인 모달. ESC 닫기 + aria-modal + 확인 버튼 오토포커스. */
 export default function ConfirmModal({
   open,
   title,

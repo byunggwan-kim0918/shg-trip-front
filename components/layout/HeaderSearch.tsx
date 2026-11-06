@@ -9,7 +9,6 @@ import { displayStatus, dateRange } from '@/lib/utils/tripStatus';
 
 const MAX_RESULTS = 8;
 
-/** 헤더 여행 검색. itineraries 스토어 클라이언트 필터 + 드롭다운. */
 export default function HeaderSearch() {
   const router = useRouter();
   const { itineraries, loadItineraries } = useItineraryStore();
@@ -17,8 +16,8 @@ export default function HeaderSearch() {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
-  // 검색 소스 보장: 목록이 비었으면 로드(헤더 단독 화면 대비 — Sidebar만 로드를 호출하므로).
-  // store가 in-flight 가드를 하므로 Sidebar 호출과 중복되지 않는다. rejection은 삼킨다.
+  // Sidebar만 목록을 로드하므로 헤더 단독 화면에서도 검색 소스가 비지 않게 로드한다.
+  // store가 in-flight를 가드해 Sidebar 호출과 중복되지 않는다. rejection은 삼킨다.
   const triedLoad = useRef(false);
   useEffect(() => {
     if (itineraries.length === 0 && !triedLoad.current) {
@@ -27,7 +26,6 @@ export default function HeaderSearch() {
     }
   }, [itineraries.length, loadItineraries]);
 
-  // 외부 클릭 닫기
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
@@ -69,7 +67,7 @@ export default function HeaderSearch() {
             if (next || results.length === 0) setOpen(false);
           }}
           onKeyDown={(e) => {
-            // 조합 중 Escape는 조합 취소, Enter는 조합 확정 — 둘 다 IME가 먼저 가져간다.
+            // 조합 중 Escape·Enter는 IME가 먼저 가져간다(조합 취소·확정).
             if (e.nativeEvent.isComposing) return;
             if (e.key === 'Escape') { setOpen(false); (e.target as HTMLInputElement).blur(); }
             if (e.key === 'Enter') {

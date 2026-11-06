@@ -11,10 +11,7 @@ function formatDate(iso: string | null): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-/**
- * "이번 달 생성 가능 N/5회 · 30일 기준" 배지 (R2).
- * 소진/차단 시 warn 톤 + 리셋 시각 안내. quota null(조회 실패)이면 렌더 안 함.
- */
+/** quota가 null(조회 실패)이면 렌더하지 않는다. */
 export default function GenerationQuotaBadge({
   quota,
   className = '',

@@ -4,7 +4,6 @@ import { useWizardStore } from '@/lib/stores/useWizardStore';
 import { THEME_OPTIONS, CATEGORY_OPTIONS } from '@/lib/constants/wizardOptions';
 import type { Theme, Category } from '@/lib/types/itinerary';
 
-/** 2단계: 취향 (6b). 테마 카드 그리드 + 세부 카테고리 칩. */
 export default function TasteStep() {
   const { data, updateData } = useWizardStore();
 
@@ -31,7 +30,6 @@ export default function TasteStep() {
         </p>
       </div>
 
-      {/* 테마 카드 */}
       <div>
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">테마</div>
         <div className="grid grid-cols-3 gap-2.5">
@@ -57,7 +55,6 @@ export default function TasteStep() {
         </div>
       </div>
 
-      {/* 세부 카테고리 칩 */}
       <div>
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">세부 카테고리</div>
         <div className="flex flex-wrap gap-2">
