@@ -7,7 +7,7 @@ import {
   NEW_TRIP_SENTENCE_KEY, NEW_TRIP_PARSED_KEY, DESCRIPTION_MAX_LENGTH, DESTINATION_MAX_LENGTH,
 } from '@/lib/constants/newTrip';
 import { parseTripSentence, type ParsedTrip } from '@/lib/data/itineraryService';
-import type { WizardData, Theme, Category, TripPace, TransportPref } from '@/lib/types/itinerary';
+import type { WizardData, Theme, Category, TripPace, TransportPref, Companion } from '@/lib/types/itinerary';
 import NewTripShell from '@/components/itinerary/NewTripShell';
 import WizardLayout from '@/components/itinerary/wizard/WizardLayout';
 import TripBasicsStep from '@/components/itinerary/wizard/steps/TripBasicsStep';
@@ -65,7 +65,13 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
     if (parsed.pace) partial.pace = parsed.pace as TripPace;
     if (parsed.transportPref) partial.transportPref = parsed.transportPref as TransportPref;
     if (parsed.budget != null) partial.budget = parsed.budget;
-    // party는 프리필하지 않음(홀18) — 원문 문장(description)에 이미 포함, enrich가 자유텍스트로 읽음.
+    if (parsed.companion) partial.companion = parsed.companion as Companion;
+    // 혼자·커플은 인원 입력이 숨겨져 있어, 앞뒤 안 맞는 인원이 보이지 않은 채 전송된다
+    if (parsed.partySize != null && parsed.companion !== 'solo' && parsed.companion !== 'couple') {
+      partial.partySize = parsed.partySize;
+    }
+    if (parsed.arrivalTime) partial.arrivalTime = parsed.arrivalTime;
+    if (parsed.departureTime) partial.departureTime = parsed.departureTime;
   }
   useWizardStore.getState().updateData(partial);
 

@@ -12,16 +12,27 @@ const initialData: WizardData = {
   pace: 'normal',
   transportPref: 'any',
   budget: null,
+  companion: null,
+  partySize: null,
+  arrivalTime: null,
+  departureTime: null,
   startDate: null,
   endDate: null,
   description: '',
   selectedPlaces: [],
 };
 
+/** 당일치기인데 출발이 도착보다 빠르거나 같은 경우. "HH:mm"은 문자열 비교로 순서가 맞다. */
+export function isSameDayTimeInverted(data: WizardData): boolean {
+  return !!data.startDate && data.startDate === data.endDate
+    && !!data.arrivalTime && !!data.departureTime && data.departureTime <= data.arrivalTime;
+}
+
 /** 각 단계 유효성 (데이터 기반, 동기 계산). 4단계(예산·장소)는 선택이라 항상 유효. */
 export function computeStepValid(step: number, data: WizardData): boolean {
   switch (step) {
-    case 0: return data.destination.trim().length > 0 && !!data.startDate && !!data.endDate;
+    case 0: return data.destination.trim().length > 0 && !!data.startDate && !!data.endDate
+      && !isSameDayTimeInverted(data);
     case 1: return data.themes.length >= 1 && data.categories.length >= 1;
     case 2: return true; // 스타일 (페이스·이동 기본값 있음)
     case 3: return true; // 예산·필수장소 (선택·건너뛰기)

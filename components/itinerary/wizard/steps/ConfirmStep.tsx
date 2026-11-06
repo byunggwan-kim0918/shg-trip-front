@@ -2,12 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
-import { useWizardStore } from '@/lib/stores/useWizardStore';
+import { useWizardStore, isSameDayTimeInverted } from '@/lib/stores/useWizardStore';
 import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
 import { formatBudget } from '@/lib/utils/format';
 import { nightsLabel, dateRange } from '@/lib/utils/tripStatus';
 import {
-  THEME_LABEL, CATEGORY_LABEL, PACE_LABEL, TRANSPORT_LABEL,
+  THEME_LABEL, CATEGORY_LABEL, PACE_LABEL, TRANSPORT_LABEL, COMPANION_LABEL,
 } from '@/lib/constants/wizardOptions';
 import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 import { DESCRIPTION_MAX_LENGTH } from '@/lib/constants/newTrip';
@@ -24,6 +24,12 @@ export default function ConfirmStep() {
     data.categories.map((c) => CATEGORY_LABEL[c] ?? c).join('·'),
   ].filter(Boolean).join(' / ');
 
+  const times = [data.arrivalTime && `${data.arrivalTime} 도착`, data.departureTime && `${data.departureTime} 출발`]
+    .filter(Boolean).join(' · ');
+  const companion = data.companion
+    ? `${COMPANION_LABEL[data.companion] ?? data.companion}${data.partySize ? ` ${data.partySize}명` : ''}`
+    : null;
+
   const rows: { label: string; value: string; step: number }[] = [
     {
       label: '여행지 · 기간',
@@ -32,13 +38,15 @@ export default function ConfirmStep() {
         : data.destination,
       step: 0,
     },
+    ...(times ? [{ label: '도착 · 출발', value: times, step: 0 }] : []),
     { label: '취향', value: themeCat || '미설정', step: 1 },
     {
       label: '스타일',
-      value: `${PACE_LABEL[data.pace] ?? data.pace} · ${TRANSPORT_LABEL[data.transportPref] ?? data.transportPref}`,
+      value: [companion, PACE_LABEL[data.pace] ?? data.pace, TRANSPORT_LABEL[data.transportPref] ?? data.transportPref]
+        .filter(Boolean).join(' · '),
       step: 2,
     },
-    { label: '예산', value: data.budget ? `${formatBudget(data.budget)}원` : 'AI에게 맡김', step: 3 },
+    { label: '예산', value: data.budget ? `일행 전체 ${formatBudget(data.budget)}원` : 'AI에게 맡김', step: 3 },
     {
       label: '필수 장소',
       value: data.selectedPlaces.length > 0 ? data.selectedPlaces.map((p) => p.name).join(' · ') : '없음',
@@ -50,8 +58,10 @@ export default function ConfirmStep() {
   const missing: string[] = [];
   if (!data.destination.trim()) missing.push('여행지');
   if (!data.startDate || !data.endDate) missing.push('기간');
+  if (isSameDayTimeInverted(data)) missing.push('출발 시간');
   if (data.themes.length === 0 || data.categories.length === 0) missing.push('취향');
-  const firstMissingStep = !data.destination.trim() || !data.startDate || !data.endDate ? 0 : 1;
+  const firstMissingStep = !data.destination.trim() || !data.startDate || !data.endDate
+    || isSameDayTimeInverted(data) ? 0 : 1;
 
   const handleGenerate = () => {
     if (missing.length > 0) {
