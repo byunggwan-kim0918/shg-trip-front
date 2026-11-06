@@ -89,7 +89,10 @@ export default function BudgetPlacesStep() {
 
       {/* 예산 */}
       <div>
-        <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">예산</div>
+        <div className="mb-2.5 flex items-baseline justify-between">
+          <span className="text-xs font-bold tracking-[0.03em] text-muted-2">예산</span>
+          <span className="text-[11px] text-muted-2">일행 전체 · 숙박 포함</span>
+        </div>
         <label className="mb-2 flex h-12 items-center rounded-lg border border-card-border bg-surface-3 px-4 focus-within:ring-2 focus-within:ring-accent/25">
           <input
             type="text"

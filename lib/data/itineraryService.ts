@@ -210,7 +210,11 @@ export interface ParsedTrip {
   destination: string | null;
   startDate: string | null;  // "2026-07-25"
   endDate: string | null;
-  party: string | null;      // 표시 전용 (마법사 필드 아님)
+  party: string | null;      // "이해했어요" 패널 표시용 원문
+  companion: string | null;
+  partySize: number | null;
+  arrivalTime: string | null; // "HH:mm"
+  departureTime: string | null;
   themes: string[];
   categories: string[];
   pace: string | null;

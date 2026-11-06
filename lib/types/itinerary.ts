@@ -10,6 +10,7 @@ export type Category = 'attraction' | 'restaurant' | 'cafe' | 'accommodation' | 
 export type TripPace = 'tight' | 'normal' | 'relaxed';
 
 export type TransportPref = 'walk' | 'car' | 'any';
+export type Companion = 'solo' | 'couple' | 'friends' | 'family' | 'parents';
 
 /** 백엔드 TransportationMode enum 값 */
 export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI' | 'BIKE' | 'FLIGHT';
@@ -99,6 +100,11 @@ export interface WizardData {
   pace: TripPace;
   transportPref: TransportPref;
   budget: number | null;
+  companion: Companion | null;
+  partySize: number | null;
+  /** 첫날 도착·마지막 날 출발 "HH:mm". 모르면 null */
+  arrivalTime: string | null;
+  departureTime: string | null;
   startDate: string | null;
   endDate: string | null;
   description: string;
@@ -126,6 +132,10 @@ export interface ItineraryGenerateRequest {
   pace: string;
   transportPref: string;
   budget: number | null;
+  companion: Companion | null;
+  partySize: number | null;
+  arrivalTime: string | null;
+  departureTime: string | null;
   startDate: string;
   endDate: string;
   description: string | null;

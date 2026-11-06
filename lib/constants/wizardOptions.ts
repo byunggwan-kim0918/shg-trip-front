@@ -3,7 +3,7 @@ import {
   Wallet, Crown, Camera, Footprints, Waves, Mountain, Moon, Home, Palette,
   PartyPopper, PawPrint, Car, Shuffle, Coffee, type LucideIcon,
 } from 'lucide-react';
-import type { Theme, Category, TripPace, TransportPref } from '@/lib/types/itinerary';
+import type { Theme, Category, TripPace, TransportPref, Companion } from '@/lib/types/itinerary';
 
 /** 테마 (2단계 취향 카드). 디자인 6a 기준 대표 테마를 앞에 배치. */
 export const THEME_OPTIONS: { id: Theme; label: string; icon: LucideIcon }[] = [
@@ -61,6 +61,18 @@ export const TRANSPORT_OPTIONS: { id: TransportPref; label: string; icon: Lucide
   { id: 'any', label: '상관없음', icon: Shuffle, desc: '자유롭게' },
 ];
 
+export const COMPANION_OPTIONS: { id: Companion; label: string }[] = [
+  { id: 'solo', label: '혼자' },
+  { id: 'couple', label: '커플' },
+  { id: 'friends', label: '친구' },
+  { id: 'family', label: '가족(아이)' },
+  { id: 'parents', label: '부모님' },
+];
+
+/** 혼자·커플은 인원이 정해져 있어 묻지 않는다. 나머지는 인원을 처음 만질 때의 시작값. */
+export const DEFAULT_PARTY_SIZE: Partial<Record<Companion, number>> = { friends: 3, family: 4, parents: 3 };
+export const MAX_PARTY_SIZE = 20; // 백엔드 @Max
+
 /** 인기 목적지 (1단계 칩). */
 export const POPULAR_DESTINATIONS = ['제주도', '부산', '강릉', '경주', '여수'];
 
@@ -76,6 +88,7 @@ export const BUDGET_QUICK_CHIPS: { label: string; value: number | null }[] = [
 export const THEME_LABEL = Object.fromEntries(THEME_OPTIONS.map((t) => [t.id, t.label])) as Record<string, string>;
 export const CATEGORY_LABEL = Object.fromEntries(CATEGORY_OPTIONS.map((c) => [c.id, c.label])) as Record<string, string>;
 export const PACE_LABEL = Object.fromEntries(PACE_OPTIONS.map((p) => [p.id, p.label])) as Record<string, string>;
+export const COMPANION_LABEL = Object.fromEntries(COMPANION_OPTIONS.map((c) => [c.id, c.label])) as Record<string, string>;
 export const TRANSPORT_LABEL = Object.fromEntries(TRANSPORT_OPTIONS.map((t) => [t.id, t.label])) as Record<string, string>;
 
 export const MAX_BUDGET = 100_000_000; // 백엔드 @DecimalMax — 1억원
