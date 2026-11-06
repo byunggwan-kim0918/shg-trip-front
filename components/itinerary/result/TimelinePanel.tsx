@@ -271,6 +271,8 @@ export default function TimelinePanel({
         })}
       </div>
       )}
+      {/* 공공누리 이용 조건: TourAPI 데이터(이미지·영업시간)를 쓰는 화면은 출처를 표시한다. */}
+      <p className="mt-6 text-center text-[11px] text-muted-2">관광 정보 일부: 한국관광공사</p>
     </div>
   );
 }
