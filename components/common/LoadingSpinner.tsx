@@ -1,10 +1,9 @@
 interface Props {
   message?: string;
-  /** 스피너 지름 px (기본 40). */
+  /** 지름 px. */
   size?: number;
 }
 
-/** 원형 스피너 (짧은 로딩 기본). border-top accent + shg-spin. */
 export default function LoadingSpinner({ message, size = 40 }: Props) {
   return (
     <div className="flex flex-col items-center justify-center gap-4">

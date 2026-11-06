@@ -9,24 +9,15 @@ type Props = {
   className?: string;
 };
 
-/** 진입 모션: 기존 globals.css의 fade-in-up 키프레임을 재사용한다(병렬 시스템 금지). */
+/** 모션 정의를 한 곳에 두려고 globals.css의 fade-in-up 키프레임을 재사용한다. */
 const ENTER =
   'motion-safe:[animation:fade-in-up_300ms_cubic-bezier(0.23,1,0.32,1)_both]';
 /** 발화 전 숨김. motion-safe로만 걸어서 reduced-motion 사용자에겐 항상 보이게 한다. */
 const HIDDEN = 'motion-safe:opacity-0';
 
 /**
- * 뷰포트에 들어올 때 한 번만 진입 모션을 재생한다.
- *
- * 접힘선 아래 요소에 로드 시점 애니메이션을 걸면 사용자가 스크롤해 오기 전에
- * 재생이 끝나 아무도 보지 못한다. 그래서 IntersectionObserver로 실제로
- * 보이는 순간에 발화시키고, 한 번 재생 후 관찰을 끊는다.
- *
- * 숨김은 observer의 첫 보고에서 "아직 아래에 있다"가 확인된 요소에만 건다. 처음부터 숨겨 두면
- * JS가 늦거나 observer가 발화하지 않을 때 섹션이 빈 칸으로 남는다.
- *
- * prefers-reduced-motion 처리는 상태가 아니라 CSS(motion-safe)에 맡긴다.
- * 그래서 모션 비선호 사용자는 숨김도 애니메이션도 적용받지 않는다.
+ * 접힘선 아래 요소는 로드 시점에 재생하면 아무도 못 보므로 보이는 순간 한 번만 재생한다.
+ * 처음부터 숨기면 observer가 발화하지 않을 때 빈 칸으로 남아, 아래에 있다고 확인된 요소만 숨긴다.
  */
 export default function Reveal({ children, delay = 0, className = '' }: Props) {
   const ref = useRef<HTMLDivElement>(null);

@@ -7,8 +7,7 @@ import { fetchItinerary } from '@/lib/data/itineraryService';
 import { hasPendingStory, hasPendingImage } from '@/lib/types/itinerary';
 import ResultLayout from '@/components/itinerary/result/ResultLayout';
 
-// 비동기 생성 폴링(story 문장 + 장소 사진): 2.5초 간격, 최대 16회(~40초) 후 종료.
-// 이미지 업로드가 더 오래 걸리면 STORY_POLL_MAX_ATTEMPTS를 24(~60초)로 상향 가능.
+// story 문장과 장소 사진은 비동기로 채워지므로 약 40초 동안 재조회한다.
 const STORY_POLL_INTERVAL_MS = 2500;
 const STORY_POLL_MAX_ATTEMPTS = 16;
 
@@ -19,12 +18,11 @@ export default function ItineraryDetailPage() {
   const { currentItinerary, setCurrentItinerary, applyAsyncFill, setStoryPending } =
     useItineraryStore();
   const [notFound, setNotFound] = useState(false);
-  // true로 초기화 — 첫 렌더에서 currentItinerary=null 상태로 ResultLayout이 노출되는 것을 방지
+  // false로 시작하면 첫 렌더에 currentItinerary=null인 ResultLayout이 노출된다.
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!id || isNaN(id)) { setNotFound(true); setIsLoading(false); return; }
-    // 이미 로드된 일정이면 재요청 생략
     if (currentItinerary?.id === id) { setIsLoading(false); return; }
 
     fetchItinerary(id)
@@ -33,9 +31,8 @@ export default function ItineraryDetailPage() {
       .finally(() => setIsLoading(false));
   }, [id, currentItinerary?.id, setCurrentItinerary]);
 
-  // 비동기 채움 폴링 — 구조 일정 먼저 도착 후 가이드북 문장(notes)과 장소 사진(imageUrl)이
-  // 채워지는 것을 반영한다. story 또는 image 중 하나라도 pending이면 폴링을 계속한다.
-  // 단 store 플래그(setStoryPending)는 story 의미만 유지해 "생성 중" 표시가 이미지 대기로 오래 켜지지 않게 한다.
+  // story나 image 중 하나라도 pending이면 폴링을 계속한다.
+  // setStoryPending은 story만 반영해야 "생성 중" 표시가 이미지 대기로 오래 켜지지 않는다.
   const isTarget = currentItinerary?.id === id;
   const storyPending = isTarget && hasPendingStory(currentItinerary);
   const contentPending = isTarget && (hasPendingStory(currentItinerary) || hasPendingImage(currentItinerary));
@@ -47,13 +44,13 @@ export default function ItineraryDetailPage() {
     let interval: ReturnType<typeof setInterval> | undefined;
     let cancelled = false;
 
-    // 한 번의 폴링 tick: 재조회 후 pending 해소 여부 판정. 종료 시 true 반환.
+    // 폴링을 끝내야 하면 true.
     const poll = async (): Promise<boolean> => {
       attempts += 1;
       try {
         const fresh = await fetchItinerary(id);
         if (cancelled) return true;
-        // 편집(재정렬/삭제) 결과를 되돌리지 않도록 순서/집합은 보존하고 채움 필드만 머지.
+        // 편집(재정렬/삭제) 결과를 되돌리지 않게 순서·집합은 두고 채움 필드만 머지한다.
         applyAsyncFill(fresh);
         setStoryPending(hasPendingStory(fresh));
         const stillPending = hasPendingStory(fresh) || hasPendingImage(fresh);
@@ -70,7 +67,7 @@ export default function ItineraryDetailPage() {
       return false;
     };
 
-    // 첫 회는 2.5초 기다리지 않고 즉시 실행 — 이미지/story가 이미 준비된 경우 팝인 gap 최소화.
+    // 이미 준비된 경우 사진·문장이 늦게 뜨지 않게 첫 회는 기다리지 않는다.
     void poll().then((done) => {
       if (done || cancelled) return;
       interval = setInterval(async () => {

@@ -1,20 +1,12 @@
-/**
- * 자연어 새 여행 입력 공유 상수.
- * 랜딩 입력창 → 새 여행 화면으로 문장을 전달할 때 sessionStorage를 사용한다.
- * (Layer A: 문장은 wizard description 프리필로만 활용. LLM 파싱은 Layer B에서.)
- */
+/** 랜딩·대시보드 입력창에서 새 여행 화면으로 넘기는 원문 문장(sessionStorage). */
 export const NEW_TRIP_SENTENCE_KEY = 'shg.newTripSentence';
 
-/**
- * 파싱 완료된 새 여행 데이터(원문 문장 + 구조화 필드)를 마법사로 전달하는 키.
- * NewTripShell에서 /parse 결과를 저장 → builder 진입 시 wizard 필드 프리필 + ConfirmStep 점프에 사용.
- */
+/** NewTripShell의 /parse 결과(원문 + 구조화 필드). builder가 프리필 후 ConfirmStep으로 점프한다. */
 export const NEW_TRIP_PARSED_KEY = 'shg.newTripParsed';
 
 export const SENTENCE_PLACEHOLDER =
   '예) 7월 말에 제주로 2박 3일, 카페랑 오름 위주로 여유롭게';
 
-/** 랜딩 예시 칩: 라벨 + 클릭 시 프리필될 문장. */
 export const EXAMPLE_CHIPS: Array<{ label: string; sentence: string }> = [
   {
     label: '제주 힐링 3일',
@@ -34,7 +26,7 @@ export const EXAMPLE_CHIPS: Array<{ label: string; sentence: string }> = [
   },
 ];
 
-/** 서버 DTO 상한과 맞춘 입력 길이 — 넘기면 생성 버튼을 눌러야 400을 본다. */
+/** 서버 DTO 상한과 같다. 넘기면 생성 버튼을 눌러야 400을 본다. */
 export const DESCRIPTION_MAX_LENGTH = 500;
 export const DESTINATION_MAX_LENGTH = 50;
 export const MANUAL_PLACE_NAME_MAX_LENGTH = 100;

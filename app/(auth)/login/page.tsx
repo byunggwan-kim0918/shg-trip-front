@@ -4,10 +4,7 @@ import LoginErrorToast from '@/components/auth/LoginErrorToast';
 import LoginReturnHint from '@/components/auth/LoginReturnHint';
 import Logo from '@/components/common/Logo';
 
-/**
- * 로그인 좌측 미리보기. 실제 생성 결과와 같은 모양(시간 · 장소)을 보여준다.
- * 랜딩 히어로와 같은 어휘를 쓰되 구성은 달리해서 두 화면이 복붙으로 읽히지 않게 한다.
- */
+/** 랜딩 히어로와 어휘는 같되 구성을 달리해 두 화면이 복붙으로 읽히지 않게 한다. */
 const LOGIN_PREVIEW = [
   { time: '10:30', name: '제주국제공항' },
   { time: '12:10', name: '동문재래시장' },
@@ -15,8 +12,7 @@ const LOGIN_PREVIEW = [
 ] as const;
 
 
-/** 진입 모션(design-dna.md §7). 대상에 따라 메커니즘을 나눈다.
- *  텍스트=아래서 위로 "도착" / 이미지=거의 제자리에서 "안착"(4px). 같은 효과를 전부에 복사하지 않는다. */
+/** 진입 모션(design-dna.md §7). 텍스트는 아래서 위로 도착하고, 이미지는 4px만 움직여 안착한다. */
 const ENTER_TEXT =
   'motion-safe:opacity-0 motion-safe:[animation:fade-in-up_400ms_cubic-bezier(0.23,1,0.32,1)_forwards]';
 const ENTER_MEDIA =
@@ -29,13 +25,9 @@ export default function LoginPage() {
         <LoginErrorToast />
       </Suspense>
 
-      {/* 분할 인증: 좌 콜라주 / 우 카드. 세로 스택일 땐 카드를 먼저 둬서 로그인 버튼이 첫 화면에 들어오게 한다. */}
+      {/* 세로 스택에서는 카드를 먼저 둬야 로그인 버튼이 첫 화면에 들어온다. */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_1fr] md:items-center md:gap-14">
-        {/* 좌: 입력 → 결과 데모.
-            예전엔 목적지 타일 4개를 깔았는데, 이 제품에는 커버 사진이 없어서 늘 그라데이션
-            폴백이었다. 네 타일이 같은 녹색 계열로 나와 "물감 색표본"이 됐고, 폴백을 종이 톤으로
-            낮추자 이번엔 빈 흰 판이 됐다 — 타일 자체가 내용물인 자리라 폴백 조정으로는 안 된다.
-            로그인 전 사용자가 알아야 하는 건 목적지가 아니라 **무엇을 넣으면 무엇이 나오는가**다. */}
+        {/* 커버 사진이 없어 목적지 타일은 빈 색면이 되므로, 무엇을 넣으면 무엇이 나오는지를 보여준다. */}
         <div className={`${ENTER_MEDIA} md:max-w-[480px]`}>
           <p className="mb-3 text-[13px] font-semibold text-muted">이렇게 적으면</p>
 
@@ -70,7 +62,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* 우: 로그인 카드. 좌측 정렬. */}
         <div className={`${ENTER_TEXT} motion-safe:[animation-delay:80ms] order-first flex w-full max-w-[380px] flex-col items-start text-left md:order-none`}>
           <Logo size={62} className="mb-5" />
           <h1 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">SHG trip</h1>

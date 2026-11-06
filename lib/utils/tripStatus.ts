@@ -1,14 +1,7 @@
-/**
- * 여행 상태/기간 유틸.
- *
- * 백엔드 status(DRAFT/FINALIZED/ARCHIVED) + 날짜로 리디자인의 4가지 표시 상태
- * (여행 중 / 초안 / 완료 / 예정)를 계산한다. 백엔드에 상태 필터 파라미터가 없어
- * 필터 탭은 프론트에서 이 유틸로 처리한다.
- */
+/** 백엔드에 상태 필터 파라미터가 없어 표시 상태(여행 중/초안/완료/예정)와 필터 탭을 프론트에서 계산한다. */
 
 export type TripDisplayStatus = 'ongoing' | 'draft' | 'done' | 'upcoming';
 
-/** 필터 탭 키 */
 export type TripFilter = 'all' | 'upcoming' | 'ongoing' | 'done';
 
 interface DatedTrip {
@@ -39,7 +32,7 @@ export function ddayLabel(startDate: string, now: Date = new Date()): string {
   return `D+${Math.abs(diff)}`;
 }
 
-/** N박 M일 계산. */
+/** 당일 포함 일수(N박 M일의 M). */
 export function tripDays(startDate: string, endDate: string): number {
   const s = midnight(new Date(startDate));
   const e = midnight(new Date(endDate));
@@ -59,12 +52,11 @@ export function shortDate(dateStr: string): string {
   return `${d.getMonth() + 1}.${d.getDate()}`;
 }
 
-/** "M.D - M.D" 날짜 범위. en-dash는 ai-tells §9.G에서 구분자로 금지. */
+/** "M.D - M.D". en-dash는 ai-tells §9.G에서 구분자로 쓰지 않는다. */
 export function dateRange(startDate: string, endDate: string): string {
   return `${shortDate(startDate)} - ${shortDate(endDate)}`;
 }
 
-/** 표시 상태 판정: DRAFT면 초안, 아니면 날짜로 예정/여행중/완료. */
 export function displayStatus(trip: DatedTrip, now: Date = new Date()): TripDisplayStatus {
   if (trip.status === 'DRAFT') return 'draft';
   const today = midnight(now).getTime();
@@ -75,7 +67,7 @@ export function displayStatus(trip: DatedTrip, now: Date = new Date()): TripDisp
   return 'ongoing';
 }
 
-/** 필터 탭 매칭. 'all'은 항상 true. draft는 예정/여행중/완료 어디에도 안 잡히므로 'all'에서만 노출. */
+/** draft는 예정/여행중/완료 어디에도 안 잡혀 'all'에서만 보인다. */
 export function matchesFilter(trip: DatedTrip, filter: TripFilter, now: Date = new Date()): boolean {
   if (filter === 'all') return true;
   return displayStatus(trip, now) === filter;
@@ -92,7 +84,6 @@ export const STATUS_META: Record<
   upcoming: { label: '예정', dotVar: 'var(--status-upcoming)', bgVar: 'var(--status-upcoming-bg)', fgVar: 'var(--status-upcoming)' },
 };
 
-/** 필터 탭 정의(대시보드 상단). */
 export const FILTER_TABS: Array<{ key: TripFilter; label: string }> = [
   { key: 'all', label: '전체' },
   { key: 'upcoming', label: '예정' },

@@ -5,7 +5,7 @@ import { BACKEND_URL } from '@/lib/server/backendFetch';
 const UNAUTHENTICATED = { data: { isAuthenticated: false, user: null } };
 
 /**
- * 미인증 응답은 항상 __session을 지운다. 쿠키가 남아 있으면 미들웨어가 /login을 /main으로
+ * 미인증 응답은 항상 __session을 지운다. 쿠키가 남으면 미들웨어가 /login을 /main으로
  * 되돌려 AuthGuard와 서로 튕기며 빈 화면에 갇힌다.
  */
 function unauthenticated(): NextResponse {
@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
     return springRes.status >= 500 ? unavailable(springRes.status) : unauthenticated();
   }
 
-  // 401 → refresh 시도
   const incomingCookie = request.headers.get('cookie') ?? '';
   let refreshRes: Response;
   try {

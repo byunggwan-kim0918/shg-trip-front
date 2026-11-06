@@ -9,14 +9,13 @@ import { BUDGET_QUICK_CHIPS, MAX_BUDGET, MAX_CUSTOM_PLACES } from '@/lib/constan
 import type { WizardPlace } from '@/lib/types/itinerary';
 import { MANUAL_PLACE_NAME_MAX_LENGTH } from '@/lib/constants/newTrip';
 
-/** 4단계: 예산 · 필수 장소 (6d) — 선택 · 건너뛰기 가능. */
 export default function BudgetPlacesStep() {
   const { data, updateData } = useWizardStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WizardPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  // budget=null은 "미입력"과 "상관없음" 둘 다를 의미해 애매하다.
-  // 사용자가 예산을 명시적으로 만졌을 때만 null-칩("상관없음")을 활성 표시한다.
+  // budget=null은 "미입력"과 "상관없음"을 둘 다 뜻하므로
+  // 사용자가 예산을 만졌을 때만 "상관없음" 칩을 활성 표시한다.
   const [budgetTouched, setBudgetTouched] = useState(data.budget !== null);
   const [budgetHint, setBudgetHint] = useState<string | null>(null);
 
@@ -87,7 +86,6 @@ export default function BudgetPlacesStep() {
       </div>
       <p className="-mt-3 text-[13px] text-muted">비워두면 AI가 알아서 채워요.</p>
 
-      {/* 예산 */}
       <div>
         <div className="mb-2.5 flex items-baseline justify-between">
           <span className="text-xs font-bold tracking-[0.03em] text-muted-2">예산</span>
@@ -108,7 +106,6 @@ export default function BudgetPlacesStep() {
         {budgetHint && <p className="-mt-1 mb-2 text-xs text-warn-fg" role="status">{budgetHint}</p>}
         <div className="flex gap-1.5">
           {BUDGET_QUICK_CHIPS.map((chip) => {
-            // null 칩(상관없음)은 사용자가 예산을 만졌을 때만 활성으로 간주
             const active = chip.value === null ? budgetTouched && data.budget === null : data.budget === chip.value;
             return (
               <button
@@ -126,7 +123,6 @@ export default function BudgetPlacesStep() {
         </div>
       </div>
 
-      {/* 필수 장소 */}
       <div className="relative">
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">꼭 가고 싶은 장소</div>
         <div className="flex gap-2">
@@ -137,7 +133,7 @@ export default function BudgetPlacesStep() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
-                // 한글 조합 중 Enter는 "조합 확정"용 — 제출로 처리하면 입력창을 비운 뒤
+                // 한글 조합 중 Enter는 조합 확정이라, 제출로 처리하면 입력창을 비운 뒤
                 // 잔여 조합("성산일출봉"의 "봉")이 다시 채워져 칩이 두 개 생긴다.
                 if (e.nativeEvent.isComposing) return;
                 if (e.key === 'Enter' && hasNoResults) { e.preventDefault(); addCustomPlace(); }
@@ -196,7 +192,6 @@ export default function BudgetPlacesStep() {
         )}
       </div>
 
-      {/* 선택된 장소 칩 */}
       {data.selectedPlaces.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {data.selectedPlaces.map((place) => (

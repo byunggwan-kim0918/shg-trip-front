@@ -7,14 +7,13 @@ import {
 } from '@/lib/constants/wizardOptions';
 import type { Companion } from '@/lib/types/itinerary';
 
-/** 3단계: 스타일 (6c). 누구와(선택) + 하루 페이스 3카드 + 이동 방법 3카드 (단일 선택). */
 export default function StyleStep() {
   const { data, updateData } = useWizardStore();
   const defaultParty = data.companion ? DEFAULT_PARTY_SIZE[data.companion] : undefined;
   const partyShown = defaultParty != null ? (data.partySize ?? defaultParty) : null;
 
   const selectCompanion = (id: Companion) => {
-    // 같은 칩을 다시 누르면 해제. 동행이 바뀌면 이전 동행 기준 인원은 맞지 않아 비운다.
+    // 동행이 바뀌면 이전 동행 기준 인원은 맞지 않아 비운다.
     const next = data.companion === id ? null : id;
     updateData({ companion: next, partySize: next === data.companion ? data.partySize : null });
   };
@@ -28,7 +27,6 @@ export default function StyleStep() {
     <div className="space-y-5">
       <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">여행 스타일</h2>
 
-      {/* 누구와 */}
       <div>
         <div className="mb-2.5 flex items-baseline justify-between">
           <span className="text-xs font-bold tracking-[0.03em] text-muted-2">누구와</span>
@@ -85,7 +83,6 @@ export default function StyleStep() {
         )}
       </div>
 
-      {/* 하루 페이스 */}
       <div>
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">하루 페이스</div>
         <div className="grid grid-cols-3 gap-2.5">
@@ -113,7 +110,6 @@ export default function StyleStep() {
         <p className="mt-2 text-[11px] text-muted-2">점심·저녁 식사는 빼고 센 숫자예요.</p>
       </div>
 
-      {/* 이동 방법 */}
       <div>
         <div className="mb-2.5 text-xs font-bold tracking-[0.03em] text-muted-2">이동 방법</div>
         <div className="grid grid-cols-3 gap-2.5">

@@ -58,13 +58,12 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [openCardMenuId]);
 
-  /** 필터 적용된 목록. */
   const filtered = useMemo(
     () => itineraries.filter((t) => matchesFilter(t, filter)),
     [itineraries, filter],
   );
 
-  /** 히어로 = 현재 필터 안의 예정/여행중 중 startDate가 가장 가까운 것(D-day 최소, 음수 제외 우선). */
+  /** 현재 필터 안의 예정/여행중 일정 중 startDate가 가장 가까운 것. */
   const hero = useMemo(() => {
     const candidates = filtered
       .filter((t) => {
@@ -74,13 +73,12 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
       .sort((a, b) => {
         const da = daysUntil(a.startDate);
         const db = daysUntil(b.startDate);
-        // 여행중(음수~0)·임박 순: 절대 임박도 기준
+        // 여행중(음수~0)도 임박한 것으로 보고 절대값으로 비교한다.
         return Math.abs(da) - Math.abs(db);
       });
     return candidates[0] ?? null;
   }, [filtered]);
 
-  /** 그리드 = 히어로 제외 나머지. */
   const gridItems = useMemo(
     () => filtered.filter((t) => t.id !== hero?.id),
     [filtered, hero],
@@ -138,7 +136,6 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-1 py-2">
-      {/* 헤더 */}
       <div className="mb-4 flex items-end justify-between">
         <div className="flex items-baseline gap-2.5">
           <h1 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">내 여행</h1>
@@ -153,7 +150,6 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
         </button>
       </div>
 
-      {/* 필터 탭 */}
       <div className="mb-5 flex gap-1.5">
         {FILTER_TABS.map((tab) => {
           const active = filter === tab.key;
@@ -172,7 +168,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
         })}
       </div>
 
-      {/* 히어로 카드 — 메뉴 버튼을 카드 버튼 안에 중첩할 수 없어 형제로 겹친다 */}
+      {/* 메뉴 버튼은 카드 버튼 안에 중첩할 수 없어 형제로 겹친다 */}
       {hero && (
         <div className="relative mb-4">
           <button
@@ -180,9 +176,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
             onClick={() => goToStep(hero)}
             className="group relative block w-full overflow-hidden rounded-xl border border-card-border bg-card-bg text-left transition-[box-shadow] duration-150 hover:shadow-[0_14px_30px_-20px_rgba(20,22,28,0.35)]"
           >
-            {/* 사진이 있으면 사진이 주역이고, 없으면 **색면 대신 정보**가 주역이다.
-                예전엔 사진이 없어도 200px 그라데이션 배너를 깔고 그 위에 흰 글자를 얹었는데,
-                이 제품에는 커버 사진이 사실상 없어서 화면에서 가장 큰 요소가 늘 "정보 0인 색 띠"였다. */}
+            {/* 커버 사진이 없으면 색 배너 대신 정보를 주역으로 둔다. */}
             {hero.coverImage ? (
               <div className="relative h-[200px] w-full">
                 <DestinationCover
@@ -257,7 +251,6 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
         </div>
       )}
 
-      {/* 그리드 */}
       {gridItems.length === 0 && hero ? null : gridItems.length === 0 ? (
         <div className="py-10">
           <EmptyState
@@ -268,8 +261,8 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
           />
         </div>
       ) : (
-        // items-start: 사진 있는 카드와 없는 카드가 섞이면 행 높이가 가장 큰 카드에 맞춰져
-        // 짧은 카드 가운데에 200px짜리 빈 구멍이 생긴다. 각 카드를 내용 높이대로 세운다.
+        // 사진 있는 카드와 없는 카드가 섞이면 짧은 카드 가운데에 빈 구멍이 생기므로
+        // items-start로 각 카드를 내용 높이대로 세운다.
         <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {gridItems.map((item, idx) => {
             const st = displayStatus(item);
@@ -282,9 +275,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                 onKeyDown={(e) => e.key === 'Enter' && goToStep(item)}
                 className="group relative flex h-fit cursor-pointer flex-col overflow-hidden rounded-xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
               >
-                {/* 사진이 있을 때만 커버를 그린다. 사진 없이 88px 색 밴드를 깔면
-                    카드를 구분하는 유일한 장치가 "정보 0인 면"이 되고, 실제로 목적지 5개가
-                    같은 색으로 보였다. 사진이 없으면 그 자리를 목적지·D-day 메타 줄이 가져간다. */}
+                {/* 사진 없이 색 밴드를 깔면 카드가 같은 색 면으로만 구분되므로 사진이 있을 때만 커버를 그린다. */}
                 {item.coverImage ? (
                   <DestinationCover
                     destination={item.destination}
@@ -299,7 +290,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                   </DestinationCover>
                 ) : null}
 
-                {/* 본문. flex-1 + 메타 mt-auto로 카드 높이를 맞춘다(제목 줄수·태그 유무와 무관). */}
+                {/* flex-1 + 메타 mt-auto로 제목 줄수·태그 유무와 무관하게 카드 높이를 맞춘다. */}
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-2.5 flex items-start justify-between gap-2">
                     <span className="flex min-w-0 items-baseline gap-2">

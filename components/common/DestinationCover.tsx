@@ -6,24 +6,18 @@ import { proxyImageUrl } from '@/lib/utils/imageUrl';
 
 interface Props {
   destination: string;
-  /** 실사진 있으면 우선 사용, 없으면 hue 그라데이션. */
+  /** 없으면 hue 그라데이션으로 그린다. */
   imageUrl?: string | null;
-  /** 같은 목적지 카드 미세 구분용 hue 오프셋. */
+  /** 같은 목적지 카드끼리 구분하는 hue 오프셋. */
   seedOffset?: number;
-  /** 큰 목적지 글자 표시 여부 (기본 true). */
   showLabel?: boolean;
-  /** 글자 크기 px (그리드 40 / 히어로 80). */
+  /** px (그리드 40 / 히어로 80). */
   labelSize?: number;
-  /** 어둠 스크림(히어로 좌측 그라데) 오버레이. */
   scrim?: boolean;
   className?: string;
   children?: React.ReactNode;
 }
 
-/**
- * 목적지 커버. 라이트/다크 그라데이션을 두 레이어로 깔고 .dark 클래스로 스위칭.
- * 커버 위 우하단 반투명 목적지 글자 + (옵션) 어둠 스크림.
- */
 export default function DestinationCover({
   destination,
   imageUrl,
@@ -36,8 +30,7 @@ export default function DestinationCover({
 }: Props) {
   const img = proxyImageUrl(imageUrl);
   const [imgError, setImgError] = useState(false);
-  // 이 프로젝트는 `.dark` 클래스 토큰 방식이라 Tailwind `dark:` 변형이 동작하지 않는다.
-  // 이전엔 두 그라데이션을 dark:opacity로 전환해서 다크에서도 라이트(밝은 파스텔)가 보였다.
+  // `.dark` 클래스 토큰 방식이라 Tailwind `dark:` 변형으로는 두 그라데이션을 전환할 수 없다.
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     const el = document.documentElement;
@@ -47,10 +40,9 @@ export default function DestinationCover({
     mo.observe(el, { attributes: true, attributeFilter: ['class'] });
     return () => mo.disconnect();
   }, []);
-  // 라벨은 원래 hue 그라데이션 커버용(흰색 18%)이라 실사진 위에선 묻힌다.
-  // 사진이 실제로 보일 때만 하단 스크림을 깔고 라벨 알파를 올린다.
+  // 라벨(흰색 18%)은 실사진 위에서 묻히므로 사진이 보일 때만 하단 스크림을 깔고 알파를 올린다.
   const onPhoto = Boolean(img) && !imgError;
-  // imageUrl(비동기 채움 등)이 바뀌면 에러 상태 초기화 → 새 URL 재시도
+  // imageUrl이 비동기로 채워지면 이전 에러 상태 때문에 새 URL을 건너뛰지 않게 한다.
   useEffect(() => { setImgError(false); }, [img]);
   return (
     <div className={`relative overflow-hidden ${className}`}>
@@ -94,11 +86,8 @@ export default function DestinationCover({
               : 'absolute left-3.5 top-3 font-semibold leading-none text-muted'
           }
           style={{
-            // 사진 위에서는 종전처럼 우하단 큰 글자(스크림이 받쳐준다).
-            // 사진이 없을 때는 **워터마크를 그리지 않는다.** 커버가 종이로 바뀌면서
-            // 거대 글자는 (a) 바로 옆 카드 제목과 같은 정보를 반복하고
-            // (b) 긴 목적지명이 잘리며 (c) 종이 위에서 유일하게 시끄러운 요소가 된다.
-            // 좌상단에 작은 식별 라벨로만 남긴다.
+            // 사진이 없을 때 큰 워터마크는 카드 제목을 반복하고 긴 목적지명이 잘리므로
+            // 좌상단 작은 식별 라벨로만 둔다.
             fontSize: onPhoto ? labelSize : Math.max(11, Math.round(labelSize * 0.3)),
             color: onPhoto ? 'rgba(255,255,255,0.88)' : undefined,
             letterSpacing: onPhoto ? '-0.03em' : '-0.01em',

@@ -13,13 +13,7 @@ import {
   EXAMPLE_CHIPS,
 } from '@/lib/constants/newTrip';
 
-/**
- * 히어로 콜라주. 종횡비를 일부러 다르게 두어 대칭 그리드를 깬다.
- * imageUrl은 현재 시드 기반 플레이스홀더 사진. 장소 이미지 파이프라인이
- * 랜딩에 열리면 places.image_url로 교체하면 된다(DestinationCover가
- * 사진 우선 → 그라데이션 폴백을 이미 처리한다).
- */
-/** 예산 셀 미리보기. 같은 올리브 계열을 명도로만 나눈다(유채색 예산 3개 규칙). */
+/** 유채색 예산(3개)을 넘기지 않게 같은 올리브 계열을 명도로만 나눈다. */
 const BUDGET_SPLIT = [
   { label: '숙소', amount: '140,000원', pct: '52.6%', tone: 'var(--accent)' },
   { label: '식비', amount: '92,000원', pct: '34.6%', tone: 'color-mix(in oklab, var(--accent) 55%, transparent)' },
@@ -33,7 +27,6 @@ const ROUTE_STRIP = [
   { name: '서연의집', km: '4.1km' },
 ] as const;
 
-/** 히어로 우측 미리보기. 실제 생성 결과와 같은 모양(시간 · 장소 · 구간 이동)을 보여준다. */
 const HERO_PREVIEW_STEPS = [
   { time: '10:30', name: '제주국제공항', transit: '차로 18분 · 7.4km' },
   { time: '12:10', name: '동문재래시장', transit: '차로 24분 · 11.2km' },
@@ -46,7 +39,7 @@ export default function Home() {
   const router = useRouter();
   const [sentence, setSentence] = useState('');
 
-  /** 문장 저장 후 새 여행 마법사로. 비로그인 시 middleware가 /login으로 보낸다. */
+  /** 비로그인이면 middleware가 /login으로 보내므로 문장은 sessionStorage에 먼저 남긴다. */
   const startTrip = () => {
     if (sentence.trim()) {
       sessionStorage.setItem(NEW_TRIP_SENTENCE_KEY, sentence.trim());
@@ -56,7 +49,6 @@ export default function Home() {
 
   return (
     <div className="min-h-[100dvh] bg-surface">
-      {/* nav: 단일 행, 높이 66px */}
       <header className="sticky top-0 z-50 border-b border-divider bg-header-bg backdrop-blur-xl">
         <div className="mx-auto flex h-[66px] max-w-6xl items-center justify-between px-5 sm:px-10">
           <div className="flex items-center gap-2.5">
@@ -83,9 +75,7 @@ export default function Home() {
       </header>
 
       <main className="px-5 sm:px-10">
-        {/* ── 히어로: 비대칭 분할 (좌 카피/입력, 우 콜라주) ── */}
         <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 pb-20 pt-14 md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] md:gap-14 md:pt-20">
-          {/* 좌: 좌측 정렬 */}
           <div className="motion-safe:opacity-0 motion-safe:[animation:fade-in-up_400ms_cubic-bezier(0.23,1,0.32,1)_forwards] text-left">
             <h1 className="text-[34px] font-extrabold leading-[1.12] tracking-[-0.03em] text-foreground sm:text-[52px]">
               말 한마디면,
@@ -97,7 +87,6 @@ export default function Home() {
               가고 싶은 곳을 문장으로 적어보세요. AI가 동선, 시간, 예산까지 한 번에 짜드려요.
             </p>
 
-            {/* 자연어 입력창 = 주 CTA */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -122,7 +111,6 @@ export default function Home() {
               </button>
             </form>
 
-            {/* 예시 칩: 입력창 프리필 */}
             <div className="mt-4 flex flex-wrap gap-2">
               {EXAMPLE_CHIPS.map((chip) => (
                 <button
@@ -137,12 +125,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 우: AI가 만들어줄 결과물 미리보기.
-              예전엔 목적지 타일 4개(그라데이션 색면)를 깔았는데, 이 제품에는 커버 사진이
-              사실상 없어서 화면의 45%가 "라벨 말고는 정보가 0인 페인트 칩"이었다.
-              색면을 종이 톤으로 낮추자 이번엔 빈 흰 판이 됐다 — 타일 자체가 내용물인 자리라
-              폴백을 조용하게 만드는 것으로는 해결되지 않는다.
-              이 제품이 실제로 만들어내는 것(시간 · 장소 · 동선)을 그대로 보여준다. */}
+          {/* 커버 사진이 없어 목적지 타일은 빈 색면이 되므로, 실제 결과물(시간 · 장소 · 동선)을 보여준다. */}
           <div className="motion-safe:opacity-0 motion-safe:[animation:shg-fade-in_500ms_cubic-bezier(0.23,1,0.32,1)_forwards] motion-safe:[animation-delay:80ms]">
             <div className="overflow-hidden rounded-xl border border-card-border bg-card-bg shadow-[0_24px_60px_-40px_rgba(20,22,28,0.45)]">
               <div className="flex items-center justify-between gap-3 border-b border-divider px-5 py-3.5">
@@ -187,8 +170,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── 기능: 비대칭 벤토 3셀 (동일 3분할 금지) ── */}
-        {/* JS 미동작 시 reveal 요소가 opacity:0으로 남지 않도록 */}
+        {/* JS가 꺼져 있으면 reveal 요소가 opacity:0으로 남는다 */}
         <noscript>
           <style>{`[data-reveal]{opacity:1 !important}`}</style>
         </noscript>
@@ -198,9 +180,7 @@ export default function Home() {
           </h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-            {/* 대형 셀. 예전엔 상단에 230px DestinationCover를 깔았는데 showLabel={false}라
-                내용물이 0인 색 판이었고, 커버가 종이 톤이 된 뒤로는 로드 실패처럼 보였다.
-                이 셀이 설명하는 것(거리·순서)을 그대로 그린다. */}
+            {/* 커버 이미지는 내용 없는 색 판이 되므로 이 셀이 설명하는 거리·순서를 직접 그린다. */}
             <Reveal className="md:col-span-3">
               <article className="flex h-full flex-col justify-between gap-7 rounded-xl border border-divider bg-surface-2 p-6">
               <div>
@@ -237,10 +217,8 @@ export default function Home() {
               </article>
             </Reveal>
 
-            {/* 소형 셀: 틴트 배경 */}
             <Reveal delay={50} className="md:col-span-2">
-              {/* 옆 셀 높이에 맞춰 늘어나는 칸이라 justify-end면 내용이 바닥에 붙고 위쪽 틴트가
-                  290px 빈 판으로 남는다(로드 실패처럼 보인다). 광학 중앙에 둔다. */}
+              {/* 옆 셀 높이로 늘어나는 칸이라 justify-end면 위쪽이 빈 판으로 남아 로드 실패처럼 보인다. */}
               <article className="flex h-full flex-col justify-center rounded-xl border border-divider bg-accent-soft p-6">
               <span className="mb-3.5 flex h-[38px] w-[38px] items-center justify-center rounded-lg bg-surface text-accent-weak-fg">
                 <Wallet size={18} aria-hidden="true" />
@@ -270,7 +248,6 @@ export default function Home() {
               </article>
             </Reveal>
 
-            {/* 와이드 셀: 가로 구성으로 리듬 전환 */}
             <Reveal delay={100} className="md:col-span-5">
               <article className="flex flex-col items-start gap-5 rounded-xl border border-divider bg-surface-2 p-6 sm:flex-row sm:items-center sm:gap-7">
               <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-weak-fg">

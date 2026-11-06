@@ -34,7 +34,6 @@ export const OAUTH_CONFIG: Record<Provider, OAuthProviderConfig> = {
 export async function getOAuthUrl(provider: Provider): Promise<string> {
   const config = OAUTH_CONFIG[provider];
 
-  // BFF에서 state 생성 + HttpOnly 쿠키 설정
   const stateRes = await fetch('/api/auth/oauth-state', {
     method: 'POST',
     credentials: 'include',

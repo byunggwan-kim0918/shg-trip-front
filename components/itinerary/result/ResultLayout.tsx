@@ -16,10 +16,9 @@ import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
 
-/** 헤더에 노출할 태그 최대 개수. 나머지는 "+N"으로 접는다. */
+/** LLM 태그 뒤쪽은 서로 비슷하거나 일정에 없는 장소라 앞쪽만 보이고 나머지는 "+N"으로 접는다. */
 const MAX_VISIBLE_TAGS = 6;
 
-/** 만료일까지 남은 일수 (공유 안내용). */
 function daysUntilExpiry(iso: string): number {
   const diff = new Date(iso).getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / 86400000));
@@ -31,7 +30,6 @@ function toMinutes(time: string | null): number | null {
   return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
 }
 
-/** 같은 날 안에서 시작 시각이 이전 스텝보다 빨라지는(역행) 이상이 있는지 판정 */
 function hasTimeAnomaly(steps: ItineraryStep[]): boolean {
   const byDay = new Map<number, ItineraryStep[]>();
   for (const s of steps) {
@@ -65,10 +63,8 @@ export default function ResultLayout() {
   const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  // F3: 편집 모드(드래그 재정렬·삭제) 토글 + 삭제 확인 대상
   const [editMode, setEditMode] = useState(false);
   const [stepToDelete, setStepToDelete] = useState<ItineraryStep | null>(null);
-  // 공유
   const [sharing, setSharing] = useState(false);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const shareNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,7 +79,7 @@ export default function ResultLayout() {
         await navigator.clipboard.writeText(url);
         setShareNotice(`공유 링크가 복사됐어요 · ${daysUntilExpiry(expiresAt)}일 후 만료`);
       } catch {
-        // 클립보드 권한 없을 때: 링크를 안내에 노출(사용자가 직접 복사)
+        // 클립보드 권한이 없으면 링크를 안내에 노출해 직접 복사하게 한다.
         setShareNotice(`공유 링크: ${url}`);
       }
       if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
@@ -96,7 +92,6 @@ export default function ResultLayout() {
     setSharing(false);
   }, [currentItinerary, sharing]);
 
-  // 제목/태그 편집
   const [editOpen, setEditOpen] = useState(false);
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -111,13 +106,12 @@ export default function ResultLayout() {
       patchItinerarySummary(updated.id, { title: updated.title, tags: updated.tags });
       setEditOpen(false);
     } catch (e) {
-      // 409(Optimistic Lock 충돌) 등 — 모달에 에러 표시
       setEditError(e instanceof Error ? e.message : '수정에 실패했어요. 새로고침 후 다시 시도해주세요.');
     }
     setEditBusy(false);
   }, [currentItinerary, setCurrentItinerary, patchItinerarySummary]);
 
-  // 확정: 헤더 버튼 + 모바일 고정 바가 확인 모달을 거쳐 공유하는 단일 콜백
+  // 헤더 버튼과 모바일 고정 바가 확인 모달을 거쳐 같은 콜백을 쓴다.
   const handleFinalize = useCallback(async () => {
     if (!currentItinerary) return;
     setFinalizing(true);
@@ -128,8 +122,7 @@ export default function ResultLayout() {
       patchItinerarySummary(updated.id, { status: updated.status });
       setEditMode(false);
     } catch (e) {
-      // 확정 실패(낙관락 충돌·네트워크 등)를 사용자에게 알린다.
-      // (과거엔 조용히 삼켜, 버튼을 눌러도 아무 반응 없는 것처럼 보였음)
+      // 실패를 삼키면 버튼이 아무 반응 없는 것처럼 보인다.
       setFinalizeError(e instanceof Error ? e.message : '일정 확정에 실패했어요. 잠시 후 다시 시도해주세요.');
     }
     setFinalizing(false);
@@ -159,9 +152,8 @@ export default function ResultLayout() {
     if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
   }, []);
 
-  // 커버 이미지 교체(일정 전환·비동기 채움) 시 로드 에러 상태 초기화 → 새 URL 재시도.
-  // 실제 표시 커버는 coverImage ?? 첫 스텝 이미지로 폴백되므로, firstStepImage가 폴링으로
-  // 새 URL로 바뀌는 경우도 리셋 트리거에 포함해야 그라데이션 폴백에 고착되지 않는다.
+  // 표시 커버는 coverImage ?? 첫 스텝 이미지라, firstStepImage가 폴링으로 바뀔 때도 리셋해야
+  // 그라데이션 폴백에 고착되지 않는다.
   useEffect(() => { setCoverError(false); }, [
     currentItinerary?.id,
     currentItinerary?.coverImage,
@@ -179,11 +171,11 @@ export default function ResultLayout() {
   const { destination, startDate, endDate, totalBudget, coverImage, tags } = currentItinerary;
   const finalized = currentItinerary.status === 'FINALIZED';
   const hasSteps = currentItinerary.steps.length > 0;
-  // 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터에는 없는 필드라 ?? []
+  // 과거 데이터에는 없는 필드다.
   const qualityNotices = currentItinerary.qualityNotices ?? [];
 
-  // 예산 대비 추정 총액 = 장소 비용 + 이동 비용 (대안 선택 시 실시간 반영되도록 steps에서 합산).
-  // 이동비를 빼면 렌터카/택시 여행의 실제 지출이 과소 표시돼 여행자가 예산을 오판한다.
+  // 이동비를 빼면 렌터카/택시 여행 지출이 과소 표시된다.
+  // 대안 선택이 바로 반영되게 steps에서 합산한다.
   const estimatedTotal = currentItinerary.steps.reduce(
     (sum, s) => sum + (s.estimatedCost ?? 0) + (s.transportationCost ?? 0), 0);
   const budgetPct = totalBudget && totalBudget > 0
@@ -191,23 +183,19 @@ export default function ResultLayout() {
     : null;
   const overBudget = budgetPct != null && budgetPct > 100;
 
-  // 이상 데이터 감지 (사용자에게 즉시 인지시키기 위한 경고)
   const timeAnomaly = hasTimeAnomaly(currentItinerary.steps);
   const unrealisticLeg = currentItinerary.steps.some(
     (s) => s.transportationDistance != null && s.transportationDistance > UNREALISTIC_LEG_KM,
   );
-  // 커버 이미지: 유효한 절대 URL(S3)일 때만 coverImage 사용.
-  // 과거 데이터의 깨진 상대경로(/api/places/{id}/photo)나 생성 직후 null이면 첫 스텝 imageUrl로 폴백
-  // (스텝 사진과 동일 경로 → 비동기 업로드 폴링과 함께 채워짐).
+  // 과거 데이터의 상대경로(/api/places/{id}/photo)는 깨지므로 절대 URL(S3)만 쓰고,
+  // 없으면 비동기 업로드로 함께 채워지는 첫 스텝 imageUrl로 폴백한다.
   const validCover = coverImage && /^https?:\/\//.test(coverImage) ? coverImage : null;
   const firstStepImage = currentItinerary.steps.find((s) => s.place?.imageUrl)?.place?.imageUrl ?? null;
   const cover = proxyImageUrl(validCover ?? firstStepImage);
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
-      {/* SummaryHeader (4a) */}
       <div className="flex items-start gap-4 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5">
-        {/* 커버 사각 74 */}
         <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
           {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -218,7 +206,7 @@ export default function ResultLayout() {
               onError={() => setCoverError(true)}
             />
           ) : (
-            // 사진 없으면 목적지 이니셜만. 큰 그라데이션 블록은 정보가 0이면서 헤더를 지배한다.
+            // 큰 그라데이션 블록은 정보 없이 헤더를 지배하므로 목적지 이니셜만 둔다.
             <div className="flex h-full w-full items-center justify-center bg-surface-3">
               <span className="text-[15px] font-extrabold tracking-[-0.02em] text-muted">{destination.slice(0, 2)}</span>
             </div>
@@ -226,13 +214,9 @@ export default function ResultLayout() {
         </div>
 
         <div className="min-w-0 flex-1">
-          {/* items-start. items-center였을 때는 제목이 2줄이면(line-clamp-2, 23px×1.25×2 ≈ 57px)
-              27px짜리 연필이 두 줄 사이 수직 중앙에 놓여 첫 줄 끝도 둘째 줄 끝도 아니었다. */}
+          {/* items-center면 제목이 2줄일 때 연필 버튼이 두 줄 사이 중앙에 놓인다. */}
           <div className="flex items-start gap-2">
-            {/* LLM이 만든 제목은 60자를 넘는 문장이다. 30px + truncate는 1024px에서 17자만 남겨
-                무슨 여행인지 알 수 없었다(폭 390/768/1024/1440 실측).
-                23px + 2줄이면 1024px에서 50자, 1440px에서 제목 전체가 들어간다.
-                30px는 어느 폭에서도 더 많은 정보를 주지 못해 없앴다 — 제목은 배너가 아니라 식별자다. */}
+            {/* LLM 제목은 60자를 넘는 문장이라 30px + truncate면 무슨 여행인지 안 보여 23px 2줄로 둔다. */}
             <h1 className="min-w-0 line-clamp-2 text-[23px] font-extrabold leading-[1.25] tracking-[-0.03em] text-foreground">
               {normalizeText(currentItinerary.title) || destination}
             </h1>
@@ -264,20 +248,13 @@ export default function ResultLayout() {
               </span>
             )}
           </p>
-          {/*
-            금액은 추정치다. 입장료(admission_fee)와 가격대(price_level) 데이터가 대부분 비어 있어
-            식사·숙소는 카테고리 기본값(식사 1.3~2.4만, 숙소 12만)으로 계산된다. 예산을 입력해도
-            맞출 근거가 없으므로, 퍼센트를 단정적으로 보여주지 않고 추정임을 함께 밝힌다.
-          */}
+          {/* 입장료·가격대 데이터가 대부분 비어 카테고리 기본값으로 계산하므로 퍼센트를 단정하지 않고 추정임을 밝힌다. */}
           {estimatedTotal > 0 && (
             <p className="mt-1 text-[11px] text-muted-2">
               금액은 추정치입니다. 입장료·실제 가격 정보가 없는 항목은 카테고리 평균으로 계산했습니다.
             </p>
           )}
-          {/* 표시는 최대 6개. LLM이 9~10개를 만드는데 앞쪽은 서로 거의 같은 말이고
-              ("제주 로맨틱 / 제주 힐링 / 제주 카페 / 제주 맛집") 뒤쪽은 실제 일정에 없는
-              유명 장소가 섞인다. 두 줄을 넘기면 제목 블록이 헤더를 지배한다.
-              데이터는 그대로 두고 표시만 줄인다 — 편집 모달에서는 전체를 다룬다. */}
+          {/* 데이터는 그대로 두고 표시만 줄인다. 편집 모달에서는 전체를 다룬다. */}
           {tags && tags.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
@@ -294,7 +271,6 @@ export default function ResultLayout() {
           )}
         </div>
 
-        {/* 액션 */}
         <div className="flex shrink-0 flex-col items-end gap-2">
           <div className="flex items-center gap-2">
             <button
@@ -329,7 +305,7 @@ export default function ResultLayout() {
               <Share2 size={14} aria-hidden="true" /> {sharing ? '생성 중...' : '공유'}
             </button>
             {currentItinerary.status === 'DRAFT' && (
-              // 모바일은 하단 고정 확정 바가 담당 → 헤더 버튼은 lg 이상에서만
+              // 모바일은 하단 고정 확정 바가 맡으므로 헤더 버튼은 lg 이상에서만 보인다.
               <button
                 type="button"
                 disabled={finalizing || !hasSteps}
@@ -378,9 +354,7 @@ export default function ResultLayout() {
         </div>
       )}
 
-      {/* 본문. 모바일: 지도 상단 고정 → 타임라인 스크롤. lg: 타임라인 좌 / 지도 우. */}
       <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* 지도 — 모바일 상단(고정 높이, 토글), lg 우측 */}
         <div
           className={`w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l ${
             showMap ? 'block h-[180px]' : 'hidden lg:block'
@@ -394,8 +368,7 @@ export default function ResultLayout() {
           />
         </div>
 
-        {/* 타임라인. flex-1(basis 0%)이 폭을 정하므로 비율은 위 지도의 lg:w-[52%]만으로 결정된다 —
-            여기 w-[48%]는 의도를 코드에 남기는 용도다(실효 없음). */}
+        {/* 폭은 flex-1이 정하므로 비율은 지도의 lg:w-[52%]로만 바뀐다. 여기 w-[48%]는 실효가 없다. */}
         <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[48%]">
           <TimelinePanel
             itinerary={currentItinerary}
@@ -410,7 +383,6 @@ export default function ResultLayout() {
         </div>
       </div>
 
-      {/* 모바일 하단 고정 확정 바 (DRAFT일 때) */}
       {currentItinerary.status === 'DRAFT' && (
         <div className="shrink-0 border-t border-card-border bg-card-bg px-4 py-3 lg:hidden">
           <button
@@ -424,7 +396,6 @@ export default function ResultLayout() {
         </div>
       )}
 
-      {/* 대안 선택 실패(네트워크 등) 토스트 */}
       {alternativeError && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
           <div className="w-full max-w-md">
@@ -437,7 +408,7 @@ export default function ResultLayout() {
         </div>
       )}
 
-      {/* 편집(재정렬/삭제) 실패 토스트 — 낙관 반영은 롤백됨 */}
+      {/* 낙관 반영은 이미 롤백된 상태다 */}
       {stepError && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
           <div className="w-full max-w-md">
@@ -450,7 +421,6 @@ export default function ResultLayout() {
         </div>
       )}
 
-      {/* 확정 실패 토스트 — 과거엔 조용히 삼켜 버튼이 먹통처럼 보였음 */}
       {finalizeError && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
           <div className="w-full max-w-md">
@@ -496,7 +466,6 @@ export default function ResultLayout() {
         onCancel={() => { if (!isDeleting) setDeleteConfirmOpen(false); }}
       />
 
-      {/* 스톱 삭제 확인 */}
       <ConfirmModal
         open={stepToDelete != null}
         title="이 스톱을 삭제할까요?"
@@ -510,7 +479,7 @@ export default function ResultLayout() {
         onCancel={() => { if (!isEditingSteps) setStepToDelete(null); }}
       />
 
-      {/* key로 열 때마다 재마운트 — 폴링(currentItinerary 교체) 중에도 편집값이 리셋되지 않게 */}
+      {/* 폴링으로 currentItinerary가 교체돼도 편집값이 리셋되지 않게 key로 열 때만 재마운트한다 */}
       <EditItineraryModal
         key={editOpen ? 'edit-open' : 'edit-closed'}
         open={editOpen}

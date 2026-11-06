@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Zap, ArrowRight } from 'lucide-react';
 import { NEW_TRIP_SENTENCE_KEY, SENTENCE_PLACEHOLDER, EXAMPLE_CHIPS } from '@/lib/constants/newTrip';
 
-/** 신규 유저 빈 상태 (7d/7e). 자연어 입력 + 예시 칩 + 직접 고르기. */
 export default function EmptyDashboard() {
   const router = useRouter();
   const [sentence, setSentence] = useState('');
@@ -30,7 +29,6 @@ export default function EmptyDashboard() {
         AI가 일정을 만들어드려요.
       </p>
 
-      {/* 자연어 입력 */}
       <form
         onSubmit={(e) => { e.preventDefault(); start(); }}
         className="mt-7 flex w-full max-w-[560px] flex-col gap-3 rounded-xl border-[1.5px] border-accent bg-card-bg p-4 focus-within:ring-2 focus-within:ring-accent/25 shadow-[0_14px_34px_-18px_rgba(20,22,28,0.45)] sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-5 sm:pr-2"
@@ -51,7 +49,6 @@ export default function EmptyDashboard() {
         </button>
       </form>
 
-      {/* 예시 칩 + 직접 고르기 */}
       <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2.5">
         <div className="flex flex-wrap justify-center gap-1.5">
           {EXAMPLE_CHIPS.slice(0, 3).map((chip) => (

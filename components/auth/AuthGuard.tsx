@@ -71,7 +71,6 @@ export default function AuthGuard({ children, fallback = null }: AuthGuardProps)
     }
   }, [phase, isAuthenticated, isDemo, pathname, router]);
 
-  // 닉네임이 없으면 onboarding으로 리다이렉트
   useEffect(() => {
     if (phase === 'ready' && isAuthenticated && !isDemo && user && !user.nickname) {
       router.replace('/onboarding');
@@ -110,7 +109,6 @@ export default function AuthGuard({ children, fallback = null }: AuthGuardProps)
   }
 
   if (phase !== 'ready' || (!isAuthenticated && !isDemo)) return <>{fallback}</>;
-  // 닉네임 미설정 시 children 렌더링 차단
   if (!isDemo && user && !user.nickname) return <>{fallback}</>;
 
   return <>{children}</>;

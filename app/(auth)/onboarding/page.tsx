@@ -14,7 +14,6 @@ export default function OnboardingPage() {
   const user = useAuthStore((s) => s.user);
   const fetchSession = useAuthStore((s) => s.fetchSession);
 
-  // 세션 로드 후 이미 닉네임이 있으면 /main으로 리다이렉트
   useEffect(() => {
     fetchSession();
   }, [fetchSession]);
