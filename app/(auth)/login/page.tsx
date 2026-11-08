@@ -73,11 +73,11 @@ export default function LoginPage() {
             <SocialLoginGroup />
           </div>
 
-          <p className="mt-6 text-[11px] leading-relaxed text-text-2">
+          <p className="mt-6 text-xs leading-relaxed text-text-2">
             시작하면{' '}
-            <a href="/terms" className="underline transition-colors hover:text-foreground">이용약관</a>
+            <a href="/terms" className="-my-3 inline-block py-3 underline transition-colors hover:text-foreground">이용약관</a>
             {' '}및{' '}
-            <a href="/privacy" className="underline transition-colors hover:text-foreground">개인정보처리방침</a>
+            <a href="/privacy" className="-my-3 inline-block py-3 underline transition-colors hover:text-foreground">개인정보처리방침</a>
             에 동의하게 됩니다.
           </p>
         </div>

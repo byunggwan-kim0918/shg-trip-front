@@ -156,6 +156,7 @@ export default function PlanNewPage() {
 
   return (
     <div className="h-[calc(100dvh-8rem)]">
+      <h1 className="sr-only">새 여행 만들기</h1>
       <WizardLayout optionalSteps={[3]}>{steps}</WizardLayout>
     </div>
   );

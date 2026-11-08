@@ -4,8 +4,8 @@ export const NEW_TRIP_SENTENCE_KEY = 'shg.newTripSentence';
 /** NewTripShell의 /parse 결과(원문 + 구조화 필드). builder가 프리필 후 ConfirmStep으로 점프한다. */
 export const NEW_TRIP_PARSED_KEY = 'shg.newTripParsed';
 
-export const SENTENCE_PLACEHOLDER =
-  '예) 7월 말에 제주로 2박 3일, 카페랑 오름 위주로 여유롭게';
+// 모바일 한 줄 입력칸에서 잘리지 않는 길이로 둔다. 자세한 예시는 아래 예시 칩이 맡는다.
+export const SENTENCE_PLACEHOLDER = '예) 제주 2박 3일, 오름이랑 카페 위주로';
 
 export const EXAMPLE_CHIPS: Array<{ label: string; sentence: string }> = [
   {

@@ -69,7 +69,7 @@ export default function AvatarMenu() {
         <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-[10px] border border-card-border bg-card-bg shadow-lg">
           <div className="border-b border-divider px-4 py-3">
             <p className="truncate text-sm font-bold text-foreground" title={user?.nickname ?? undefined}>{user?.nickname ?? '사용자'}</p>
-            <p className="truncate text-[11px] text-muted-2">{user?.email ?? ''}</p>
+            <p className="truncate text-xs text-muted-2">{user?.email ?? ''}</p>
           </div>
           <button
             type="button"

@@ -30,14 +30,14 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
           <img src={img} alt={place.name} className="h-full w-full object-cover" loading="lazy" onError={() => setImgError(true)} />
         ) : (
           // 빈 44px 블록은 surface-2 위에서 보이지 않으므로 장소명 이니셜을 둔다.
-          <span className="flex h-full w-full items-center justify-center bg-surface-3 text-[11px] font-extrabold tracking-[-0.02em] text-muted">
+          <span className="flex h-full w-full items-center justify-center bg-surface-3 text-xs font-extrabold tracking-[-0.02em] text-muted">
             {place.name.slice(0, 2)}
           </span>
         )}
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[13px] font-bold text-foreground">{place.name}</span>
-        <span className="block text-[11px] text-muted-2">
+        <span className="block text-xs text-muted-2">
           {place.rating != null && (
             <span className="inline-flex items-center gap-0.5">
               {/* 별점은 상태가 아니라 데이터라 상태색(완료 초록)을 쓰지 않는다 */}

@@ -30,7 +30,7 @@ export default function StyleStep() {
       <div>
         <div className="mb-2.5 flex items-baseline justify-between">
           <span className="text-xs font-bold tracking-[0.03em] text-muted-2">누구와</span>
-          <span className="text-[11px] text-muted-2">선택</span>
+          <span className="text-xs text-muted-2">선택</span>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {COMPANION_OPTIONS.map((c) => {
@@ -102,12 +102,12 @@ export default function StyleStep() {
               >
                 <p.icon size={20} strokeWidth={1.8} aria-hidden="true" />
                 <span className="text-[13px] font-bold">{p.label}</span>
-                <span className="text-[11px] text-muted-2">{p.desc}</span>
+                <span className="text-xs text-muted-2">{p.desc}</span>
               </button>
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] text-muted-2">점심·저녁 식사는 빼고 센 숫자예요.</p>
+        <p className="mt-2 text-xs text-muted-2">점심·저녁 식사는 빼고 센 숫자예요.</p>
       </div>
 
       <div>
@@ -129,7 +129,7 @@ export default function StyleStep() {
               >
                 <t.icon size={20} strokeWidth={1.8} aria-hidden="true" />
                 <span className="text-[13px] font-bold">{t.label}</span>
-                <span className="text-[11px] text-muted-2">{t.desc}</span>
+                <span className="text-xs text-muted-2">{t.desc}</span>
               </button>
             );
           })}

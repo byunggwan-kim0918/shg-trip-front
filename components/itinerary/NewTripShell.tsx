@@ -147,9 +147,9 @@ export default function NewTripShell() {
     <div className="mx-auto flex max-w-5xl flex-col gap-8 py-6 lg:flex-row lg:gap-9 lg:py-10">
       <div className="min-w-0 flex-1">
         <div className="mb-2 text-[13px] font-semibold text-muted-2">새 여행</div>
-        <h2 className="mb-5 text-[23px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[30px]">
+        <h1 className="mb-5 text-[23px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[30px]">
           어떤 여행을 꿈꾸세요?
-        </h2>
+        </h1>
 
         <textarea
           value={sentence}
