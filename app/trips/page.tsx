@@ -7,7 +7,7 @@ import { REGIONS } from '@/lib/trips/regions';
 
 export const metadata: Metadata = {
   title: '여행 코스 추천 | 국내·일본 도시별 일정 모음 - SHG trip',
-  description: '제주, 부산, 교토 등 도시별 추천 여행 코스. 기간과 테마별로 하루 동선, 시간, 예상 비용까지 정리했습니다.',
+  description: '서울, 부산, 제주, 오사카, 교토, 후쿠오카 등 국내·일본 도시별 추천 여행 코스. 기간과 테마별로 하루 동선, 시간, 예상 비용까지 정리했습니다.',
   alternates: { canonical: `${SITE_URL}/trips` },
 };
 
