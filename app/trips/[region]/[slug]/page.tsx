@@ -315,7 +315,7 @@ export default async function TripPage({ params }: { params: Params }) {
 
         <section className="mt-12 rounded-2xl bg-accent-soft p-6 text-center">
           <h2 className="text-[18px] font-extrabold tracking-[-0.02em] text-foreground">날짜와 취향만 바꿔서 내 일정으로</h2>
-          <p className="mt-1.5 text-[14px] text-text-2">문장 하나면 AI가 동선·시간·예산까지 다시 짜드려요.</p>
+          <p className="mt-1.5 text-[14px] text-text-2">문장 하나면 동선·시간·예산까지 다시 짜드려요.</p>
           <div className="mt-4 flex justify-center">
             <StartTripButton sentence={sentence} label="이 일정으로 내 여행 만들기" />
           </div>

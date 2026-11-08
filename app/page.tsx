@@ -89,7 +89,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 max-w-[46ch] text-[15px] font-medium leading-relaxed text-muted sm:text-[17px]">
-              가고 싶은 곳을 문장으로 적어보세요. AI가 동선, 시간, 예산까지 한 번에 짜드려요.
+              가고 싶은 곳을 문장으로 적어보세요. 동선, 시간, 예산까지 한 번에 짜드려요.
             </p>
 
             <form
@@ -138,7 +138,7 @@ export default function Home() {
                   제주 <span className="font-medium text-muted">· 2박 3일</span>
                 </span>
                 <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-bold text-accent-weak-fg">
-                  AI가 짠 일정
+                  한 문장으로 짠 일정
                 </span>
               </div>
 
@@ -181,7 +181,7 @@ export default function Home() {
         </noscript>
         <section id="features" className="mx-auto max-w-6xl pb-24">
           <h2 className="mb-8 text-[23px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[30px]">
-            AI가 대신 하는 것들
+            대신 해드리는 것들
           </h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-5">

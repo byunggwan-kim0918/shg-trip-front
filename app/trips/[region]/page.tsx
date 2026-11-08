@@ -151,7 +151,7 @@ export default async function RegionPage({ params }: { params: Params }) {
 
         <section className="mt-12 rounded-2xl bg-accent-soft p-6">
           <h2 className="text-[18px] font-extrabold tracking-[-0.02em] text-foreground">원하는 코스가 없나요?</h2>
-          <p className="mt-1.5 text-[14px] text-text-2">날짜와 취향을 문장으로 적으면 AI가 {info.name} 일정을 새로 짜드려요.</p>
+          <p className="mt-1.5 text-[14px] text-text-2">날짜와 취향을 문장으로 적으면 {info.name} 일정을 새로 짜드려요.</p>
           <div className="mt-4 max-w-[560px]">
             <SentenceStart placeholder={`${info.name} 2박3일 맛집 위주로`} />
           </div>

@@ -26,7 +26,7 @@ export default function EmptyDashboard() {
       <p className="mt-3 text-[13px] leading-relaxed text-muted sm:text-[15px]">
         가고 싶은 곳을 한 문장으로 적으면
         <br />
-        AI가 일정을 만들어드려요.
+        일정을 대신 만들어드려요.
       </p>
 
       <form

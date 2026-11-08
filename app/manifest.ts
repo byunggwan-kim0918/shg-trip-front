@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'SHG trip · 여행 플래너',
     short_name: 'SHG trip',
-    description: '말 한마디면, 여행이 완성됩니다. AI가 동선·시간·예산까지 한 번에.',
+    description: '말 한마디면, 여행이 완성됩니다. 동선·시간·예산까지 한 번에.',
     lang: 'ko',
     start_url: '/main',
     display: 'browser',

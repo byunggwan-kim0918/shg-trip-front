@@ -40,7 +40,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
           href="/"
           className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-3 py-1.5 text-xs font-bold text-accent-fg transition-[filter] hover:brightness-105"
         >
-          <Sparkles size={13} aria-hidden="true" /> 나도 AI로 여행 일정 만들기
+          <Sparkles size={13} aria-hidden="true" /> 나도 여행 일정 만들기
         </Link>
       </div>
 

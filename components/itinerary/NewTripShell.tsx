@@ -193,7 +193,7 @@ export default function NewTripShell() {
             title={sentenceEmpty ? '여행 문장을 먼저 적어주세요' : undefined}
             className="flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-accent px-5 py-4 text-[15px] font-bold text-accent-fg shadow-[0_10px_24px_-10px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
           >
-            <Sparkles size={16} aria-hidden="true" /> AI로 일정 만들기
+            <Sparkles size={16} aria-hidden="true" /> 일정 만들기
           </button>
           <button
             type="button"
@@ -214,7 +214,7 @@ export default function NewTripShell() {
       <aside className="w-full shrink-0 self-start rounded-xl border border-divider bg-card-bg p-6 lg:w-[400px]">
         <div className="mb-1 flex items-center gap-2">
           <Sparkles size={15} className="text-accent-weak-fg" aria-hidden="true" />
-          <span className="text-[15px] font-bold text-foreground">AI가 이렇게 이해했어요</span>
+          <span className="text-[15px] font-bold text-foreground">이렇게 이해했어요</span>
           {parsing && <Loader2 size={14} className="ml-auto animate-spin text-muted-2" aria-hidden="true" />}
         </div>
         <div className="mb-5 text-xs text-muted-2">
@@ -231,7 +231,7 @@ export default function NewTripShell() {
               <UnderstandRow label="페이스" value={paceValue} last />
             </div>
             <div className="mt-4 rounded-[10px] bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
-              표에 없는 취향(좋아하는 음식 등)도 문장 그대로 &lsquo;AI에게 한마디&rsquo;로 전달돼 장소를 고를 때 참고해요.
+              표에 없는 취향(좋아하는 음식 등)도 문장 그대로 &lsquo;추가 요청&rsquo;으로 전달돼 장소를 고를 때 참고해요.
             </div>
           </>
         ) : parseError || understoodNothing ? (

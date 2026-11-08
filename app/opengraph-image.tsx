@@ -47,7 +47,7 @@ export default function OpengraphImage() {
             color: '#a0a7b1',
           }}
         >
-          AI trip planner. Routes, timing and budget in one go.
+          One sentence, a full trip. Routes, timing and budget in one go.
         </div>
       </div>
     ),
