@@ -29,7 +29,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-[100dvh] flex-col bg-background">
       {/* 링크를 받은 사람이 서비스로 들어올 수 있는 유일한 입구 */}
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-card-border bg-card-bg px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">

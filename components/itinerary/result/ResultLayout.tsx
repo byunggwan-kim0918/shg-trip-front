@@ -194,9 +194,9 @@ export default function ResultLayout() {
   const cover = proxyImageUrl(validCover ?? firstStepImage);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <div className="flex items-start gap-4 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5">
-        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
+    <div className="flex flex-col lg:h-[calc(100dvh-8rem)]">
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-3 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5 lg:flex-nowrap">
+        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl lg:block">
           {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -271,7 +271,7 @@ export default function ResultLayout() {
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:shrink-0 lg:flex-col lg:items-end">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -354,7 +354,7 @@ export default function ResultLayout() {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+      <div className="flex flex-1 flex-col lg:flex-row lg:overflow-hidden">
         <div
           className={`w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l ${
             showMap ? 'block h-[180px]' : 'hidden lg:block'
@@ -369,7 +369,7 @@ export default function ResultLayout() {
         </div>
 
         {/* 폭은 flex-1이 정하므로 비율은 지도의 lg:w-[52%]로만 바뀐다. 여기 w-[48%]는 실효가 없다. */}
-        <div className="w-full flex-1 overflow-y-auto lg:order-1 lg:w-[48%]">
+        <div className="w-full flex-1 lg:order-1 lg:w-[48%] lg:overflow-y-auto">
           <TimelinePanel
             itinerary={currentItinerary}
             selectedDay={selectedDay}
@@ -384,7 +384,7 @@ export default function ResultLayout() {
       </div>
 
       {currentItinerary.status === 'DRAFT' && (
-        <div className="shrink-0 border-t border-card-border bg-card-bg px-4 py-3 lg:hidden">
+        <div className="sticky bottom-0 z-10 shrink-0 border-t border-card-border bg-card-bg px-4 py-3 lg:hidden">
           <button
             type="button"
             disabled={finalizing || !hasSteps}

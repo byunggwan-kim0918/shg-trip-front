@@ -15,6 +15,21 @@ export default function HeaderSearch() {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  // 모바일 헤더는 로고·버튼 사이에 입력칸을 둘 폭이 없어 아이콘으로 접어 두고 누르면 헤더 전체 폭으로 펼친다.
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (expanded) inputRef.current?.focus();
+  }, [expanded]);
+
+  const collapse = (restoreFocus = false) => {
+    setOpen(false);
+    setExpanded(false);
+    // 펼친 입력칸이 사라지면 포커스가 body로 빠져 키보드 사용자가 위치를 잃는다.
+    if (restoreFocus) requestAnimationFrame(() => toggleRef.current?.focus());
+  };
 
   // Sidebar만 목록을 로드하므로 헤더 단독 화면에서도 검색 소스가 비지 않게 로드한다.
   // store가 in-flight를 가드해 Sidebar 호출과 중복되지 않는다. rejection은 삼킨다.
@@ -26,13 +41,17 @@ export default function HeaderSearch() {
     }
   }, [itineraries.length, loadItineraries]);
 
+  // 모바일에서 펼친 입력칸은 헤더 버튼을 덮으므로 바깥을 누르면 입력값이 있어도 접는다.
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setExpanded(false);
+      }
     }
-    if (open) document.addEventListener('mousedown', onClick);
+    if (open || expanded) document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
-  }, [open]);
+  }, [open, expanded]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -45,16 +64,33 @@ export default function HeaderSearch() {
   }, [query, itineraries]);
 
   const go = (id: number) => {
-    setOpen(false);
+    collapse();
     setQuery('');
     router.push(`/main/itinerary/${id}`);
   };
 
   return (
-    <div ref={boxRef} className="relative max-w-[360px] flex-1">
-      <label className="flex h-9 items-center gap-2 rounded-lg border border-transparent bg-surface-3 px-3 transition-colors focus-within:border-accent">
+    <div
+      ref={boxRef}
+      className={expanded
+        ? 'absolute inset-x-3 top-1/2 z-50 -translate-y-1/2 sm:relative sm:inset-x-auto sm:top-auto sm:max-w-[360px] sm:flex-1 sm:translate-y-0'
+        : 'relative sm:max-w-[360px] sm:flex-1'}
+    >
+      {!expanded && (
+        <button
+          ref={toggleRef}
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex h-11 w-11 items-center justify-center rounded-[10px] text-muted transition-colors hover:bg-surface-hover sm:hidden"
+          aria-label="여행 검색 열기"
+        >
+          <Search size={17} aria-hidden="true" />
+        </button>
+      )}
+      <label className={`${expanded ? 'flex' : 'hidden sm:flex'} h-10 items-center gap-2 rounded-lg border border-transparent bg-surface-3 px-3 transition-colors focus-within:border-accent sm:h-9`}>
         <Search size={14} className="shrink-0 text-muted-2" aria-hidden="true" />
         <input
+          ref={inputRef}
           type="search"
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
@@ -62,6 +98,7 @@ export default function HeaderSearch() {
           onBlur={(e) => {
             const next = e.relatedTarget as Node | null;
             if (next && boxRef.current?.contains(next)) return;
+            if (!query.trim()) setExpanded(false);
             // Safari는 버튼 클릭에 포커스를 주지 않아 relatedTarget이 null이다. 결과 클릭이 끊기지 않게
             // 그 경우는 외부 클릭 핸들러에 맡기고, 결과가 없을 때만 바로 닫는다.
             if (next || results.length === 0) setOpen(false);
@@ -69,14 +106,18 @@ export default function HeaderSearch() {
           onKeyDown={(e) => {
             // 조합 중 Escape·Enter는 IME가 먼저 가져간다(조합 취소·확정).
             if (e.nativeEvent.isComposing) return;
-            if (e.key === 'Escape') { setOpen(false); (e.target as HTMLInputElement).blur(); }
+            if (e.key === 'Escape') {
+              const wasExpanded = expanded;
+              collapse(wasExpanded);
+              if (!wasExpanded) (e.target as HTMLInputElement).blur();
+            }
             if (e.key === 'Enter') {
               if (results[0]) go(results[0].id);
               else setOpen(false);
             }
           }}
           placeholder="여행 검색"
-          className="w-full bg-transparent text-[13px] text-text-2 outline-none placeholder:text-muted-2"
+          className="w-full bg-transparent text-base text-text-2 outline-none placeholder:text-muted-2 sm:text-[13px]"
           aria-label="여행 검색"
         />
       </label>
