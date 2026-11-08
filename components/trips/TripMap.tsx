@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import MapPanel from '@/components/itinerary/result/MapPanel';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import type { CuratedDay } from '@/lib/trips/types';
+import { getDayColor } from '@/lib/constants/dayColors';
 
 /** MapPanel은 ItineraryStep을 받으므로 지도에 필요한 필드만 채워 넘긴다. */
 function toMapSteps(days: CuratedDay[]): ItineraryStep[] {
@@ -64,8 +65,9 @@ export default function TripMap({ days }: { days: CuratedDay[] }) {
               setSelected(null);
             }}
             className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-              day === d ? 'bg-accent text-accent-fg' : 'bg-surface-3 text-muted hover:text-foreground'
+              day === d ? (d == null ? 'bg-accent text-accent-fg' : 'text-white') : 'bg-surface-3 text-muted hover:text-foreground'
             }`}
+            style={day === d && d != null ? { background: getDayColor(d).bg } : undefined}
           >
             {d == null ? '전체' : `${d}일차`}
           </button>

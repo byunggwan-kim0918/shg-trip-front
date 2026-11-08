@@ -10,6 +10,17 @@ interface TransitInfoProps {
   distance?: number | null; // km
 }
 
+const MODE_LABEL: Record<TransportType, string> = {
+  CAR: '차로',
+  WALK: '걸어서',
+  BUS: '버스로',
+  SUBWAY: '지하철로',
+  TRAIN: '열차로',
+  TAXI: '택시로',
+  BIKE: '자전거로',
+  FLIGHT: '비행기로',
+};
+
 export default function TransitInfo({ mode, duration, distance }: TransitInfoProps) {
   const IconComponent = getTransportIcon(mode);
   const isUnrealistic = distance != null && distance > UNREALISTIC_LEG_KM;
@@ -18,7 +29,7 @@ export default function TransitInfo({ mode, duration, distance }: TransitInfoPro
     <div className="flex items-center gap-2 py-2 pl-1 text-xs font-semibold text-muted-2">
       {React.createElement(IconComponent, { size: 15, 'aria-hidden': 'true' })}
       {duration != null && distance != null ? (
-        <span className="tabular-nums">차로 {formatDuration(duration)} · {distance.toFixed(1)}km</span>
+        <span className="tabular-nums">{MODE_LABEL[mode] ?? '이동'} {formatDuration(duration)} · {distance.toFixed(1)}km</span>
       ) : (
         <>
           {duration != null && <span>{formatDuration(duration)}</span>}
