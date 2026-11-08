@@ -17,7 +17,6 @@ interface Props {
 const MAX_TAGS = 8;
 const MAX_TAG_LEN = 12;
 
-/** 일정 제목·태그 편집 모달. ConfirmModal 패턴 준용(오버레이+ESC+aria). */
 export default function EditItineraryModal({
   open,
   initialTitle,
@@ -32,7 +31,6 @@ export default function EditItineraryModal({
   const [tagInput, setTagInput] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
 
-  // 열릴 때마다 현재 값으로 초기화 + 포커스
   useEffect(() => {
     if (!open) return;
     setTitle(initialTitle);
@@ -74,7 +72,6 @@ export default function EditItineraryModal({
         >
           <h2 className="text-[17px] font-bold text-foreground">일정 편집</h2>
 
-          {/* 제목 */}
           <div className="mt-4">
             <label className="mb-1.5 block text-xs font-bold text-muted-2">제목</label>
             <input
@@ -88,7 +85,6 @@ export default function EditItineraryModal({
             />
           </div>
 
-          {/* 태그 */}
           <div className="mt-4">
             <label className="mb-1.5 block text-xs font-bold text-muted-2">태그 <span className="font-semibold text-muted-2/70">(최대 {MAX_TAGS}개)</span></label>
             <div className="flex gap-2">

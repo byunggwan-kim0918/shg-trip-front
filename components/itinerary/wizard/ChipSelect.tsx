@@ -18,7 +18,6 @@ interface ChipSelectProps {
 export default function ChipSelect({ options, selected, onChange, minSelect = 1 }: ChipSelectProps) {
   const toggle = (id: string) => {
     if (selected.includes(id)) {
-      // minSelect 이하로 내려가지 않도록 방지
       if (selected.length <= minSelect) return;
       onChange(selected.filter((s) => s !== id));
     } else {

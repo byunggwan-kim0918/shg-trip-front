@@ -5,7 +5,6 @@ interface Props {
   className?: string;
 }
 
-/** 테마/카테고리 칩. 라이트/다크 토큰 자동. */
 export default function TagChip({ children, variant = 'surface', className = '' }: Props) {
   const styles =
     variant === 'accent'

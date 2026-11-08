@@ -7,7 +7,6 @@ interface AlternativeListProps {
   onSelect: (alternative: AlternativeOption) => void;
 }
 
-/** "이 시간대 대안" 영역 (4a). 점선 구분 + 미니카드 나열. */
 export default function AlternativeList({ step, currentPlaceId, onSelect }: AlternativeListProps) {
   return (
     <div className="mt-3.5 border-t border-dashed border-card-border pt-3.5 animate-fade-in-up">

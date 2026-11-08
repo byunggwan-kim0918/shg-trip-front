@@ -11,14 +11,13 @@ import { isEnrichValidationError, enrichErrorStep } from '@/lib/constants/enrich
 import ErrorState from '@/components/common/ErrorState';
 import type { ItineraryGenerateRequest } from '@/lib/types/itinerary';
 
-/** F4: step-stream 이벤트의 스텝(확정 뼈대) — 백엔드 { name, startTime, category }. */
+/** step-stream 이벤트의 스텝(확정 뼈대). 백엔드 { name, startTime, category }. */
 interface StreamStep {
   name: string;
   startTime: string | null;
   category: string | null;
 }
 
-/** 리디자인 진행 단계 칩 4개 (2f/3d). */
 const STAGES: { key: string; label: string }[] = [
   { key: 'select', label: '장소 선별' },
   { key: 'route', label: '동선 최적화' },
@@ -34,9 +33,7 @@ const STALL_TIMEOUT_MS = 150_000;
 const MAX_RECONNECT_ATTEMPTS = 3;
 const ESTIMATE_SEC = 60;
 
-// 백엔드는 최적화 경로(OptimizedGenerationExecutor)와 fallback 경로
-// (ItineraryGenerationExecutor)에서 서로 다른 stage 문자열을 보낸다.
-// 모든 backend stage를 리디자인 4단계 칩으로 매핑한다.
+// 최적화 경로와 fallback 경로가 서로 다른 stage 문자열을 보내므로 둘 다 4단계 칩으로 매핑한다.
 const STAGE_BUCKET: Record<string, number> = {
   ENRICHING: 0,
   SEARCHING: 0,
@@ -94,7 +91,7 @@ function useSmoothedProgress() {
   return { display, setTarget };
 }
 
-// 백엔드가 실제로 전송하는 퍼센트 값들 (최적화 경로 + fallback 경로 합집합).
+// 백엔드가 보내는 퍼센트 값(최적화 경로 + fallback 경로 합집합).
 const KNOWN_PERCENTAGES = [10, 20, 30, 35, 50, 65, 70, 80, 90, 100];
 
 function getNextTarget(current: number): number {
@@ -124,17 +121,16 @@ export default function LoadingScreen() {
   const { display: progress, setTarget } = useSmoothedProgress();
   const [stage, setStage] = useState('ENRICHING');
   const [error, setError] = useState<string | null>(null);
-  // enrich 검증 실패 errorCode(UNREALISTIC_BUDGET 등) — "조건 수정" 단계 점프에 사용
+  // "조건 수정" 단계 점프에 쓴다(UNREALISTIC_BUDGET 등).
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  // F4: step-stream 수신한 day별 확정 뼈대 (dayNumber → steps) → 스켈레톤을 실카드로 교체
   const [streamedDays, setStreamedDays] = useState<Record<number, StreamStep[]>>({});
   const [visible, setVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const startedRef = useRef(false);
   const esRef = useRef<EventSource | null>(null);
-  // complete 이벤트 수신 후 onerror 오발화 방지 플래그
+  // complete 뒤 브라우저 재연결이 onerror를 발화시키므로 완료 여부를 기억한다.
   const completedRef = useRef(false);
-  // Day 보드 열 수 — 새로고침 재연결 시 wizard 데이터가 없으면 3열 기본
+  // 새로고침 재연결로 wizard 데이터가 없으면 3열로 그린다.
   const dayCountRef = useRef(3);
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 진행 중 작업을 놓친 경우(재연결·응답 없음) 서버에서 끝나 저장됐을 수 있어 목록으로 안내한다
@@ -155,7 +151,6 @@ export default function LoadingScreen() {
     startedRef.current = true;
 
     const run = async () => {
-      // wizard 데이터 없이 직접 접근한 경우 — 새로고침 시 jobId 재사용 시도
       const hasWizardData = data.destination.trim().length > 0 && !!data.startDate && !!data.endDate;
       const savedJobId = sessionStorage.getItem(SESSION_KEY);
 
@@ -163,21 +158,17 @@ export default function LoadingScreen() {
         dayCountRef.current = Math.min(tripDays(data.startDate!, data.endDate!), 3);
       }
 
-      // 새로고침 케이스: wizard 데이터는 없지만 진행 중인 jobId가 있음
       if (!hasWizardData && savedJobId) {
         setLostJob(true);
         reconnectToJob(savedJobId);
         return;
       }
 
-      // wizard 데이터도 없고 jobId도 없으면 → 플랜 페이지로
       if (!hasWizardData) {
         router.replace('/main/plan/new');
         return;
       }
 
-      // 정상 플로우: 새 생성 요청.
-      // 모드는 필수 장소 유무로 파생 (자동/수동 모드 분리 폐지 — 5단계 통합 마법사).
       const req: ItineraryGenerateRequest = {
         mode: data.selectedPlaces.length > 0 ? 'MANUAL' : 'AUTO',
         destination: data.destination,
@@ -207,7 +198,7 @@ export default function LoadingScreen() {
       try {
         jobId = await startItineraryGeneration(req);
       } catch (e) {
-        // 429(차단·쿼터 초과)는 errorCode를 담아 종료 상태로 표시(재시도 무의미)
+        // 429(차단·쿼터 초과)는 재시도해도 소용없어 종료 상태로 표시한다.
         if (e instanceof GenerationRejectedError) {
           setError(e.message);
           setErrorCode(e.code);
@@ -217,7 +208,7 @@ export default function LoadingScreen() {
         return;
       }
 
-      // jobId를 sessionStorage에 저장 — 새로고침 시 재연결에 사용
+      // 새로고침 시 재연결에 쓴다.
       sessionStorage.setItem(SESSION_KEY, jobId);
       connectToJob(jobId);
     };
@@ -227,24 +218,20 @@ export default function LoadingScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** 새로고침 후 기존 jobId로 SSE 재연결 */
   function reconnectToJob(jobId: string) {
-    // 이미 완료된 작업인지 먼저 result API로 확인
     fetch(`/api/proxy/itineraries/generate/${jobId}/result`, { credentials: 'include' })
       .then(async (res) => {
         if (res.ok) {
           const body = await res.json() as { success: boolean; data: number };
           if (body.success) {
-            // 이미 완료됨 — 바로 결과 처리
             await handleComplete(jobId, body.data);
             return;
           }
         }
-        // 404(아직 진행 중이거나 result 없음) → SSE 재연결 시도
+        // 404면 아직 진행 중이다.
         connectToJob(jobId);
       })
       .catch(() => {
-        // 네트워크 오류 → SSE 재연결 시도 (result가 아직 없을 수 있음)
         connectToJob(jobId);
       });
   }
@@ -276,7 +263,6 @@ export default function LoadingScreen() {
     }, STALL_TIMEOUT_MS);
   }
 
-  /** SSE 연결 및 이벤트 핸들러 등록 */
   function connectToJob(jobId: string) {
     completedRef.current = false;
     const sseUrl = `/api/proxy/itineraries/generate/${jobId}/stream`;
@@ -291,7 +277,6 @@ export default function LoadingScreen() {
       setStage(payload.stage);
     });
 
-    // F4: 확정된 뼈대(장소·시간)를 day별로 수신 → 해당 Day 스켈레톤을 실카드로 교체.
     eventSource.addEventListener('step-stream', (e) => {
       armStallTimer(jobId, eventSource);
       try {
@@ -302,15 +287,14 @@ export default function LoadingScreen() {
       } catch { /* 잘못된 페이로드 무시 */ }
     });
 
-    // complete: 구조(day·순서·시간·동선) 일정이 확정된 시점. story(가이드북 문장)는 아직
-    // 비동기로 채워지는 중이므로 여기서 곧바로 결과 화면으로 이동한다.
+    // complete는 구조 일정이 확정된 시점이고 story는 결과 화면에서 비동기로 채워지므로 바로 이동한다.
     eventSource.addEventListener('complete', async () => {
       completedRef.current = true;
       clearStallTimer();
       setTarget(100);
       setStage('COMPLETE');
 
-      // fetch/json은 네트워크 단절 시 throw → unhandled rejection 방지 위해 감싼다.
+      // fetch/json은 네트워크 단절 시 throw하므로 감싸지 않으면 unhandled rejection이 난다.
       try {
         const res = await fetch(`/api/proxy/itineraries/generate/${jobId}/result`, {
           credentials: 'include',
@@ -330,7 +314,7 @@ export default function LoadingScreen() {
       }
     });
 
-    // story-ready/story-failed: 화면 전환 전에 먼저 도착하는 경우를 대비한 정리용 리스너.
+    // story 이벤트가 화면 전환 전에 먼저 도착할 때를 위한 정리용 리스너.
     eventSource.addEventListener('story-ready', () => {
       eventSource.close();
     });
@@ -339,7 +323,7 @@ export default function LoadingScreen() {
     });
 
     eventSource.addEventListener('error', (e) => {
-      // 연결 끊김도 같은 이름('error')으로 들어온다 — 본문이 있는 서버 이벤트만 여기서 처리하고
+      // 연결 끊김도 'error' 이름으로 들어오므로 본문 있는 서버 이벤트만 여기서 처리하고
       // 끊김은 onerror의 재연결로 넘긴다.
       if (!(e instanceof MessageEvent) || !e.data) return;
       completedRef.current = true;
@@ -352,12 +336,12 @@ export default function LoadingScreen() {
       } catch { /* 본문이 JSON이 아니면 기본 문구 */ }
       setError(payload?.message ?? 'AI 일정 생성 중 오류가 발생했습니다.');
       setErrorCode(payload?.errorCode ?? null);
-      // 서버가 작업을 모름(재배포·만료) — 이미 저장됐을 수 있으니 목록으로 안내한다
+      // 서버가 작업을 모르면(재배포·만료) 이미 저장됐을 수 있어 목록으로 안내한다.
       if (payload?.errorCode === 'PLANNING_006') setLostJob(true);
       sessionStorage.removeItem(SESSION_KEY);
     });
 
-    // onerror: 서버 complete 후 브라우저가 재연결 시도할 때도 발화함
+    // 서버 complete 후 브라우저가 재연결을 시도할 때도 발화한다.
     eventSource.onerror = () => {
       if (completedRef.current) return;
       clearStallTimer();
@@ -375,7 +359,6 @@ export default function LoadingScreen() {
     };
   }
 
-  /** 완료 처리 공통 로직 */
   async function handleComplete(jobId: string, itineraryId: number) {
     try {
       const itinerary = await fetchItinerary(itineraryId);
@@ -390,10 +373,10 @@ export default function LoadingScreen() {
   }
 
   if (error) {
-    // 차단·쿼터 초과(PLANNING_003/004)는 재시도 무의미 → "확인"만.
+    // 차단·쿼터 초과(PLANNING_003/004)는 재시도해도 소용없어 "확인"만 둔다.
     const isBlocked = errorCode === 'PLANNING_003' || errorCode === 'PLANNING_004';
-    // 입력 검증 실패(비현실 예산·테마 상충·여행지/기간)면 "조건 수정"으로 해당 단계 점프.
-    // 그 외(서버·AI 오류)는 "다시 시도"로 확인 단계(4)에서 재제출 — 두 경우 모두 입력값 보존.
+    // 입력 검증 실패는 "조건 수정"으로 해당 단계에, 그 외는 "다시 시도"로 확인 단계(4)에 보낸다.
+    // 두 경우 모두 입력값을 보존한다.
     const isValidationError = isEnrichValidationError(errorCode);
     const targetStep = isValidationError ? enrichErrorStep(errorCode) : 4;
     return (
@@ -421,9 +404,7 @@ export default function LoadingScreen() {
         fadeOut ? 'opacity-0 scale-95' : visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 translate-y-4'
       }`}
     >
-      {/* 헤더. 깜빡이는 점 3개가 있었는데 정보가 0인 장식이었고, 화면에 로딩 표시가
-          4개(점·퍼센트·스피너 칩·shimmer)나 되게 만들었다. 같은 자리를 실제 진행률을
-          쓰는 바로 바꿔 장식을 정보로 교체한다. */}
+      {/* 로딩 장식을 늘리지 않고 실제 진행률 바 하나로 진행을 보여준다. */}
       <div className="mb-5 text-center">
         <div className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">
           AI가 일정을 짜고 있어요
@@ -444,7 +425,6 @@ export default function LoadingScreen() {
         </div>
       </div>
 
-      {/* 진행 단계 칩 4개 */}
       <div className="mb-6 flex flex-wrap justify-center gap-2">
         {STAGES.map((s, i) => {
           const isDone = i < currentStageIdx || stage === 'COMPLETE';
@@ -477,7 +457,6 @@ export default function LoadingScreen() {
         })}
       </div>
 
-      {/* Day 보드 — step-stream 수신 시 스켈레톤을 실카드로 교체 (F4) */}
       <div
         className="grid gap-3"
         style={{ gridTemplateColumns: `repeat(${dayCount}, 1fr)` }}
@@ -508,8 +487,8 @@ export default function LoadingScreen() {
                     </div>
                   ))
                 : [0, 1, 2].map((r) => (
-                    // 실카드(min-h-52 / rounded-10 / border / card-bg / px-3 py-2)와 같은 껍데기에
-                    // 장소명·시간 자리만 바로 둔다. 도착하면 바 → 글자만 바뀌고 레이아웃은 안 움직인다.
+                    // 실카드와 같은 껍데기(min-h-52 / rounded-10 / border / card-bg / px-3 py-2)라
+                    // 도착하면 바 → 글자만 바뀌고 레이아웃은 안 움직인다.
                     <div
                       key={r}
                       className="flex min-h-[52px] flex-col justify-center gap-1.5 rounded-[10px] border border-card-border bg-card-bg px-3 py-2"

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Logo from '@/components/common/Logo';
 
-/** 개인정보 문의처. 실제로 받는 주소로 바꿔야 한다. */
+/** 개인정보 문의처. TODO: 실제로 받는 주소로 교체. */
 export const LEGAL_CONTACT_EMAIL = 'contact@shg-trip.cloud';
 
 export interface LegalSection {

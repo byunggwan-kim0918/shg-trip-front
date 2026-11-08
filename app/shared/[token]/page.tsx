@@ -14,11 +14,11 @@ interface ApiEnvelope<T> {
   error: null | { code: string; message: string };
 }
 
-/** 공유 토큰으로 일정 조회 (비인증 SSR). 만료·무효면 null. */
+/** 비인증 SSR 조회. 만료·무효 토큰이면 null. */
 async function fetchShared(token: string): Promise<Itinerary | null> {
   try {
     const res = await backendFetch(`/api/shared/${encodeURIComponent(token)}`, {
-      // 공유 일정은 캐시하지 않음(만료·수정 반영)
+      // 만료·수정이 바로 반영돼야 해서 캐시하지 않는다.
       cache: 'no-store',
     });
     if (!res.ok) return null;
@@ -29,16 +29,7 @@ async function fetchShared(token: string): Promise<Itinerary | null> {
   }
 }
 
-/**
- * 공유 링크 미리보기.
- *
- * 이게 없어서 카카오톡·슬랙·iMessage에 붙인 모든 공유 링크가 사이트 기본 제목
- * ("SHG trip · 여행 플래너")으로 똑같이 떴다. 공유는 이 제품이 앱 밖으로 나가는
- * 유일한 표면인데, 링크 카드만 보면 어느 여행인지 분간이 안 됐다.
- *
- * SSR에서 이미 일정을 받아오므로(fetchShared) 같은 호출을 재사용한다.
- * Next가 generateMetadata와 페이지의 동일 요청을 dedupe하므로 왕복이 늘지 않는다.
- */
+/** 페이지와 같은 fetchShared 요청은 Next가 dedupe하므로 메타데이터 때문에 왕복이 늘지 않는다. */
 export async function generateMetadata({
   params,
 }: {

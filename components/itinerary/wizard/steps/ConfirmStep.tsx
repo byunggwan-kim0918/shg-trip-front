@@ -13,7 +13,6 @@ import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 import { DESCRIPTION_MAX_LENGTH } from '@/lib/constants/newTrip';
 import { clearShellDraft } from '@/components/itinerary/NewTripShell';
 
-/** 5단계: 확인 → 생성 (6e). 요약 + "AI에게 한마디"(선택) + 생성. */
 export default function ConfirmStep() {
   const router = useRouter();
   const { data, setStep } = useWizardStore();
@@ -76,7 +75,6 @@ export default function ConfirmStep() {
     <div className="space-y-4">
       <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">이대로 만들까요?</h2>
 
-      {/* 요약 (행 클릭 → 해당 단계로) */}
       <div className="flex flex-col">
         {rows.map((row, i) => (
           <button
@@ -93,7 +91,6 @@ export default function ConfirmStep() {
         ))}
       </div>
 
-      {/* AI에게 한마디 */}
       <div>
         <div className="mb-2 text-xs font-bold tracking-[0.03em] text-muted-2">
           AI에게 한마디 <span className="font-semibold text-muted-2/70">(선택)</span>
@@ -108,7 +105,6 @@ export default function ConfirmStep() {
         />
       </div>
 
-      {/* 쿼터 배지 (30일 최대 5회 명시) */}
       {quota && (
         <div className="flex justify-center">
           <GenerationQuotaBadge quota={quota} />
@@ -125,7 +121,6 @@ export default function ConfirmStep() {
         </button>
       )}
 
-      {/* 생성 CTA — 소진/차단 시 비활성 */}
       <button
         type="button"
         onClick={handleGenerate}

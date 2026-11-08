@@ -5,11 +5,7 @@ import KakaoIcon from '@/components/icons/KakaoIcon';
 import GoogleIcon from '@/components/icons/GoogleIcon';
 import NaverIcon from '@/components/icons/NaverIcon';
 
-/**
- * 버튼 위계 (리디자인 스펙):
- * 카카오만 브랜드 채움(#FEE500). 구글·네이버는 아웃라인(surface+border)이고
- * 브랜드 색은 좌측 아이콘에만 적용 → 네이버 초록 버튼이 CTA처럼 튀는 문제 해결.
- */
+/** 네이버 초록을 채우면 CTA처럼 튀므로 브랜드 채움은 카카오만 쓰고 구글·네이버는 아이콘에만 브랜드 색을 둔다. */
 const PROVIDER_STYLES: Record<Provider, {
   container: string;
   iconClass?: string;

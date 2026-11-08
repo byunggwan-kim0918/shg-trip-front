@@ -6,7 +6,6 @@ import { useAuthStore } from '@/lib/stores';
 import { forceLogout } from '@/lib/api/fetchClient';
 import Portal from '@/components/common/Portal';
 
-/** 헤더 아바타 드롭다운: 닉네임 표시 / 닉네임 변경 / 로그아웃. */
 export default function AvatarMenu() {
   const user = useAuthStore((s) => s.user);
   const fetchSession = useAuthStore((s) => s.fetchSession);
@@ -78,7 +77,7 @@ export default function AvatarMenu() {
         current={user?.nickname ?? ''}
         onClose={() => setEditOpen(false)}
         onSaved={async () => {
-          // fetchSession 실패해도 저장은 성공했으므로 모달은 닫는다(unhandled rejection 방지).
+          // 저장은 이미 성공했으므로 세션 갱신이 실패해도 모달을 닫는다.
           try { await fetchSession(); } catch { /* 세션 갱신 실패는 무시 */ }
           setEditOpen(false);
         }}
@@ -87,7 +86,7 @@ export default function AvatarMenu() {
   );
 }
 
-/** 닉네임 변경 모달 (온보딩과 동일 계약: PATCH /api/proxy/users/profile, 2~20자). */
+/** 온보딩과 같은 계약: PATCH /api/proxy/users/profile, 2~20자. */
 function NicknameModal({
   open,
   current,

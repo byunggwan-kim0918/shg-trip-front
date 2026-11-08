@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import type { WizardData } from '@/lib/types/itinerary';
 
-// 5단계 통합 마법사 (자동/수동 모드 분리 폐지).
 // 0 여행지·기간 → 1 취향(테마+카테고리) → 2 스타일(페이스+이동) → 3 예산·필수장소(선택) → 4 확인
 const TOTAL_STEPS = 5;
 
@@ -28,15 +27,15 @@ export function isSameDayTimeInverted(data: WizardData): boolean {
     && !!data.arrivalTime && !!data.departureTime && data.departureTime <= data.arrivalTime;
 }
 
-/** 각 단계 유효성 (데이터 기반, 동기 계산). 4단계(예산·장소)는 선택이라 항상 유효. */
+/** 4단계(예산·장소)는 선택이라 항상 유효하다. */
 export function computeStepValid(step: number, data: WizardData): boolean {
   switch (step) {
     case 0: return data.destination.trim().length > 0 && !!data.startDate && !!data.endDate
       && !isSameDayTimeInverted(data);
     case 1: return data.themes.length >= 1 && data.categories.length >= 1;
-    case 2: return true; // 스타일 (페이스·이동 기본값 있음)
-    case 3: return true; // 예산·필수장소 (선택·건너뛰기)
-    case 4: return true; // 확인
+    case 2: return true;  // 페이스·이동은 기본값이 있다
+    case 3: return true;  // 선택·건너뛰기 가능
+    case 4: return true;
     default: return true;
   }
 }

@@ -26,10 +26,8 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.json({ data: { success: true } });
 
-  // 새 __session 쿠키
   response.headers.append('Set-Cookie', createSessionCookie(newAccessToken));
 
-  // Spring의 새 refresh_token Set-Cookie 전달
   const setCookieHeaders = springRes.headers.getSetCookie?.() ?? [];
   for (const setCookie of setCookieHeaders) {
     response.headers.append('Set-Cookie', setCookie);

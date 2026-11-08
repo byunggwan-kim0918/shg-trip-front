@@ -22,15 +22,8 @@ interface MapPanelProps {
 }
 
 export default function MapPanel({ steps, selectedDay, selectedStepId, onMarkerClick }: MapPanelProps) {
-  /* 테마를 DOM이 아니라 store에서 읽는다.
-   *
-   * 예전엔 MutationObserver로 html.dark를 감시했다. 그런데 그 콜백은 toggleThemeWithTransition()의
-   * apply()가 **끝난 뒤** 전달되고, 브라우저는 이미 apply() 직후 상태로 스냅샷을 잡아
-   * 220ms 크로스페이드를 시작한다. 거기에 setIsDark가 flushSync도 아니어서 리렌더가 다음 프레임으로
-   * 밀렸다 — 결과적으로 화면 전체가 어두워진 다음 지도만 뒤늦게 따라왔다.
-   *
-   * 테마는 이미 useAppStore에 있고, apply()가 classList 토글과 **같은 flushSync 안에서** 커밋한다.
-   * 거기서 읽으면 지도 스타일 교체가 같은 스냅샷에 들어간다. */
+  /* MutationObserver 콜백은 테마 전환 스냅샷 뒤에 와서 지도만 늦게 바뀐다.
+   * store 값은 apply()가 classList 토글과 같은 flushSync 안에서 커밋하므로 같은 스냅샷에 들어간다. */
   const isDark = useAppStore((s) => s.theme === 'dark');
 
   const mappableSteps = steps.filter(
@@ -53,9 +46,8 @@ export default function MapPanel({ steps, selectedDay, selectedStepId, onMarkerC
     );
   }
 
-  // min-h를 두지 않는다. 모바일 부모가 h-[180px] + overflow-hidden이라 min-h-[300px]이면
-  // 아래 120px이 잘리고, 거기에 어트리뷰션 표시가 들어간다
-  // (OSM 타일 정책·CARTO 약관 모두 저작자 표시 노출을 요구한다). 높이는 부모가 정한다.
+  // 모바일 부모가 h-[180px] + overflow-hidden이라 min-h를 두면 하단 어트리뷰션이 잘린다.
+  // 타일 약관(OSM·OpenFreeMap)이 저작자 표시 노출을 요구하므로 높이는 부모가 정한다.
   return (
     <div className="w-full h-full">
       <MapPanelInner

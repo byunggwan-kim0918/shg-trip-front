@@ -1,14 +1,12 @@
 interface Props {
   /** 0~100. indeterminate=true면 무시. */
   value?: number;
-  /** 불확정 로딩 바 (shg-indef). */
   indeterminate?: boolean;
-  /** 바 높이 px (기본 10; 마법사 6). */
+  /** 바 높이 px. */
   height?: number;
   className?: string;
 }
 
-/** 선형 프로그레스 바 (4d). 확정(%) 또는 불확정(shg-indef). */
 export default function ProgressBar({
   value = 0,
   indeterminate = false,

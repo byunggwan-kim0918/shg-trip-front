@@ -24,7 +24,6 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
 
   return (
     <div className="mx-auto flex h-full max-w-2xl flex-col">
-      {/* 헤더: 뒤로 + 진행바 + N/5 */}
       <div className="flex items-center gap-3 px-4 py-4">
         <button
           type="button"
@@ -44,7 +43,6 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
         </span>
       </div>
 
-      {/* 슬라이드 컨테이너 */}
       <div ref={containerRef} className="relative flex-1 overflow-hidden">
         <div
           className="flex h-full transition-transform duration-300 ease-in-out"
@@ -59,7 +57,7 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
         </div>
       </div>
 
-      {/* 하단 nav (마지막 단계는 자체 생성 CTA가 있으므로 다음 버튼 숨김) */}
+      {/* 마지막 단계는 자체 생성 CTA가 있어 다음 버튼을 숨긴다 */}
       {!isLast && (
         <div className="flex items-center justify-between gap-3 border-t border-divider px-4 py-4">
           {isOptional ? (

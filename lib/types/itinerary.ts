@@ -1,5 +1,3 @@
-// lib/types/itinerary.ts
-// 백엔드 응답 구조 기준 타입 정의
 
 export type TripMode = 'AUTO' | 'MANUAL';
 
@@ -73,7 +71,7 @@ export interface Itinerary {
   coverImage: string | null;
   tags: string[];
   status: ItineraryStatus;
-  /** 생성 시 해소하지 못한 품질 문제 안내(숙소 미배정·식사 누락 등). 과거 데이터엔 없어 optional. */
+  /** 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터엔 없다. */
   qualityNotices?: string[];
   steps: ItineraryStep[];
 }
@@ -91,8 +89,7 @@ export interface ItinerarySummary {
   tags: string[];
 }
 
-/** 위자드 입력 데이터 (프론트 전용). 자동/수동 모드 분리 폐지 — 생성 요청 mode는
- *  selectedPlaces 유무로 파생하므로 별도 mode 필드를 두지 않는다. */
+/** 생성 요청 mode는 selectedPlaces 유무로 파생하므로 별도 mode 필드를 두지 않는다. */
 export interface WizardData {
   destination: string;
   themes: Theme[];
@@ -108,7 +105,7 @@ export interface WizardData {
   startDate: string | null;
   endDate: string | null;
   description: string;
-  selectedPlaces: WizardPlace[];  // Manual 모드 전용 (검색 결과 임시 저장용)
+  selectedPlaces: WizardPlace[];
 }
 
 /** 위자드 장소 선택용 임시 타입 (Place 검색 결과) */
@@ -144,17 +141,14 @@ export interface ItineraryGenerateRequest {
   customPlaceNames: string[];
 }
 
-/** steps[]를 dayNumber 기준으로 그룹핑한 뷰 전용 타입 */
 export interface DayGroup {
   dayNumber: number;
   steps: ItineraryStep[];
 }
 
 /**
- * story(가이드북 문장 = step.notes)가 아직 비동기로 채워지는 중인지 판정.
- * 새 파이프라인은 구조 일정을 먼저 저장(notes=null)하고 Haiku가 비동기로 notes를 채운다.
- * DRAFT 상태에서 notes가 비어있는 step이 하나라도 있으면 생성 중으로 본다
- * (FINALIZED/fallback 경로는 이미 notes가 채워져 있어 false).
+ * 구조 일정을 먼저 저장(notes=null)하고 Haiku가 notes를 비동기로 채우므로 DRAFT에서 빈 notes가 있으면 생성 중으로 본다.
+ * FINALIZED/fallback 경로는 notes가 이미 채워져 있다.
  */
 export function hasPendingStory(itin: Itinerary): boolean {
   if (itin.status !== 'DRAFT') return false;
@@ -162,17 +156,14 @@ export function hasPendingStory(itin: Itinerary): boolean {
 }
 
 /**
- * 장소 사진(place.imageUrl)이 아직 비동기로 채워지는 중인지 판정.
- * 백엔드는 일정 저장 시 imageUrl=null로 두고 Google/S3 이미지를 비동기로 업로드한다.
- * DRAFT 상태에서 place가 있는데 imageUrl이 비어있는 step이 하나라도 있으면 채워지는 중으로 본다.
- * (일부 장소는 매칭 실패로 끝내 null일 수 있어 폴링은 max attempts로 종료된다.)
+ * 백엔드는 imageUrl=null로 저장하고 사진을 비동기로 올린다. 매칭 실패로 끝내 null인 장소가 있어
+ * 폴링은 max attempts로 끝난다.
  */
 export function hasPendingImage(itin: Itinerary): boolean {
   if (itin.status !== 'DRAFT') return false;
   return itin.steps.some((s) => s.place != null && !s.place.imageUrl);
 }
 
-/** steps[]를 dayNumber 기준으로 그룹핑 */
 export function groupStepsByDay(steps: ItineraryStep[]): DayGroup[] {
   const map = new Map<number, ItineraryStep[]>();
   for (const step of steps) {

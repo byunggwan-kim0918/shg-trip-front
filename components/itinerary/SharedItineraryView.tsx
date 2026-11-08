@@ -16,10 +16,7 @@ interface Props {
   itinerary: Itinerary;
 }
 
-/**
- * 공유 일정 읽기 전용 뷰 (공개 페이지). 로그인 불필요.
- * ResultLayout의 편집·확정·store 로직을 제외한 뷰만 — TimelinePanel/MapPanel을 readOnly로 재사용.
- */
+/** ResultLayout의 편집·확정·store 로직 없이 TimelinePanel/MapPanel을 readOnly로 재사용한다. */
 export default function SharedItineraryView({ itinerary }: Props) {
   const dayGroups = groupStepsByDay(itinerary.steps);
   const [selectedDay, setSelectedDay] = useState(dayGroups[0]?.dayNumber ?? 1);
@@ -47,15 +44,14 @@ export default function SharedItineraryView({ itinerary }: Props) {
         </Link>
       </div>
 
-      {/* 헤더 (ResultLayout 헤더 축약, 액션 없음) */}
       <div className="flex items-start gap-4 border-b border-card-border bg-card-bg px-4 py-4 sm:px-6 sm:py-5">
         <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
           {cover && !coverError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover} alt={itinerary.title ?? destination} className="h-full w-full object-cover" onError={() => setCoverError(true)} />
           ) : (
-            // 사진 없으면 목적지 이니셜만. 형제 화면(ResultLayout)과 같은 처리 —
-            // 글자 없는 그라데이션 사각형은 정보가 0이면서 헤더 좌측을 차지한다.
+            // 글자 없는 그라데이션 사각형은 정보 없이 헤더 좌측만 차지하므로
+            // ResultLayout처럼 목적지 이니셜만 둔다.
             <div className="flex h-full w-full items-center justify-center bg-surface-3">
               <span className="text-[15px] font-extrabold tracking-[-0.02em] text-muted">{destination.slice(0, 2)}</span>
             </div>
@@ -83,7 +79,6 @@ export default function SharedItineraryView({ itinerary }: Props) {
         </span>
       </div>
 
-      {/* 본문: 모바일 지도 상단, lg 좌 타임라인 우 지도 */}
       {itinerary.steps.length === 0 ? (
         <div className="flex flex-1 items-center justify-center px-4">
           <EmptyState
@@ -95,7 +90,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
         </div>
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-          {/* 비율은 ResultLayout과 같이 유지한다 — 두 화면이 같은 레이아웃 문자열을 복제하고 있다. */}
+          {/* ResultLayout과 같은 레이아웃 문자열을 복제하고 있어 비율을 같이 고쳐야 한다. */}
           <div className="h-[180px] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l">
             <MapPanel
               steps={itinerary.steps}

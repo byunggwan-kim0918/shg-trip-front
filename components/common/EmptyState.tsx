@@ -6,12 +6,10 @@ interface Props {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
-  /** dashed border 강조 (결과 없음 등). */
   dashed?: boolean;
   className?: string;
 }
 
-/** 빈 상태 (4e). 아이콘 박스 + 제목 + 설명 + 액션 버튼. */
 export default function EmptyState({
   icon: Icon,
   title,

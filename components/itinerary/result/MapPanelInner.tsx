@@ -10,28 +10,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // side effect: L.maplibreGL()을 등록한다. 타입도 이 패키지가 leaflet 모듈에 덧붙인다.
 import '@maplibre/maplibre-gl-leaflet';
 
-/* 워커 경로를 명시한다. maplibre는 기본적으로 `import.meta.url` 옆에서 워커를 찾는데,
- * 번들러를 거치면 그 자리가 청크 디렉터리라 파일이 없다. 그러면 콘솔 에러 하나만 남고
- * 마커·경로선은 멀쩡한 채 **베이스맵만 백지**가 된다(타일 디코딩이 전부 워커에서 돈다).
- * 파일은 predev/prebuild가 public/으로 복사한다 — scripts/copy-maplibre-worker.mjs */
+/* 번들러를 거치면 maplibre가 import.meta.url 옆에서 워커를 못 찾아 베이스맵만 백지가 된다.
+ * 파일은 predev/prebuild가 public/으로 복사한다(scripts/copy-maplibre-worker.mjs). */
 setWorkerUrl('/maplibre-gl-worker.mjs');
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 
-/** 일차별 색상 램프 (최대 10일).
- *
- * 일차는 **범주가 아니라 순서**(Day 1 → N)다. 예전 팔레트는 색상환을 고르게 분배한
- * 범주형이라 4일차 보라(#643e98)·9일차 마젠타(#983e98)·3일차 갈색(#98643e)이 나왔고,
- * 상세 화면의 40%를 차지하는 지도 위에서 그게 곧 무지개였다(보라는 AI tell 1순위이기도 하다).
- * 순서형 데이터에는 순서형 스케일을 쓴다 — 브랜드 올리브(70°)에서 출발해 초록 → 청록 → 파랑으로
- * 한 방향으로만 흐른다. 색상환을 한 바퀴 돌지 않으므로 따뜻한 색(갈색·보라·마젠타)이 아예 없다.
- *
- * bg=마커 채움(흰 숫자 대비 4.5 이상) / border=한 단계 어둡게 / line=경로선 한 단계 밝게.
- *
- * 다크 변형은 **테두리와 경로선만** 밝힌다(borderDark/lineDark). 채움(bg)은 양 테마 공통이다 —
- * 마커 라벨이 흰색 하드코딩이라 채움을 밝히면 흰 숫자의 대비가 4.5 아래로 떨어진다
- * (예: #5f6a1e는 흰 글자 5.90인데 한 단계 밝은 #7a8729는 3.94). 다크 타일(#171a20) 위에서
- * 묻히는 건 어두운 테두리이므로, 분리는 테두리를 밝혀서 얻는다.
+/**
+ * 일차는 순서라 올리브(70°)에서 파랑으로 한 방향으로만 흐르는 순서형 램프를 쓴다(최대 10일).
+ * 마커 라벨이 흰색 고정이라 채움을 밝히면 대비가 4.5 아래로 떨어지므로 다크에서는 테두리·경로선만 밝힌다.
  */
 const DAY_COLORS = [
   { bg: '#5f6a1e', border: '#49521a', line: '#7a8729', borderDark: '#9cab36', lineDark: '#9cab36' }, //  1일차  70° 올리브 = 브랜드
@@ -47,20 +34,8 @@ const DAY_COLORS = [
 ];
 
 /**
- * 베이스맵. Google Maps JS를 걷어내고 OpenFreeMap 벡터 타일로 옮겼다 — **키도 한도도 없다**
- * (openfreemap.org가 명시한 조건이다).
- *
- * CARTO Positron/Dark Matter를 먼저 붙였다가 되돌렸다. `basemaps.cartocdn.com`은 이제
- * 좌표와 무관하게 "API KEY REQUIRED" 워터마크 타일(2,049B, 모든 타일이 같은 MD5)을 200으로
- * 돌려준다. HTTP 200에 image/png라 코드에서는 성공으로 보이지만 지도는 빈 회색이다.
- * Stadia도 401(키 필요), Esri Canvas는 키 없이 열리지만 라벨 레이어가 분리돼 있고 약관이
- * ArcGIS 계정을 전제한다. 이번 작업의 목적이 "키를 지워도 도는 상태"이므로 전부 탈락이다.
- *
- * Google `styles` 배열로 하던 POI 끄기·채도 낮추기는 **처음부터 그렇게 디자인된 스타일**로
- * 대체한다 — positron/dark는 상업 POI 핀이 없고 채도가 낮아 우리 번호 마커와 경쟁하지 않고,
- * 다크도 CSS invert 해킹(물이 갈색이 되던 그것) 없이 진짜 다크다. 벡터라 레티나에서도 선명하다.
- *
- * 어트리뷰션은 OpenFreeMap·OpenMapTiles·OSM 모두 표기를 요구한다. 지우면 약관 위반이다.
+ * cartocdn은 키 없이 200 + 워터마크 타일을 돌려줘 성공처럼 보이고 지도는 비므로 키·한도가 없는 OpenFreeMap을 쓴다.
+ * 어트리뷰션은 OpenFreeMap·OpenMapTiles·OSM 모두 표기를 요구해 지우면 약관 위반이다.
  */
 const STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/positron';
 const STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
@@ -86,18 +61,13 @@ function hasWebGL(): boolean {
   }
 }
 
-/** OpenFreeMap 벡터 스타일을 Leaflet 레이어로 얹는다.
- *
- * 테마가 바뀌면 레이어째 갈아끼운다. maplibre의 `setStyle`로 바꿀 수도 있지만, 그러면
- * 스타일 로드가 비동기라 전환 중 한 프레임이 빈 캔버스로 남는다.
- */
+/** maplibre `setStyle`은 스타일 로드가 비동기라 전환 중 한 프레임이 비므로 테마가 바뀌면 레이어째 갈아끼운다. */
 function VectorBasemap({ isDark }: { isDark: boolean }) {
   const map = useMap();
 
   useEffect(() => {
-    // 브릿지는 maplibre 자체 컨트롤을 끄고(attributionControl:false로 덮어씀) 이 값을
-    // Leaflet 어트리뷰션 컨트롤에 넘긴다. 스타일 source의 attribution을 자동으로 읽기도 하지만,
-    // 표기 의무가 걸린 문자열을 외부 스타일 파일에 맡기지 않는다.
+    // 브릿지는 이 값을 Leaflet 어트리뷰션 컨트롤에 넘긴다. 표기 의무가 걸린 문자열을
+    // 외부 스타일 파일의 attribution에 맡기지 않는다.
     const layer = L.maplibreGL({
       style: isDark ? STYLE_DARK : STYLE_LIGHT,
       attributionControl: { customAttribution: VECTOR_ATTRIBUTION },
@@ -111,7 +81,6 @@ function VectorBasemap({ isDark }: { isDark: boolean }) {
   return null;
 }
 
-/** 일차 색 + 테마. 다크에서는 테두리·경로선만 밝은 변형으로 바꾼다(채움은 공통). */
 function getDayColor(dayNumber: number, isDark = false) {
   const c = DAY_COLORS[(dayNumber - 1) % DAY_COLORS.length];
   return isDark
@@ -119,12 +88,7 @@ function getDayColor(dayNumber: number, isDark = false) {
     : { bg: c.bg, border: c.border, line: c.line };
 }
 
-/** 번호가 박힌 원형 마커.
- *
- * `className`을 주면 Leaflet 기본값 `leaflet-div-icon`(흰 사각형 + 그림자)을 **대체**하므로
- * 별도 리셋 CSS가 필요 없다. Google legacy Marker 시절에는 SVG를 data URI로 만들어
- * `label` 옵션으로 숫자를 얹었는데, divIcon에서는 그냥 HTML이면 된다.
- */
+/** `className`을 주면 Leaflet 기본 `leaflet-div-icon`(흰 사각형 + 그림자)을 대체하므로 리셋 CSS가 필요 없다. */
 function stepIcon(fill: string, stroke: string, label: string, selected: boolean): L.DivIcon {
   const size = selected ? 34 : 28;
   return L.divIcon({
@@ -141,7 +105,6 @@ function stepIcon(fill: string, stroke: string, label: string, selected: boolean
   });
 }
 
-/** 경로 중간의 진행 방향 화살표. Google `SymbolPath.FORWARD_CLOSED_ARROW` + `offset:'50%'` 대응. */
 function arrowIcon(fill: string, stroke: string, angle: number): L.DivIcon {
   return L.divIcon({
     className: 'shg-route-arrow',
@@ -156,10 +119,9 @@ function arrowIcon(fill: string, stroke: string, angle: number): L.DivIcon {
 
 type LatLngTuple = [number, number];
 
-/** 경로 전체 길이의 절반 지점과 그 지점의 진행 방향(화면 기준, 위쪽 0°·시계방향).
- *
- * 경도 1도는 위도에 따라 짧아지므로 cos 보정만 넣는다. 하루 동선 규모(수십 km)에서는
- * 측지선 계산과 눈에 보이는 차이가 없다.
+/**
+ * 경로 길이 절반 지점과 그 지점의 진행 방향(화면 기준, 위쪽 0°·시계방향).
+ * 하루 동선 규모(수십 km)에서는 cos 보정만으로 측지선 계산과 눈에 보이는 차이가 없다.
  */
 function pathMidpoint(path: LatLngTuple[]): { pos: LatLngTuple; angle: number } | null {
   if (path.length < 2) return null;
@@ -190,7 +152,6 @@ function pathMidpoint(path: LatLngTuple[]): { pos: LatLngTuple; angle: number } 
   return null;
 }
 
-/** 번호 마커 하나. */
 function StepMarker({
   lat, lng, label, fill, stroke, selected, onClick,
 }: {
@@ -207,7 +168,6 @@ function StepMarker({
   );
 }
 
-/** 일차별 step 순서대로 경로선과 방향 화살표를 그린다. */
 function DayPolylines({ steps, isDark }: { steps: ItineraryStep[]; isDark: boolean }) {
   const paths = useMemo(() => {
     const byDay = new Map<number, ItineraryStep[]>();
@@ -254,7 +214,6 @@ function DayPolylines({ steps, isDark }: { steps: ItineraryStep[]; isDark: boole
   );
 }
 
-/** 선택된 step으로 pan하는 컨트롤러 */
 function MapController({
   steps,
   selectedStepId,
@@ -264,8 +223,7 @@ function MapController({
 }) {
   const map = useMap();
 
-  // 표시 중인 스텝 전체가 들어오도록 맞춘다. 예전엔 center+zoom(13) 고정이라
-  // 첫 스텝 주변만 보이고 나머지 핀이 화면 밖에 있었다(제주 공항 → 성산처럼 멀리 가는 날은 대부분).
+  // center+zoom 고정이면 첫 스텝 주변만 보이고 멀리 간 핀이 화면 밖에 남는다.
   const fitKey = steps.map((s) => s.id).join(',');
   useEffect(() => {
     const pts = steps
@@ -280,12 +238,8 @@ function MapController({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, fitKey]);
 
-  /* 선택된 스톱으로 pan — **선택이 실제로 바뀔 때만** 돈다.
-   *
-   * 예전엔 deps에 steps가 있었다. 그러면 Day를 전환할 때도(steps가 새 배열) 이 효과가 다시 돌고,
-   * 이전에 클릭해 둔 selectedStepId가 남아 있으면 setView(.., 15)로 **위 fitBounds를 덮어썼다**.
-   * 그래서 Day를 바꿔도 핀 전체가 들어오지 않고 한 핀만 확대된 채 나머지가 화면 가장자리로 몰렸다.
-   * steps는 ref로 읽어 최신 값을 쓰면서 재실행 트리거에서는 뺀다. */
+  /* 선택이 실제로 바뀔 때만 돈다. steps를 deps에 넣으면 Day 전환 때 남은 selectedStepId가
+   * 위 fitBounds를 덮어쓰므로 steps는 ref로 읽는다. */
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
 
@@ -300,7 +254,6 @@ function MapController({
   return null;
 }
 
-/** 일차별 step 내 순서 번호 계산 */
 function useDayStepIndex(steps: ItineraryStep[]) {
   return useMemo(() => {
     const indexMap = new Map<number, number>();
@@ -345,7 +298,6 @@ export default function MapPanelInner({
     [onMarkerClick],
   );
 
-  // 고유 일차 목록 (범례용)
   const uniqueDays = useMemo(() => {
     const days = new Set(steps.map((s) => s.dayNumber));
     return Array.from(days).sort((a, b) => a - b);
@@ -355,9 +307,8 @@ export default function MapPanelInner({
 
   return (
     <div className="relative w-full h-full">
-      {/* Leaflet 자체 크롬(타일 배경·줌 버튼·어트리뷰션·말풍선)은 라이트 고정이라
-          다크에서 흰 사각형으로 튄다. 테마 토큰으로 덮는다 — 이 지도만의 문제라
-          globals.css가 아니라 소비자 옆에 둔다. */}
+      {/* Leaflet 자체 크롬은 라이트 고정이라 다크에서 흰 사각형으로 튄다.
+          이 지도만의 문제라 globals.css가 아니라 소비자 옆에서 테마 토큰으로 덮는다. */}
       <style>{`
         /* isolation: Leaflet 내부 pane은 z-index 400~800을 쓴다. 스태킹 컨텍스트를 만들지
            않으면 그 숫자가 바깥 범례·헤더와 직접 경쟁한다. */
@@ -420,10 +371,8 @@ export default function MapPanelInner({
           );
         })}
 
-        {/* 말풍선은 Marker 자식이 아니라 좌표를 직접 받는 독립 Popup이다 — 열림 상태를
-            Leaflet이 아니라 우리가 들고 있어야 같은 마커 재클릭이 토글로 동작한다.
-            `remove`는 ×·배경클릭에서도 React 언마운트에서도 불리므로, prev를 비교해
-            "다른 스톱으로 막 옮긴 경우"를 걸러낸다. */}
+        {/* 같은 마커 재클릭이 토글로 동작하려면 열림 상태를 우리가 들고 있어야 해서 독립 Popup을 쓴다.
+            `remove`는 ×·배경클릭과 언마운트 모두에서 불리므로 prev를 비교해 다른 스톱으로 옮긴 경우를 거른다. */}
         {infoStep?.place && (
           <Popup
             position={[infoStep.place.latitude, infoStep.place.longitude]}
@@ -459,7 +408,7 @@ export default function MapPanelInner({
                   <p style={{ color: color.bg }} className="text-xs mt-0.5">
                     {place.category}
                   </p>
-                  {/* 별점은 데이터다. amber(경고 계열)나 상태색을 쓰지 않는다 */}
+                  {/* 별점은 데이터라 amber(경고 계열)나 상태색을 쓰지 않는다 */}
                   {place.rating != null && (
                     <div className="flex items-center gap-1 text-xs mt-0.5 text-text-2">
                       <Star size={12} className="fill-current" aria-hidden="true" />
@@ -478,7 +427,6 @@ export default function MapPanelInner({
         )}
       </MapContainer>
 
-      {/* 일차별 범례 */}
       {uniqueDays.length > 1 && (
         <div className="absolute top-3 left-3 bg-card-bg/90 backdrop-blur-sm rounded-[10px] shadow-md border border-card-border px-3 py-2 flex flex-col gap-1 z-10">
           {uniqueDays.map((day) => {

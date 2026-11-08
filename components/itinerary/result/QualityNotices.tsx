@@ -1,15 +1,11 @@
 import { Info } from 'lucide-react';
 import type { ParsedNotice } from '@/lib/utils/qualityNotices';
 
-/**
- * 선택된 Day의 품질 알림(생성 시 끝내 채우지 못한 숙소·식사 등).
- *
- * 알림이 전부 일차 단위라 헤더가 아니라 그날 첫 스톱 위에 둔다. 하루치는 1~2줄이라 접지 않는다.
- */
+/** 알림이 전부 일차 단위라 헤더가 아니라 그날 첫 스톱 위에 두고, 하루치는 1~2줄이라 접지 않는다. */
 export default function QualityNotices({ items }: { items: ParsedNotice[] }) {
   if (items.length === 0) return null;
 
-  // 식사 누락 등은 같은 원인 문장을 공유한다. 항목마다 반복하지 않고 한 번만 보인다.
+  // 같은 원인 문장을 공유하는 항목이 많아 원인은 한 번만 보인다.
   const causes = [...new Set(items.map((i) => i.cause).filter((c): c is string => c != null))];
 
   return (

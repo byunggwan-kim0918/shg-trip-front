@@ -53,7 +53,6 @@ export default function Sidebar() {
         role="complementary"
         aria-label="사이드바"
       >
-        {/* 헤더: 로고 + 접기 */}
         <div className="flex items-center justify-between h-14 px-4 shrink-0">
           <Link
             href="/main"
@@ -72,7 +71,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* 새 여행 버튼 → AI 새 여행 셸 (AI/직접 선택은 셸에서) */}
         <div className="px-3.5 mb-5">
           <button
             onClick={() => router.push('/main/plan/new')}
@@ -83,7 +81,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* 내 여행함 */}
         <nav className="flex-1 overflow-y-auto px-3.5 pb-4" aria-label="내 여행함">
           <h2 className="px-1.5 pb-2.5 text-xs font-bold tracking-[0.04em] text-muted-2">
             내 여행함

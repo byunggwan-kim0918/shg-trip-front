@@ -10,7 +10,6 @@ import { THEME_LABEL, PACE_LABEL } from '@/lib/constants/wizardOptions';
 import { dateRange, nightsLabel } from '@/lib/utils/tripStatus';
 import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 
-/** 예산 퀵칩: 라벨 + 문장에 덧붙일 구절. */
 const BUDGET_CHIPS: Array<{ label: string; phrase: string }> = [
   { label: '50만원', phrase: '예산은 50만원' },
   { label: '100만원', phrase: '예산은 100만원' },
@@ -28,7 +27,6 @@ export function clearShellDraft() {
   shellDraft = '';
 }
 
-/** "이해했어요" 패널 한 줄. */
 function UnderstandRow({ label, value, last }: { label: string; value: string | null; last?: boolean }) {
   const filled = !!value;
   return (
@@ -41,11 +39,6 @@ function UnderstandRow({ label, value, last }: { label: string; value: string | 
   );
 }
 
-/**
- * AI 새 여행 셸 (리디자인 2c/3c).
- * Layer B: 타이핑 → 디바운스 → /parse 실시간 패널 갱신 + 마법사 구조화 프리필.
- * 파싱 결과는 sessionStorage(NEW_TRIP_PARSED_KEY)로 넘겨 builder에서 필드 프리필 + ConfirmStep 점프.
- */
 export default function NewTripShell() {
   const router = useRouter();
   const [sentence, setSentence] = useState(() => shellDraft);
@@ -55,19 +48,18 @@ export default function NewTripShell() {
   const [parseError, setParseError] = useState<string | null>(null);
   const { quota } = useGenerationQuota();
 
-  // 스테일 응답 드롭용 단조증가 seq (BFF 경유 abort 레이스 대비) + 진행중 요청 취소.
+  // BFF를 거치면 abort가 늦게 닿을 수 있어 단조증가 seq로 늦은 응답을 버린다.
   const seqRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // parsed가 대응하는 문장(불변식). 이 값이 현재 문장과 같을 때만 구조화 프리필에 신뢰.
+  // parsed가 대응하는 문장. 현재 문장과 같을 때만 구조화 프리필에 쓴다.
   const parsedForRef = useRef('');
 
-  // 문장 변경 → 디바운스 파싱
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     const trimmed = sentence.trim();
     if (trimmed.length < MIN_PARSE_LEN) {
-      // in-flight 응답이 패널을 되살리지 못하도록 seq 무효화 + abort
+      // 진행 중 응답이 패널을 되살리지 못하게 seq를 무효화하고 abort한다.
       seqRef.current++;
       abortRef.current?.abort();
       parsedForRef.current = '';
@@ -84,7 +76,6 @@ export default function NewTripShell() {
       setParsing(true);
       try {
         const result = await parseTripSentence(trimmed, controller.signal);
-        // 최신 요청만 반영 (stale 드롭)
         if (seq === seqRef.current) {
           setParsed(result);
           parsedForRef.current = trimmed;
@@ -120,12 +111,11 @@ export default function NewTripShell() {
     });
   };
 
-  // withSentence면 파싱 결과+원문을 sessionStorage로 넘겨 builder에서 프리필/점프.
   const goWizard = useCallback((withSentence: boolean) => {
     const trimmed = sentence.trim();
     if (withSentence && trimmed) {
-      // parsed가 "현재 문장"에 대응할 때만 구조화 프리필로 넘긴다(빠른 클릭 시 stale/미완 혼입 방지).
-      // 미완·불일치면 문장만 넘겨 builder(page.tsx path 2)가 신선하게 재파싱하도록 위임.
+      // 빠른 클릭 시 미완·이전 문장 결과가 섞이지 않게 parsed가 현재 문장에 대응할 때만 넘긴다.
+      // 아니면 문장만 넘겨 builder(page.tsx path 2)가 다시 파싱한다.
       const canUseParsed = parsed != null && parsedForRef.current === trimmed;
       if (canUseParsed) {
         sessionStorage.setItem(NEW_TRIP_PARSED_KEY, JSON.stringify({ sentence: trimmed, parsed }));
@@ -139,7 +129,6 @@ export default function NewTripShell() {
     router.push('/main/plan/new?builder=1');
   }, [sentence, parsed, router]);
 
-  // 패널 표시값 (미추론은 null → "—")
   const periodValue = parsed?.startDate && parsed?.endDate
     ? `${dateRange(parsed.startDate, parsed.endDate)} (${nightsLabel(parsed.startDate, parsed.endDate)})`
     : parsed?.startDate ?? null;
@@ -148,7 +137,6 @@ export default function NewTripShell() {
     : null;
   const paceValue = parsed?.pace ? PACE_LABEL[parsed.pace] ?? parsed.pace : null;
 
-  // 하나라도 인식된 값이 있으면 표를 보여준다. 전부 비었으면 빈 상태 UI.
   const hasAnyParsed = Boolean(
     parsed?.destination || periodValue || parsed?.party || themeValue || paceValue,
   );
@@ -157,10 +145,8 @@ export default function NewTripShell() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8 py-6 lg:flex-row lg:gap-9 lg:py-10">
-      {/* 좌: 입력 */}
       <div className="min-w-0 flex-1">
         <div className="mb-2 text-[13px] font-semibold text-muted-2">새 여행</div>
-        {/* 반응형 단계가 없어 390px에서도 30px였다. 짧은 문구라 데스크톱 30px는 유지한다 */}
         <h2 className="mb-5 text-[23px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[30px]">
           어떤 여행을 꿈꾸세요?
         </h2>
@@ -176,9 +162,7 @@ export default function NewTripShell() {
           aria-label="여행 문장 입력"
         />
 
-        {/* 예산 넛지 */}
-        {/* 예산 넛지는 선택적 도움말이지 경고가 아니다. warn 색을 쓰면 아래 '한도 초과' 안내와
-            같은 계열이 되어 위계가 뒤엉킨다(실제로 그랬다). 중립 표면으로 낮춘다. */}
+        {/* 예산 넛지는 경고가 아니라 도움말이라 warn 색을 쓰면 아래 '한도 초과' 안내와 위계가 뒤엉킨다. */}
         <div className="mt-3.5 flex flex-col gap-3 rounded-[10px] border border-card-border bg-surface-2 px-5 py-4 sm:flex-row sm:items-center sm:gap-4">
           <span className="text-[13px] font-semibold text-text-2">
             예산이 있으면 알려주세요 · 일행 전체, 숙박 포함
@@ -201,7 +185,6 @@ export default function NewTripShell() {
           </div>
         </div>
 
-        {/* CTA */}
         <div className="mt-6 flex gap-3">
           <button
             type="button"
@@ -221,7 +204,6 @@ export default function NewTripShell() {
           </button>
         </div>
 
-        {/* 생성 쿼터 배지 (30일 최대 5회) */}
         {quota && (
           <div className="mt-3">
             <GenerationQuotaBadge quota={quota} />
@@ -229,7 +211,6 @@ export default function NewTripShell() {
         )}
       </div>
 
-      {/* 우: AI 이해 요약 패널 */}
       <aside className="w-full shrink-0 self-start rounded-xl border border-divider bg-card-bg p-6 lg:w-[400px]">
         <div className="mb-1 flex items-center gap-2">
           <Sparkles size={15} className="text-accent-weak-fg" aria-hidden="true" />
@@ -258,8 +239,7 @@ export default function NewTripShell() {
             {parseError ?? '이해하지 못했어요. 여행지와 기간을 넣어 다시 적어주세요.'}
           </div>
         ) : (
-          /* 빈 상태: 5줄이 전부 '—'인 표는 정보가 0인데 자리만 차지한다.
-             무엇을 알아듣는지 알려주는 편이 입력에 도움이 된다. */
+          /* 전부 '—'인 표는 정보가 없으므로 무엇을 알아듣는지 알려준다. */
           <>
             <ul className="flex flex-wrap gap-2">
               {['여행지', '기간', '인원', '테마', '페이스'].map((k) => (

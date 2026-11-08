@@ -15,9 +15,9 @@ interface StepCardProps {
   onToggleExpand: () => void;
   onClick: () => void;
   onSelectAlternative?: (alternative: AlternativeOption) => void;
-  /** 읽기 전용(공유 공개 뷰). 대안 보기 버튼 숨김 + store 미구독. */
+  /** 공유 공개 뷰. 대안 버튼을 숨기고 store를 구독하지 않는다. */
   readOnly?: boolean;
-  /** 편집 모드(F3 드래그·삭제). 카드 클릭·대안 버튼 비활성(드래그와 충돌 방지). */
+  /** 드래그와 충돌하지 않게 카드 클릭·대안 버튼을 끈다. */
   editMode?: boolean;
 }
 
@@ -42,7 +42,7 @@ export default function StepCard({
     setImgLoaded(false);
   }, [imageUrl]);
   const IconComponent = place ? getCategoryIcon(place.category) : null;
-  // 공유 뷰(readOnly)는 store에 의존하지 않음 — storyPending 항상 false 취급.
+  // 공유 뷰(readOnly)는 store에 의존하지 않아 storyPending을 항상 false로 본다.
   const storyPendingFromStore = useItineraryStore((s) => s.storyPending);
   const storyPending = readOnly ? false : storyPendingFromStore;
   const hasStory = !!step.notes && step.notes.trim().length > 0;
@@ -54,10 +54,8 @@ export default function StepCard({
 
   return (
     <div
-      /* 평상시 배경을 둔다. 보더·그림자·p-5짜리 카드 박스로 돌아가는 게 아니라
-         캔버스(--background) 위의 흰 행으로만 만든다 — 패딩은 그대로이므로 밀도는 유지된다.
-         배경이 없을 때는 스톱과 그 아래 이동 정보("차로 5분 · 3.0km")의 간격이
-         다음 스톱과의 간격과 거의 같아서, 이동 정보가 어느 스톱에 속하는지 읽히지 않았다. */
+      /* 배경이 없으면 스톱과 아래 이동 정보의 간격이 다음 스톱과의 간격과 같아져
+         이동 정보가 어느 스톱에 속하는지 읽히지 않는다. */
       className={`relative rounded-[10px] px-3.5 py-3 transition-colors ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
         isExpanded ? 'bg-accent-soft' : 'bg-card-bg hover:bg-surface-hover'
       }`}
@@ -66,12 +64,12 @@ export default function StepCard({
       tabIndex={editMode ? undefined : 0}
       onKeyDown={editMode ? undefined : (e) => e.key === 'Enter' && onClick()}
     >
-      {/* 선택 표시는 테두리가 아니라 왼쪽 띠로. 카드 박스를 없앤 뒤에도 "지금 보는 스톱"이 분명하다. */}
+      {/* 카드 박스가 없어 선택 표시는 테두리가 아니라 왼쪽 띠로 한다. */}
       {isExpanded && <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent" aria-hidden="true" />}
 
       <div className="flex gap-3">
         <div className="min-w-0 flex-1">
-          {/* 1행: 시작 시각 · 장소명 · 평점. 시각을 제목과 같은 줄에 두면 세로로 훑인다. */}
+          {/* 시각을 제목과 같은 줄에 두면 세로로 훑인다. */}
           <div className="flex items-baseline gap-2">
             {step.startTime && (
               <span className="shrink-0 text-[13px] font-extrabold tabular-nums text-accent-weak-fg">{step.startTime}</span>
@@ -87,7 +85,6 @@ export default function StepCard({
             )}
           </div>
 
-          {/* 2행: 스토리 */}
           {hasStory ? (
             <p className="mt-1 line-clamp-2 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{step.notes}</p>
           ) : storyPending ? (
@@ -96,7 +93,6 @@ export default function StepCard({
             </p>
           ) : null}
 
-          {/* 3행: 메타를 한 줄로 압축. 예전엔 시간·영업시간·비용·대안이 각각 한 줄씩 4줄을 먹었다. */}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-2">
             {timeRange && <span className="tabular-nums">{timeRange}</span>}
             {place?.openingHours && (
@@ -134,7 +130,7 @@ export default function StepCard({
           )}
         </div>
 
-        {/* 썸네일. 사진이 있을 때만 렌더한다 — 없을 때 블록으로 채우면 정보 0인 면이 리스트를 지배한다. */}
+        {/* 사진이 없을 때 빈 블록으로 채우면 정보 없는 면이 리스트를 지배한다. */}
         {imageUrl && !imgError && (
           <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[10px]">
             {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
