@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sparkles, Route, Wallet, Share2, ArrowRight } from 'lucide-react';
 import Reveal from '@/components/common/Reveal';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import Logo from '@/components/common/Logo';
+import WithdrawnNotice from '@/components/auth/WithdrawnNotice';
 import {
   NEW_TRIP_SENTENCE_KEY,
   SENTENCE_PLACEHOLDER,
@@ -73,6 +74,10 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      <Suspense fallback={null}>
+        <WithdrawnNotice />
+      </Suspense>
 
       <main className="px-5 sm:px-10">
         <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 pb-20 pt-14 md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] md:gap-14 md:pt-20">

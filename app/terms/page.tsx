@@ -72,7 +72,7 @@ export default function TermsPage() {
         {
           title: '탈퇴',
           body: (
-            <p>이용자는 언제든 <a className="underline" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>로 탈퇴를 요청할 수 있습니다. 탈퇴하면 계정과 일정이 삭제되며 복구할 수 없습니다.</p>
+            <p>이용자는 언제든 계정 메뉴의 &lsquo;회원 탈퇴&rsquo;에서 직접 탈퇴하거나 <a className="underline" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>로 탈퇴를 요청할 수 있습니다. 탈퇴하면 계정과 일정이 즉시 삭제되며 복구할 수 없습니다.</p>
           ),
         },
         {
