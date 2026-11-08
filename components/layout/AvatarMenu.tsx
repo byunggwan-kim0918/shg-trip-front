@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, UserPen } from 'lucide-react';
+import { LogOut, UserPen, UserX } from 'lucide-react';
 import { useAuthStore } from '@/lib/stores';
 import { forceLogout } from '@/lib/api/fetchClient';
 import Portal from '@/components/common/Portal';
@@ -11,6 +11,7 @@ export default function AvatarMenu() {
   const fetchSession = useAuthStore((s) => s.fetchSession);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,6 +69,13 @@ export default function AvatarMenu() {
           >
             <LogOut size={15} aria-hidden="true" /> 로그아웃
           </button>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setWithdrawOpen(true); }}
+            className="flex w-full items-center gap-2.5 border-t border-divider px-4 py-2.5 text-left text-xs font-medium text-muted-2 transition-colors hover:bg-surface-hover"
+          >
+            <UserX size={14} aria-hidden="true" /> 회원 탈퇴
+          </button>
         </div>
       )}
 
@@ -82,7 +90,93 @@ export default function AvatarMenu() {
           setEditOpen(false);
         }}
       />
+
+      <WithdrawModal
+        key={withdrawOpen ? 'withdraw-open' : 'withdraw-closed'}
+        open={withdrawOpen}
+        onClose={() => setWithdrawOpen(false)}
+      />
     </div>
+  );
+}
+
+const WITHDRAW_PHRASE = '탈퇴';
+
+/** DELETE /api/users/me 계약: 확인 문구가 정확히 일치해야 처리된다. */
+function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [phrase, setPhrase] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    inputRef.current?.focus();
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape' && !busy) onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, busy, onClose]);
+
+  if (!open) return null;
+
+  const valid = phrase.trim() === WITHDRAW_PHRASE;
+
+  const withdraw = async () => {
+    if (!valid || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ confirm: phrase.trim() }),
+      });
+      // 401이면 이미 탈퇴됐거나 세션이 끝나 BFF가 쿠키를 지운 상태다.
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      if (!res.ok) throw new Error('탈퇴 처리에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      window.location.href = '/';
+      return;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '탈퇴 처리에 실패했어요.');
+    }
+    setBusy(false);
+  };
+
+  return (
+    <Portal>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!busy) onClose(); }}>
+        <div role="dialog" aria-modal="true" aria-label="회원 탈퇴" className="w-full max-w-sm rounded-[10px] border border-card-border bg-card-bg p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <h2 className="text-[17px] font-bold text-foreground">회원 탈퇴</h2>
+          <ul className="mt-3 list-disc space-y-1 pl-4 text-sm text-text-2">
+            <li>내 여행 일정이 모두 삭제되고 되돌릴 수 없어요.</li>
+            <li>공유한 일정 링크는 바로 열리지 않아요.</li>
+            <li>같은 소셜 계정으로 다시 가입하면 새 계정으로 시작해요.</li>
+          </ul>
+          <label htmlFor="withdraw-phrase" className="mt-4 block text-xs font-semibold text-muted-2">
+            계속하려면 &lsquo;{WITHDRAW_PHRASE}&rsquo;를 입력해 주세요
+          </label>
+          <input
+            id="withdraw-phrase"
+            ref={inputRef}
+            type="text"
+            value={phrase}
+            onChange={(e) => { setPhrase(e.target.value); setError(null); }}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing) return;
+              if (e.key === 'Enter') { e.preventDefault(); withdraw(); }
+            }}
+            autoComplete="off"
+            className="mt-1.5 w-full rounded-[10px] border border-card-border bg-surface-3 px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-danger"
+          />
+          {error && <p className="mt-2 text-xs font-semibold text-danger">{error}</p>}
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={onClose} disabled={busy} className="min-h-[40px] rounded-[10px] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50">취소</button>
+            <button type="button" onClick={withdraw} disabled={!valid || busy} className="min-h-[40px] rounded-[10px] bg-danger px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:opacity-90 disabled:opacity-50">{busy ? '처리 중...' : '탈퇴하기'}</button>
+          </div>
+        </div>
+      </div>
+    </Portal>
   );
 }
 
