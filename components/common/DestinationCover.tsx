@@ -88,8 +88,10 @@ export default function DestinationCover({
           style={{
             // 사진이 없을 때 큰 워터마크는 카드 제목을 반복하고 긴 목적지명이 잘리므로
             // 좌상단 작은 식별 라벨로만 둔다.
-            fontSize: onPhoto ? labelSize : Math.max(11, Math.round(labelSize * 0.3)),
+            fontSize: onPhoto ? labelSize : Math.max(12, Math.round(labelSize * 0.3)),
             color: onPhoto ? 'rgba(255,255,255,0.88)' : undefined,
+            // 밝은 사진에서는 하단 스크림만으로 흰 글자가 묻힌다.
+            textShadow: onPhoto ? '0 1px 3px rgba(6,8,12,0.55)' : undefined,
             letterSpacing: onPhoto ? '-0.03em' : '-0.01em',
           }}
         >

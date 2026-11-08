@@ -140,7 +140,7 @@ export default function HeaderSearch() {
                       <span className="truncate text-[13px] font-semibold text-foreground">
                         {it.title ?? it.destination}
                       </span>
-                      <span className="truncate text-[11px] text-muted-2">
+                      <span className="truncate text-xs text-muted-2">
                         {it.destination} · {dateRange(it.startDate, it.endDate)}
                       </span>
                     </span>

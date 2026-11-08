@@ -14,18 +14,18 @@ const PROVIDER_STYLES: Record<Provider, {
 }> = {
   KAKAO: {
     container: 'bg-[#FEE500] hover:bg-[#F5DC00] text-[#191600] font-bold',
-    label: '카카오로 3초 만에 시작',
+    label: '카카오로 시작하기',
     icon: KakaoIcon,
   },
   GOOGLE: {
     container: 'bg-surface border border-card-border hover:bg-surface-hover text-foreground font-semibold',
-    label: 'Google로 계속하기',
+    label: 'Google로 시작하기',
     icon: GoogleIcon,
   },
   NAVER: {
     container: 'bg-surface border border-card-border hover:bg-surface-hover text-foreground font-semibold',
     iconClass: 'text-[#03C75A]',
-    label: '네이버로 계속하기',
+    label: '네이버로 시작하기',
     icon: NaverIcon,
   },
 };

@@ -24,9 +24,16 @@ export function daysUntil(startDate: string, now: Date = new Date()): number {
   return Math.ceil((start.getTime() - midnight(now).getTime()) / DAY_MS);
 }
 
-/** D-Day 라벨. "D-3" | "D-Day" | "D+2" */
+/** 이보다 멀면 D-숫자가 읽히지 않아 날짜로 보여 준다. */
+const DDAY_MAX_DAYS = 365;
+
+/** D-Day 라벨. "D-3" | "D-Day" | "D+2" | 1년 넘게 떨어지면 "2027. 3. 1." */
 export function ddayLabel(startDate: string, now: Date = new Date()): string {
   const diff = daysUntil(startDate, now);
+  if (Math.abs(diff) > DDAY_MAX_DAYS) {
+    const d = new Date(startDate);
+    return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
+  }
   if (diff > 0) return `D-${diff}`;
   if (diff === 0) return 'D-Day';
   return `D+${Math.abs(diff)}`;

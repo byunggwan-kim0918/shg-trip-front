@@ -52,7 +52,7 @@ export default function ErrorState({
         )}
       </div>
       {errorCode && (
-        <div className="mt-4 text-[11px] text-muted-2">오류 코드 · {errorCode}</div>
+        <div className="mt-4 text-xs text-muted-2">오류 코드 · {errorCode}</div>
       )}
     </div>
   );

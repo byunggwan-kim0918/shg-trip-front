@@ -116,7 +116,7 @@ export default function Sidebar() {
                       >
                         {normalizeText(item.title) || item.destination}
                       </span>
-                      <span className="truncate text-[11px] text-muted-2">
+                      <span className="truncate text-xs text-muted-2">
                         {item.destination} · {dateRange(item.startDate, item.endDate)}
                       </span>
                     </span>

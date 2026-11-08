@@ -161,10 +161,19 @@ export default function ResultLayout() {
     currentItinerary?.steps.find((s) => s.place?.imageUrl)?.place?.imageUrl,
   ]);
 
+  // 탭 여러 개를 띄워도 어느 여행인지 구분되게 한다. 컴포넌트 <title>은 레이아웃 metadata 제목과
+  // head에 함께 올라가 어느 쪽이 적용될지 보장되지 않아 직접 바꾼다.
+  const pageTitle = currentItinerary
+    ? `${normalizeText(currentItinerary.title) || currentItinerary.destination} · SHG trip`
+    : null;
+  useEffect(() => {
+    if (pageTitle) document.title = pageTitle;
+  }, [pageTitle]);
+
   if (!currentItinerary) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-muted">일정을 찾을 수 없습니다</p>
+        <p className="text-muted">일정을 찾을 수 없어요</p>
       </div>
     );
   }
@@ -252,7 +261,7 @@ export default function ResultLayout() {
           </p>
           {/* 입장료·가격대 데이터가 대부분 비어 카테고리 기본값으로 계산하므로 퍼센트를 단정하지 않고 추정임을 밝힌다. */}
           {estimatedTotal > 0 && (
-            <p className="mt-1 text-[11px] text-muted-2">
+            <p className="mt-1 text-xs text-muted-2">
               금액은 추정치입니다. 입장료·실제 가격 정보가 없는 항목은 카테고리 평균으로 계산했습니다.
             </p>
           )}
@@ -260,12 +269,12 @@ export default function ResultLayout() {
           {tags && tags.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
-                <span key={tag} className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-muted-2 ring-1 ring-card-border">
+                <span key={tag} className="rounded-full px-2 py-0.5 text-xs font-semibold text-muted-2 ring-1 ring-card-border">
                   {tag}
                 </span>
               ))}
               {tags.length > MAX_VISIBLE_TAGS && (
-                <span className="text-[11px] font-semibold text-muted-2" title={tags.slice(MAX_VISIBLE_TAGS).join(' · ')}>
+                <span className="text-xs font-semibold text-muted-2" title={tags.slice(MAX_VISIBLE_TAGS).join(' · ')}>
                   +{tags.length - MAX_VISIBLE_TAGS}
                 </span>
               )}

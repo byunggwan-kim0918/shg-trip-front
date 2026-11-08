@@ -6,6 +6,8 @@ import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { fetchItinerary } from '@/lib/data/itineraryService';
 import { hasPendingStory, hasPendingImage } from '@/lib/types/itinerary';
 import ResultLayout from '@/components/itinerary/result/ResultLayout';
+import EmptyState from '@/components/common/EmptyState';
+import { MapPinOff } from 'lucide-react';
 
 // story 문장과 장소 사진은 비동기로 채워지므로 약 40초 동안 재조회한다.
 const STORY_POLL_INTERVAL_MS = 2500;
@@ -88,15 +90,15 @@ export default function ItineraryDetailPage() {
 
   if (notFound) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-muted">일정을 찾을 수 없습니다</p>
-        <button
-          type="button"
-          onClick={() => router.push('/main/my-trips')}
-          className="px-6 py-2.5 rounded-[10px] bg-accent text-accent-fg font-medium hover:bg-accent-hover transition-colors min-h-[44px]"
-        >
-          내 일정함으로 이동
-        </button>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <EmptyState
+          icon={MapPinOff}
+          title="일정을 찾을 수 없어요"
+          description="삭제됐거나 주소가 잘못됐어요."
+          actionLabel="내 일정함으로 이동"
+          onAction={() => router.push('/main/my-trips')}
+          className="w-full max-w-sm"
+        />
       </div>
     );
   }

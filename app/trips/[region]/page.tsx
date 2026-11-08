@@ -105,7 +105,7 @@ export default async function RegionPage({ params }: { params: Params }) {
                     href={`/trips/${region}/${t.slug}`}
                     className="flex h-full flex-col rounded-2xl border border-card-border bg-card-bg p-5 transition-colors hover:bg-surface-hover"
                   >
-                    <span className="text-[11px] font-bold text-accent-weak-fg">
+                    <span className="text-xs font-bold text-accent-weak-fg">
                       {periodLabel(t.nights)} · {t.themeLabel}
                     </span>
                     <span className="mt-1.5 text-[16px] font-extrabold leading-snug tracking-[-0.02em] text-foreground">

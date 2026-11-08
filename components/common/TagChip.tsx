@@ -12,7 +12,7 @@ export default function TagChip({ children, variant = 'surface', className = '' 
       : 'bg-surface-3 text-muted';
   return (
     <span
-      className={`inline-flex items-center rounded-[10px] px-2.5 py-1 text-[11px] font-semibold ${styles} ${className}`}
+      className={`inline-flex items-center rounded-[10px] px-2.5 py-1 text-xs font-semibold ${styles} ${className}`}
     >
       {children}
     </span>

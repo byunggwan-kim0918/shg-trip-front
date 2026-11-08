@@ -419,7 +419,7 @@ export default function LoadingScreen() {
               style={{ width: `${clampedProgress}%` }}
             />
           </div>
-          <span className="w-[34px] shrink-0 text-left text-[11px] font-bold tabular-nums text-muted-2">
+          <span className="w-[34px] shrink-0 text-left text-xs font-bold tabular-nums text-muted-2">
             {clampedProgress}%
           </span>
         </div>
@@ -479,7 +479,7 @@ export default function LoadingScreen() {
                       className="flex min-h-[52px] animate-[shg-fade-in_0.4s_ease-out] flex-col justify-center gap-0.5 rounded-[10px] border border-card-border bg-card-bg px-3 py-2"
                     >
                       <div className="truncate text-xs font-bold text-foreground">{step.name}</div>
-                      <div className="truncate text-[11px] font-semibold text-muted-2">
+                      <div className="truncate text-xs font-semibold text-muted-2">
                         {step.startTime ?? ''}
                         {step.startTime && step.category ? ' · ' : ''}
                         {step.category ?? ''}

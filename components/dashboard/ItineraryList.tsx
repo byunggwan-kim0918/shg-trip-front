@@ -221,7 +221,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
               <div className="flex flex-col sm:flex-row sm:items-stretch">
                 {/* D-day는 이 제품에만 있는 값이다. 다른 데서도 볼 수 있는 값보다 이게 커야 한다. */}
                 <div className="flex shrink-0 flex-row items-baseline gap-3 border-card-border px-6 pt-5 sm:w-[168px] sm:flex-col sm:items-start sm:justify-center sm:gap-1.5 sm:border-r sm:px-7 sm:py-7 sm:pt-7">
-                  <span className="text-[11px] font-semibold tracking-[-0.01em] text-muted">가장 가까운 여행</span>
+                  <span className="text-xs font-semibold tracking-[-0.01em] text-muted">가장 가까운 여행</span>
                   <span className="font-extrabold leading-none tracking-[-0.03em] text-accent tabular-nums text-[34px]">
                     {ddayLabel(hero.startDate)}
                   </span>
@@ -278,7 +278,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                 tabIndex={0}
                 onClick={() => goToStep(item)}
                 onKeyDown={(e) => e.key === 'Enter' && goToStep(item)}
-                className="group relative flex h-fit cursor-pointer flex-col overflow-hidden rounded-xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
+                className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
               >
                 {/* 사진 없이 색 밴드를 깔면 카드가 같은 색 면으로만 구분되므로 사진이 있을 때만 커버를 그린다. */}
                 {item.coverImage ? (
@@ -289,7 +289,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                     labelSize={30}
                     className="h-[88px] w-full"
                   >
-                    <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-bold text-[#14161c]">
+                    <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold text-[#14161c]">
                       <span className="tabular-nums">{ddayLabel(item.startDate)}</span>
                     </span>
                   </DestinationCover>

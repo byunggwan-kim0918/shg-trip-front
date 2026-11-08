@@ -92,7 +92,7 @@ export default function BudgetPlacesStep() {
       <div>
         <div className="mb-2.5 flex items-baseline justify-between">
           <span className="text-xs font-bold tracking-[0.03em] text-muted-2">예산</span>
-          <span className="text-[11px] text-muted-2">일행 전체 · 숙박 포함</span>
+          <span className="text-xs text-muted-2">일행 전체 · 숙박 포함</span>
         </div>
         <label className="mb-2 flex h-12 items-center rounded-lg border border-card-border bg-surface-3 px-4 focus-within:ring-2 focus-within:ring-accent/25">
           <input
@@ -185,7 +185,7 @@ export default function BudgetPlacesStep() {
                   <span className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground">{place.name}</span>
                     {place.region && (
-                      <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] text-accent-weak-fg">
+                      <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-xs text-accent-weak-fg">
                         {place.region}
                       </span>
                     )}
@@ -206,7 +206,7 @@ export default function BudgetPlacesStep() {
               className="inline-flex max-w-full items-center gap-1.5 break-all rounded-full bg-accent-soft px-3 py-2 text-[13px] font-semibold text-accent-weak-fg"
             >
               {place.name}
-              {place.latitude === 0 && <span className="text-[11px] opacity-70">(직접입력)</span>}
+              {place.latitude === 0 && <span className="text-xs opacity-70">(직접입력)</span>}
               <button
                 type="button"
                 onClick={() => removePlace(place.id)}

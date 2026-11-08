@@ -165,7 +165,7 @@ export default async function TripPage({ params }: { params: Params }) {
             { icon: Wallet, label: `예상 비용 (${trip.partySize}인)`, value: won(totalCost) },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="bg-card-bg px-4 py-3.5">
-              <dt className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+              <dt className="flex items-center gap-1.5 text-xs font-semibold text-muted">
                 <Icon size={13} aria-hidden="true" /> {label}
               </dt>
               <dd className="mt-1 text-[15px] font-extrabold tracking-[-0.02em] text-foreground">{value}</dd>
@@ -229,10 +229,10 @@ export default async function TripPage({ params }: { params: Params }) {
                             <time className="shrink-0 text-[13px] font-extrabold tabular-nums text-accent-weak-fg">{s.start}</time>
                             <Icon size={14} className="shrink-0 translate-y-[2px] text-muted" aria-hidden="true" />
                             <h3 className="min-w-0 text-[15px] font-bold text-foreground">{s.name}</h3>
-                            <span className="ml-auto shrink-0 text-[11px] font-semibold text-muted-2">{s.kind}</span>
+                            <span className="ml-auto shrink-0 text-xs font-semibold text-muted-2">{s.kind}</span>
                           </div>
                           <p className="mt-1 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{s.note}</p>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-2">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-2">
                             <span className="tabular-nums">{s.start} - {s.end}</span>
                             {s.cost != null && s.cost > 0 && (
                               <span className="tabular-nums">
@@ -304,7 +304,7 @@ export default async function TripPage({ params }: { params: Params }) {
                     href={`/trips/${region}/${t.slug}`}
                     className="block rounded-xl border border-card-border bg-card-bg p-4 transition-colors hover:bg-surface-hover"
                   >
-                    <span className="text-[11px] font-bold text-accent-weak-fg">{periodLabel(t.nights)} · {t.themeLabel}</span>
+                    <span className="text-xs font-bold text-accent-weak-fg">{periodLabel(t.nights)} · {t.themeLabel}</span>
                     <span className="mt-1 block text-[15px] font-extrabold text-foreground">{t.title}</span>
                   </Link>
                 </li>
@@ -319,12 +319,12 @@ export default async function TripPage({ params }: { params: Params }) {
           <div className="mt-4 flex justify-center">
             <StartTripButton sentence={sentence} label="이 일정으로 내 여행 만들기" />
           </div>
-          <p className="mt-4 text-[11px] text-muted">
+          <p className="mt-4 text-xs text-muted">
             <Link href={`/trips/${region}`} className="underline hover:text-foreground">{info.name} 여행 코스 전체 보기</Link>
             {' · '}검수일 {trip.reviewedAt}
           </p>
           {trip.days.some((d) => d.stops.some((st) => st.imageUrl?.includes('visitkorea.or.kr'))) && (
-            <p className="mt-1 text-[11px] text-muted-2">장소 사진 출처: 한국관광공사</p>
+            <p className="mt-1 text-xs text-muted-2">장소 사진 출처: 한국관광공사</p>
           )}
         </section>
       </main>

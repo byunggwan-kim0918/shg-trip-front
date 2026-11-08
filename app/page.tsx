@@ -76,10 +76,11 @@ export default function Home() {
       <main className="px-5 sm:px-10">
         <section className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 pb-20 pt-14 md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] md:gap-14 md:pt-20">
           <div className="motion-safe:opacity-0 motion-safe:[animation:fade-in-up_400ms_cubic-bezier(0.23,1,0.32,1)_forwards] text-left">
-            <h1 className="text-[34px] font-extrabold leading-[1.12] tracking-[-0.03em] text-foreground sm:text-[52px]">
+            <h1 className="text-[34px] font-extrabold leading-[1.12] tracking-[-0.03em] text-foreground sm:text-[52px] md:text-[40px] lg:text-[52px]">
               말 한마디면,
               <br />
-              여행이 완성됩니다
+              {/* md 2단에서는 칸이 좁아 "여행이 / 완성됩니다"로 끊긴다. */}
+              <span className="whitespace-nowrap">여행이 완성됩니다</span>
             </h1>
 
             <p className="mt-5 max-w-[46ch] text-[15px] font-medium leading-relaxed text-muted sm:text-[17px]">
@@ -131,7 +132,7 @@ export default function Home() {
                 <span className="text-[13px] font-bold text-foreground">
                   제주 <span className="font-medium text-muted">· 2박 3일</span>
                 </span>
-                <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-bold text-accent-weak-fg">
+                <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-weak-fg">
                   한 문장으로 짠 일정
                 </span>
               </div>
@@ -146,7 +147,7 @@ export default function Home() {
                 {HERO_PREVIEW_STEPS.map((step, i) => (
                   <li key={step.name} className="relative flex gap-3.5">
                     <div className="flex flex-col items-center">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-fg tabular-nums">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg tabular-nums">
                         {i + 1}
                       </span>
                       {i < HERO_PREVIEW_STEPS.length - 1 && (
@@ -201,13 +202,13 @@ export default function Home() {
                       {i > 0 && (
                         <>
                           <span className="h-px flex-1 bg-card-border" aria-hidden="true" />
-                          <span className="shrink-0 text-[11px] font-semibold text-muted-2 tabular-nums">{stop.km}</span>
+                          <span className="shrink-0 text-xs font-semibold text-muted-2 tabular-nums">{stop.km}</span>
                           <span className="h-px flex-1 bg-card-border" aria-hidden="true" />
                         </>
                       )}
                       <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden="true" />
                     </div>
-                    <span className="truncate text-[11px] font-semibold text-text-2" style={{ marginLeft: i === 0 ? 0 : 'auto', marginRight: i === 0 ? 'auto' : 0 }}>
+                    <span className="truncate text-xs font-semibold text-text-2" style={{ marginLeft: i === 0 ? 0 : 'auto', marginRight: i === 0 ? 'auto' : 0 }}>
                       {stop.name}
                     </span>
                   </li>

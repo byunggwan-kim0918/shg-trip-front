@@ -79,7 +79,7 @@ export default function StepCard({
               {place?.name ?? '장소 정보 없음'}
             </h3>
             {rating != null && (
-              <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-bold tabular-nums text-muted">
+              <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-bold tabular-nums text-muted">
                 <Star size={9} className="fill-current" aria-hidden="true" />{rating}
               </span>
             )}
@@ -93,7 +93,7 @@ export default function StepCard({
             </p>
           ) : null}
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-2">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-2">
             {timeRange && <span className="tabular-nums">{timeRange}</span>}
             {place?.openingHours && (
               <span className="inline-flex items-center gap-1 tabular-nums" title={place.openingHours}>
@@ -111,7 +111,7 @@ export default function StepCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-                className="inline-flex items-center gap-0.5 text-[11px] font-bold text-accent-weak-fg hover:underline"
+                className="inline-flex items-center gap-0.5 text-xs font-bold text-accent-weak-fg hover:underline"
               >
                 {isExpanded ? (
                   <>대안 접기 <ChevronUp size={12} aria-hidden="true" /></>
@@ -123,11 +123,11 @@ export default function StepCard({
           </div>
 
           {step.userNotes && step.userNotes.trim().length > 0 && (
-            <p className="mt-1.5 rounded-lg bg-surface-3 px-2 py-1 text-[11px] text-text-2">{step.userNotes}</p>
+            <p className="mt-1.5 rounded-lg bg-surface-3 px-2 py-1 text-xs text-text-2">{step.userNotes}</p>
           )}
 
           {missingCoords && (
-            <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-warn-fg">
+            <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-warn-fg">
               <MapPinOff size={11} aria-hidden="true" /> 지도 표시 불가 (위치 정보 없음)
             </span>
           )}
