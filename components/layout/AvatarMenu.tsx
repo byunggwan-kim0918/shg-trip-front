@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { LogOut, UserPen, UserX } from 'lucide-react';
 import { useAuthStore } from '@/lib/stores';
 import { forceLogout } from '@/lib/api/fetchClient';
+import { type Provider, getOAuthUrl } from '@/lib/auth/oauthConfig';
 import Portal from '@/components/common/Portal';
 
 export default function AvatarMenu() {
@@ -94,6 +95,7 @@ export default function AvatarMenu() {
       <WithdrawModal
         key={withdrawOpen ? 'withdraw-open' : 'withdraw-closed'}
         open={withdrawOpen}
+        provider={user?.provider ?? null}
         onClose={() => setWithdrawOpen(false)}
       />
     </div>
@@ -102,12 +104,21 @@ export default function AvatarMenu() {
 
 const WITHDRAW_PHRASE = '탈퇴';
 
-/** DELETE /api/users/me 계약: 확인 문구가 정확히 일치해야 처리된다. */
-function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+const PROVIDER_LABEL: Record<Provider, string> = { KAKAO: '카카오', NAVER: '네이버', GOOGLE: '구글' };
+
+/** 문구 확인 후 가입한 소셜 계정으로 다시 로그인해야 탈퇴된다. 처리는 OAuth 콜백에서 한다. */
+function WithdrawModal({ open, provider, onClose }: { open: boolean; provider: Provider | null; onClose: () => void }) {
   const [phrase, setPhrase] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 제공자 화면에서 뒤로 가면 bfcache가 '이동 중' 상태 그대로 복원한다.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) setBusy(false); };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -122,25 +133,15 @@ function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }
   const valid = phrase.trim() === WITHDRAW_PHRASE;
 
   const withdraw = async () => {
-    if (!valid || busy) return;
+    if (!valid || busy || !provider) return;
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/auth/withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ confirm: phrase.trim() }),
-      });
-      // 401이면 이미 탈퇴됐거나 세션이 끝나 BFF가 쿠키를 지운 상태다.
-      if (res.status === 401) { window.location.href = '/login'; return; }
-      if (!res.ok) throw new Error('탈퇴 처리에 실패했어요. 잠시 후 다시 시도해 주세요.');
-      window.location.href = '/';
-      return;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '탈퇴 처리에 실패했어요.');
+      window.location.assign(await getOAuthUrl(provider, 'withdraw'));
+    } catch {
+      setError('본인 확인 화면을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   return (
@@ -152,6 +153,7 @@ function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }
             <li>내 여행 일정이 모두 삭제되고 되돌릴 수 없어요.</li>
             <li>공유한 일정 링크는 바로 열리지 않아요.</li>
             <li>같은 소셜 계정으로 다시 가입하면 새 계정으로 시작해요.</li>
+            <li>본인 확인을 위해 {provider ? PROVIDER_LABEL[provider] : '소셜'} 로그인 화면으로 이동해요.</li>
           </ul>
           <label htmlFor="withdraw-phrase" className="mt-4 block text-xs font-semibold text-muted-2">
             계속하려면 &lsquo;{WITHDRAW_PHRASE}&rsquo;를 입력해 주세요
@@ -172,7 +174,7 @@ function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }
           {error && <p className="mt-2 text-xs font-semibold text-danger">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <button type="button" onClick={onClose} disabled={busy} className="min-h-[40px] rounded-[10px] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50">취소</button>
-            <button type="button" onClick={withdraw} disabled={!valid || busy} className="min-h-[40px] rounded-[10px] bg-danger px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:opacity-90 disabled:opacity-50">{busy ? '처리 중...' : '탈퇴하기'}</button>
+            <button type="button" onClick={withdraw} disabled={!valid || busy || !provider} className="min-h-[40px] rounded-[10px] bg-danger px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:opacity-90 disabled:opacity-50">{busy ? '이동 중...' : '본인 확인 후 탈퇴'}</button>
           </div>
         </div>
       </div>

@@ -1,10 +1,12 @@
 import { create } from 'zustand';
+import type { Provider } from '@/lib/auth/oauthConfig';
 
 export interface UserInfo {
   id: number;
   nickname: string | null;
   email: string;
   profileImage: string | null;
+  provider: Provider | null;
 }
 
 interface AuthState {
