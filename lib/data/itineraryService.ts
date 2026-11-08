@@ -175,7 +175,8 @@ export async function searchPlaces(keyword: string): Promise<WizardPlace[]> {
   const res = await authFetch(
     `/api/places/search?keyword=${encodeURIComponent(keyword)}`,
   );
-  if (!res.ok) return [];
+  // 실패를 빈 배열로 돌리면 화면이 "결과 없음"으로 보여 원인을 숨긴다.
+  if (!res.ok) throw new Error('장소 검색에 실패했습니다.');
   const page = await parseJson<PageResponse<PlaceSearchItem>>(res);
   return page.content.map((p) => ({
     id: p.id,

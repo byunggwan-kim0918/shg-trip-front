@@ -1,12 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authBackendFetch } from '@/lib/server/backendFetch';
 
+/**
+ * 쿠키 정리 같은 BFF 처리가 붙어 있어 전용 라우트로만 불러야 하는 백엔드 경로.
+ * 프록시로 탈퇴가 성공하면 세션 쿠키가 남아 화면이 로그인 상태로 남는다.
+ */
+const BFF_ONLY_PATHS = new Set(['/api/users/me/withdrawal']);
+
+/** fetch가 보내기 전에 정규화하는 것과 같게 맞춰 "..", 중복 슬래시, 대소문자로 목록을 피하지 못하게 한다. */
+function normalizePath(path: string): string {
+  return new URL(path, 'http://bff.invalid').pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '').toLowerCase();
+}
+
 async function handleProxy(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await params;
+  // 라우트 파라미터는 한 번 디코딩된 값이라 %가 남아 있으면 이중 인코딩이다. 백엔드가 한 번 더 풀어
+  // 차단 목록에 없는 모양으로 같은 경로에 닿을 수 있어 거부한다.
+  if (path.some((segment) => segment.includes('%'))) {
+    return NextResponse.json({ error: 'Bad request' }, { status: 400 });
+  }
   const backendPath = `/api/${path.join('/')}`;
+
+  if (BFF_ONLY_PATHS.has(normalizePath(backendPath))) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   let body: string | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -20,7 +40,7 @@ async function handleProxy(
   }
 
   const { response: springRes, cookies } = await authBackendFetch(
-    backendPath,
+    `${backendPath}${request.nextUrl.search}`,
     {
       method: request.method,
       headers,

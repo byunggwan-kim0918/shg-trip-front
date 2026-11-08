@@ -155,7 +155,7 @@ export default function PlanNewPage() {
   ];
 
   return (
-    <div className="h-[calc(100vh-8rem)]">
+    <div className="h-[calc(100dvh-8rem)]">
       <WizardLayout optionalSteps={[3]}>{steps}</WizardLayout>
     </div>
   );

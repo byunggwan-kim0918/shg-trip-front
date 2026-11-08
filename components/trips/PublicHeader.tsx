@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Logo from '@/components/common/Logo';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import AuthNavLink from './AuthNavLink';
 
 export default function PublicHeader() {
   return (
@@ -15,12 +16,7 @@ export default function PublicHeader() {
             여행 코스
           </Link>
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="rounded-[10px] border border-card-border px-4 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-surface-hover"
-          >
-            로그인
-          </Link>
+          <AuthNavLink />
         </nav>
       </div>
     </header>

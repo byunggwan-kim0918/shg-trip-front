@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header';
 /** 세션 확인 동안의 골격. 실제 Sidebar·Header는 목록·프로필을 불러오므로 인증 뒤에 마운트한다. */
 function MainShellSkeleton() {
   return (
-    <div className="flex h-screen overflow-hidden bg-background" aria-busy="true" aria-label="불러오는 중">
+    <div className="flex h-[100dvh] overflow-hidden bg-background" aria-busy="true" aria-label="불러오는 중">
       <aside className="hidden w-[264px] shrink-0 flex-col gap-5 border-r border-sidebar-border bg-sidebar-bg px-3.5 md:flex">
         <div className="flex h-14 items-center gap-2.5 px-0.5">
           <div className="h-7 w-7 rounded-lg shg-shimmer" />
@@ -42,7 +42,7 @@ export default function MainLayout({
 
   return (
     <AuthGuard fallback={<MainShellSkeleton />}>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex h-[100dvh] overflow-hidden bg-background">
         <Sidebar />
         <div
           className={`

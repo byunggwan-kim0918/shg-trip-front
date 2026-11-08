@@ -10,6 +10,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // 없으면 og:image가 빌드 환경 기준 http://localhost:3000으로 나간다.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://myshgtrip.com"),
   title: "SHG trip · 여행 플래너",
   description: "말 한마디면, 여행이 완성됩니다. 동선·시간·예산까지 한 번에.",
   openGraph: {

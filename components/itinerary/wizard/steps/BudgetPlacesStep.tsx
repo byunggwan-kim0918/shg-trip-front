@@ -14,6 +14,7 @@ export default function BudgetPlacesStep() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WizardPlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
   // budget=null은 "미입력"과 "상관없음"을 둘 다 뜻하므로
   // 사용자가 예산을 만졌을 때만 "상관없음" 칩을 활성 표시한다.
   const [budgetTouched, setBudgetTouched] = useState(data.budget !== null);
@@ -40,13 +41,15 @@ export default function BudgetPlacesStep() {
   };
 
   const search = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); return; }
+    if (!q.trim()) { setResults([]); setSearchFailed(false); return; }
     setIsSearching(true);
     try {
       const places = await searchPlaces(q);
       setResults(places.filter((p) => !data.selectedPlaces.some((sp) => sp.id === p.id)));
+      setSearchFailed(false);
     } catch {
       setResults([]);
+      setSearchFailed(true);
     } finally {
       setIsSearching(false);
     }
@@ -64,7 +67,7 @@ export default function BudgetPlacesStep() {
   };
 
   const customPlaceCount = data.selectedPlaces.filter((p) => p.id < 0).length;
-  const hasNoResults = !isSearching && query.trim().length > 0 && results.length === 0;
+  const hasNoResults = !isSearching && !searchFailed && query.trim().length > 0 && results.length === 0;
   const isDuplicateName = data.selectedPlaces.some((p) => p.name.trim() === query.trim());
 
   // 검색 결과가 없을 때 이름만으로 추가한다. 백엔드가 저장된 장소에서 이름으로 찾고, 못 찾으면 뺀다
@@ -140,7 +143,7 @@ export default function BudgetPlacesStep() {
               }}
               maxLength={MANUAL_PLACE_NAME_MAX_LENGTH}
               placeholder="장소 검색 (예: 성산일출봉)"
-              className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-2"
+              className="w-full bg-transparent text-base text-foreground outline-none placeholder:text-muted-2 sm:text-[13px]"
               aria-label="장소 검색"
             />
           </label>
@@ -157,6 +160,9 @@ export default function BudgetPlacesStep() {
         </div>
 
         {isSearching && <p className="mt-1.5 text-xs text-muted-2">검색 중...</p>}
+        {searchFailed && !isSearching && query.trim() && (
+          <p className="mt-1.5 text-xs font-semibold text-danger" role="alert">장소 검색에 실패했어요. 잠시 후 다시 시도해 주세요.</p>
+        )}
         {hasNoResults && !isSearching && (
           <p className="mt-1.5 text-xs text-muted-2">
             {customPlaceCount >= MAX_CUSTOM_PLACES

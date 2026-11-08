@@ -29,7 +29,7 @@ function loginErrorUrl(code: string): string {
 }
 
 /** BFF 자체 오류는 영어 문구라 백엔드 재인증 오류만 그대로 보여 준다. */
-const REAUTH_ERROR_CODES = new Set(['USER_004', 'USER_005']);
+const REAUTH_ERROR_CODES = new Set(['USER_004', 'USER_005', 'USER_006']);
 
 function withdrawErrorMessage(e: unknown): string {
   if (e instanceof CallbackError && e.serverCode && REAUTH_ERROR_CODES.has(e.serverCode) && e.serverMessage) {
@@ -114,7 +114,7 @@ export default function OAuthCallbackPage() {
 
   if (shownError) {
     return (
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-surface px-4 text-center">
+      <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-sm font-semibold text-foreground">{shownError}</p>
         <Link href="/main" className="min-h-[40px] rounded-[10px] bg-accent px-4 py-2.5 text-sm font-bold text-accent-fg">
           돌아가기

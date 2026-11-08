@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { LinkIcon } from 'lucide-react';
+import { notFound } from 'next/navigation';
 import { backendFetch } from '@/lib/server/backendFetch';
 import type { Itinerary } from '@/lib/types/itinerary';
-import EmptyState from '@/components/common/EmptyState';
 import { normalizeText } from '@/lib/utils/text';
 import { nightsLabel } from '@/lib/utils/tripStatus';
 import SharedItineraryView from '@/components/itinerary/SharedItineraryView';
@@ -14,19 +12,20 @@ interface ApiEnvelope<T> {
   error: null | { code: string; message: string };
 }
 
-/** 비인증 SSR 조회. 만료·무효 토큰이면 null. */
+/**
+ * 비인증 SSR 조회. 만료·무효 토큰(백엔드 404)이면 null.
+ * 장애·5xx는 던져서 오류 화면으로 보낸다. 404로 답하면 링크 미리보기가 죽은 링크로 캐시한다.
+ */
 async function fetchShared(token: string): Promise<Itinerary | null> {
-  try {
-    const res = await backendFetch(`/api/shared/${encodeURIComponent(token)}`, {
-      // 만료·수정이 바로 반영돼야 해서 캐시하지 않는다.
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    const body: ApiEnvelope<Itinerary> = await res.json();
-    return body.success ? body.data : null;
-  } catch {
-    return null;
-  }
+  const res = await backendFetch(`/api/shared/${encodeURIComponent(token)}`, {
+    // 만료·수정이 바로 반영돼야 해서 캐시하지 않는다.
+    cache: 'no-store',
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`shared itinerary fetch failed: ${res.status}`);
+  const body: ApiEnvelope<Itinerary> = await res.json();
+  if (!body.success) throw new Error('shared itinerary fetch failed');
+  return body.data;
 }
 
 /** 페이지와 같은 fetchShared 요청은 Next가 dedupe하므로 메타데이터 때문에 왕복이 늘지 않는다. */
@@ -74,24 +73,8 @@ export default async function SharedPage({
   const { token } = await params;
   const itinerary = await fetchShared(token);
 
-  if (!itinerary) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-sm">
-          <EmptyState
-            icon={LinkIcon}
-            title="링크가 만료됐거나 잘못됐어요"
-            description="공유 링크가 유효하지 않거나 만료되었습니다."
-          />
-          <div className="mt-4 text-center">
-            <Link href="/" className="text-[13px] font-semibold text-accent-weak-fg hover:underline">
-              SHG trip 홈으로
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // 상태 코드 404로 응답해야 검색엔진이 만료 링크를 빈 페이지로 색인하지 않는다.
+  if (!itinerary) notFound();
 
   return <SharedItineraryView itinerary={itinerary} />;
 }
