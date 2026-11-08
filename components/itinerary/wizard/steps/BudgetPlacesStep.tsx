@@ -84,7 +84,7 @@ export default function BudgetPlacesStep() {
         <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">예산 · 필수 장소</h2>
         <span className="rounded-full bg-surface-3 px-3 py-1.5 text-xs font-bold text-muted-2">선택 · 건너뛰기</span>
       </div>
-      <p className="-mt-3 text-[13px] text-muted">비워두면 AI가 알아서 채워요.</p>
+      <p className="-mt-3 text-[13px] text-muted">비워두면 알아서 채워요.</p>
 
       <div>
         <div className="mb-2.5 flex items-baseline justify-between">

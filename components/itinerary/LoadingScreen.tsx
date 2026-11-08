@@ -105,7 +105,7 @@ const stageMessages: Record<string, string> = {
   ENRICHING: '어떤 장소가 어울릴지 분석하고 있어요',
   SEARCHING: '어울리는 장소를 찾고 있어요',
   FALLBACK: '다른 방식으로 장소를 다시 찾고 있어요',
-  GENERATING: 'AI가 최적의 장소를 고르고 있어요',
+  GENERATING: '최적의 장소를 고르고 있어요',
   SYNCING: '최신 장소 정보를 확인하고 있어요',
   SELECTING: '일자별로 장소를 배치하고 있어요',
   OPTIMIZING: '동선과 이동 시간을 다듬고 있어요',
@@ -334,7 +334,7 @@ export default function LoadingScreen() {
         const raw = (e as MessageEvent).data;
         if (raw) payload = JSON.parse(raw);
       } catch { /* 본문이 JSON이 아니면 기본 문구 */ }
-      setError(payload?.message ?? 'AI 일정 생성 중 오류가 발생했습니다.');
+      setError(payload?.message ?? '일정 생성 중 오류가 발생했습니다.');
       setErrorCode(payload?.errorCode ?? null);
       // 서버가 작업을 모르면(재배포·만료) 이미 저장됐을 수 있어 목록으로 안내한다.
       if (payload?.errorCode === 'PLANNING_006') setLostJob(true);
@@ -407,7 +407,7 @@ export default function LoadingScreen() {
       {/* 로딩 장식을 늘리지 않고 실제 진행률 바 하나로 진행을 보여준다. */}
       <div className="mb-5 text-center">
         <div className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">
-          AI가 일정을 짜고 있어요
+          일정을 짜고 있어요
         </div>
         <div className="mt-1.5 text-[13px] text-muted">
           {stageMessages[stage] ?? stageMessages.ENRICHING} · {overEstimate ? '조금 더 걸리고 있어요' : '약 1분'}

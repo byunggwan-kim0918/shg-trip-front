@@ -14,7 +14,7 @@ interface Props {
 
 export default function ErrorState({
   title = '일정을 만들지 못했어요',
-  description = 'AI 응답에 문제가 생겼어요. 잠시 후 다시 시도하거나 조건을 조금 바꿔보세요.',
+  description = '일정을 만드는 중에 문제가 생겼어요. 잠시 후 다시 시도하거나 조건을 조금 바꿔보세요.',
   errorCode,
   retryLabel = '다시 시도',
   onRetry,

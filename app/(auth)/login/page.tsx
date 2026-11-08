@@ -39,7 +39,7 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-2 py-3 pl-5">
             <span className="h-5 w-px bg-card-border" aria-hidden="true" />
-            <span className="text-xs font-semibold text-muted">AI가 동선 · 시간 · 예산 계산</span>
+            <span className="text-xs font-semibold text-muted">동선 · 시간 · 예산 자동 계산</span>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-card-border bg-card-bg">
