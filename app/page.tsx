@@ -181,7 +181,7 @@ export default function Home() {
         </noscript>
         <section id="features" className="mx-auto max-w-6xl pb-24">
           <h2 className="mb-8 text-[23px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[30px]">
-            대신 해드리는 것들
+            이런 걸 알아서 챙겨요
           </h2>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-5">

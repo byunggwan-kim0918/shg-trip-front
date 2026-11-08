@@ -45,7 +45,7 @@ export default function ConfirmStep() {
         .filter(Boolean).join(' · '),
       step: 2,
     },
-    { label: '예산', value: data.budget ? `일행 전체 ${formatBudget(data.budget)}원` : '알아서 맞춤', step: 3 },
+    { label: '예산', value: data.budget ? `일행 전체 ${formatBudget(data.budget)}원` : '정하지 않음', step: 3 },
     {
       label: '필수 장소',
       value: data.selectedPlaces.length > 0 ? data.selectedPlaces.map((p) => p.name).join(' · ') : '없음',
