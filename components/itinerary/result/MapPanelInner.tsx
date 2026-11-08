@@ -26,7 +26,7 @@ const STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
 const VECTOR_ATTRIBUTION =
   '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> · ' +
   '&copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> · ' +
-  'Data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /** WebGL이 없는 환경(구형 브라우저·GPU 차단)용 래스터 폴백. 다크 변형은 없다. */
 const RASTER_FALLBACK = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -62,6 +62,17 @@ function VectorBasemap({ isDark }: { isDark: boolean }) {
     };
   }, [map, isDark]);
 
+  return null;
+}
+
+/**
+ * 모바일 폭에서 "Leaflet |" 접두어까지 붙으면 표기가 두 줄로 넘친다. Leaflet(BSD)은 지도 위 표기 의무가 없어 접두어만 뺀다.
+ */
+function AttributionPrefix() {
+  const map = useMap();
+  useEffect(() => {
+    map.attributionControl?.setPrefix(false);
+  }, [map]);
   return null;
 }
 
@@ -291,10 +302,17 @@ export default function MapPanelInner({
            않으면 그 숫자가 바깥 범례·헤더와 직접 경쟁한다. */
         .leaflet-container { background: var(--surface-2); font: inherit; isolation: isolate; }
         .leaflet-container a { color: var(--muted); }
+        /* 표기 의무 문구라 잘라 숨기지 않고 한 줄 가로 스크롤로 둔다. 폭 기준을 지도로 잡으려고
+           오른쪽 아래 컨트롤 칸을 지도 폭만큼 펼친다(이 칸은 pointer-events: none이라 지도 조작을 막지 않는다). */
+        .leaflet-bottom.leaflet-right { left: 0; }
         .leaflet-control-attribution {
           background: color-mix(in srgb, var(--card-bg) 82%, transparent);
           color: var(--muted-2);
           font-size: 10px;
+          white-space: nowrap;
+          max-width: calc(100% - 8px);
+          overflow-x: auto;
+          scrollbar-width: thin;
         }
         .leaflet-bar, .leaflet-bar a {
           background: var(--card-bg);
@@ -325,6 +343,7 @@ export default function MapPanelInner({
           <TileLayer url={RASTER_FALLBACK} attribution={RASTER_ATTRIBUTION} maxZoom={TILE_MAX_ZOOM} />
         )}
 
+        <AttributionPrefix />
         <MapController steps={steps} selectedStepId={selectedStepId} />
         <DayPolylines steps={steps} isDark={isDark} />
 

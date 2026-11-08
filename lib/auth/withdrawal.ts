@@ -5,6 +5,8 @@ import { useSyncExternalStore } from 'react';
  * 실제 분기는 BFF가 HttpOnly 쿠키로 한다.
  */
 const WITHDRAW_PENDING_KEY = 'shg_withdraw_pending';
+// 완료 배너는 주소의 ?withdrawn=1만으로 뜨면 남이 보낸 링크로도 "탈퇴됐다"는 안내를 띄울 수 있다.
+const WITHDRAWN_NOTICE_KEY = 'shg_withdrawn_notice';
 export const WITHDRAWN_PARAM = 'withdrawn';
 
 export function markWithdrawPending(): void {
@@ -33,5 +35,30 @@ export function isWithdrawPending(): boolean {
 export function clearWithdrawPending(): void {
   try {
     sessionStorage.removeItem(WITHDRAW_PENDING_KEY);
+  } catch { /* 없으면 그대로 둔다 */ }
+}
+
+export function markWithdrawnNotice(): void {
+  try {
+    sessionStorage.setItem(WITHDRAWN_NOTICE_KEY, '1');
+  } catch { /* 저장 실패면 배너만 뜨지 않는다 */ }
+}
+
+/** 서버 렌더에서는 false라 정적·동적 렌더 어느 쪽이든 hydration이 어긋나지 않는다. */
+export function useWithdrawnNotice(): boolean {
+  return useSyncExternalStore(subscribeNever, hasWithdrawnNotice, () => false);
+}
+
+export function hasWithdrawnNotice(): boolean {
+  try {
+    return sessionStorage.getItem(WITHDRAWN_NOTICE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function clearWithdrawnNotice(): void {
+  try {
+    sessionStorage.removeItem(WITHDRAWN_NOTICE_KEY);
   } catch { /* 없으면 그대로 둔다 */ }
 }

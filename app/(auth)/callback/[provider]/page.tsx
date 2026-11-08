@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { RETURN_TO_PARAM, consumeReturnTo } from '@/lib/auth/returnTo';
-import { WITHDRAWN_PARAM, clearWithdrawPending, isWithdrawPending, useWithdrawPending } from '@/lib/auth/withdrawal';
+import { WITHDRAWN_PARAM, clearWithdrawPending, isWithdrawPending, markWithdrawnNotice, useWithdrawPending } from '@/lib/auth/withdrawal';
 
 function errorCodeFor(status: number): string {
   if (status === 400) return 'state_mismatch';
@@ -85,6 +85,7 @@ export default function OAuthCallbackPage() {
       .then((response) => {
         if (response.data.withdrawn) {
           clearWithdrawPending();
+          markWithdrawnNotice();
           window.location.replace(`/?${WITHDRAWN_PARAM}=1`);
           return;
         }
@@ -116,7 +117,7 @@ export default function OAuthCallbackPage() {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-sm font-semibold text-foreground">{shownError}</p>
-        <Link href="/main" className="min-h-[40px] rounded-[10px] bg-accent px-4 py-2.5 text-sm font-bold text-accent-fg">
+        <Link href="/main" onClick={clearWithdrawPending} className="flex min-h-[44px] items-center rounded-[10px] bg-accent px-4 text-sm font-bold text-accent-fg">
           돌아가기
         </Link>
       </div>

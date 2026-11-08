@@ -4,12 +4,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zap, ArrowRight } from 'lucide-react';
 import { NEW_TRIP_SENTENCE_KEY, SENTENCE_PLACEHOLDER, EXAMPLE_CHIPS } from '@/lib/constants/newTrip';
+import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
+import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 
 export default function EmptyDashboard() {
   const router = useRouter();
   const [sentence, setSentence] = useState('');
+  // 탈퇴 후 재가입해도 생성 횟수는 이어지므로, 새 계정의 빈 화면에서 바로 보여 줘야 만들기를 눌러 보고 막히지 않는다.
+  const { quota, canGenerate } = useGenerationQuota();
 
   const start = (text?: string) => {
+    if (!canGenerate) return;
     const value = (text ?? sentence).trim();
     if (value) sessionStorage.setItem(NEW_TRIP_SENTENCE_KEY, value);
     router.push('/main/plan/new?builder=1');
@@ -28,6 +33,7 @@ export default function EmptyDashboard() {
         <br />
         일정을 만들어드려요.
       </p>
+      {quota && <GenerationQuotaBadge quota={quota} className="mt-4" />}
 
       <form
         onSubmit={(e) => { e.preventDefault(); start(); }}
@@ -43,7 +49,8 @@ export default function EmptyDashboard() {
         />
         <button
           type="submit"
-          className="flex shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-accent px-5 py-3 text-[13px] font-bold text-accent-fg transition-[filter] hover:brightness-105"
+          disabled={!canGenerate}
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-accent px-5 py-3 text-[13px] font-bold text-accent-fg transition-[filter] hover:brightness-105 disabled:opacity-50 disabled:hover:brightness-100"
         >
           만들기 <ArrowRight size={14} aria-hidden="true" />
         </button>
@@ -56,7 +63,8 @@ export default function EmptyDashboard() {
               key={chip.label}
               type="button"
               onClick={() => start(chip.sentence)}
-              className="rounded-full bg-surface-3 px-3.5 py-2 text-xs font-semibold text-text-2 transition-colors hover:bg-accent-soft hover:text-accent-weak-fg"
+              disabled={!canGenerate}
+              className="min-h-[44px] rounded-full disabled:pointer-events-none disabled:opacity-50 bg-surface-3 px-3.5 py-2 text-xs font-semibold text-text-2 transition-colors hover:bg-accent-soft hover:text-accent-weak-fg"
             >
               {chip.label}
             </button>
@@ -66,7 +74,8 @@ export default function EmptyDashboard() {
         <button
           type="button"
           onClick={() => router.push('/main/plan/new?builder=1')}
-          className="rounded-full border border-card-border bg-card-bg px-4 py-2 text-xs font-bold text-text-2 transition-colors hover:bg-surface-hover"
+          disabled={!canGenerate}
+          className="min-h-[44px] rounded-full disabled:pointer-events-none disabled:opacity-50 border border-card-border bg-card-bg px-4 py-2 text-xs font-bold text-text-2 transition-colors hover:bg-surface-hover"
         >
           직접 고를래요
         </button>

@@ -32,7 +32,7 @@ export default function Header() {
             </Link>
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
+              className="flex h-11 w-11 items-center justify-center rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
               aria-label="사이드바 열기"
             >
               <PanelLeftOpen size={17} aria-hidden="true" />
@@ -46,7 +46,7 @@ export default function Header() {
       <div className="ml-auto flex items-center gap-2.5">
         <button
           onClick={toggleThemeWithTransition}
-          className="p-2 rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
+          className="flex h-11 w-11 items-center justify-center rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
           aria-label={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
         >
           {theme === 'light' ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}

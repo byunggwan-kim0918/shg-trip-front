@@ -93,6 +93,7 @@ export default function ResultLayout() {
   }, [currentItinerary, sharing]);
 
   const [editOpen, setEditOpen] = useState(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -221,10 +222,11 @@ export default function ResultLayout() {
               {normalizeText(currentItinerary.title) || destination}
             </h1>
             <button
+              ref={editButtonRef}
               type="button"
               onClick={() => setEditOpen(true)}
-              /* mt-px: 첫 줄 높이 28.75px 안에서 27px 버튼을 수직 중앙에 맞춘다. */
-              className="mt-px shrink-0 rounded-[10px] p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
+              /* mt-px: 첫 줄 높이 28.75px 안에서 27px 버튼을 수직 중앙에 맞춘다. 터치 영역만 after로 44px까지 넓힌다. */
+              className="relative after:absolute after:-inset-2 after:content-[''] mt-px shrink-0 rounded-[10px] p-1.5 text-muted-2 transition-colors hover:bg-surface-hover hover:text-foreground"
               aria-label="제목·태그 편집"
             >
               <Pencil size={15} aria-hidden="true" />
@@ -483,6 +485,7 @@ export default function ResultLayout() {
       <EditItineraryModal
         key={editOpen ? 'edit-open' : 'edit-closed'}
         open={editOpen}
+        returnFocusRef={editButtonRef}
         initialTitle={normalizeText(currentItinerary.title) || destination}
         initialTags={tags ?? []}
         busy={editBusy}

@@ -27,9 +27,9 @@ export function PublicFooter() {
   return (
     <footer className="mt-16 border-t border-divider py-8 text-center">
       <nav className="mb-2 flex justify-center gap-4 text-xs text-text-2">
-        <Link href="/trips" className="transition-colors hover:text-foreground">여행 코스</Link>
-        <Link href="/terms" className="transition-colors hover:text-foreground">이용약관</Link>
-        <Link href="/privacy" className="transition-colors hover:text-foreground">개인정보처리방침</Link>
+        <Link href="/trips" className="inline-flex min-h-[44px] items-center transition-colors hover:text-foreground">여행 코스</Link>
+        <Link href="/terms" className="inline-flex min-h-[44px] items-center transition-colors hover:text-foreground">이용약관</Link>
+        <Link href="/privacy" className="inline-flex min-h-[44px] items-center transition-colors hover:text-foreground">개인정보처리방침</Link>
       </nav>
       <p className="text-xs text-muted-2">&copy; 2026 SHG trip</p>
     </footer>
