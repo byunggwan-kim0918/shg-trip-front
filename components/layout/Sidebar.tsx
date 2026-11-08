@@ -64,7 +64,7 @@ export default function Sidebar() {
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-1.5 rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-[10px] text-muted hover:bg-surface-hover transition-colors"
             aria-label="사이드바 접기"
           >
             <PanelLeftClose size={17} aria-hidden="true" />

@@ -52,7 +52,7 @@ export default function MainLayout({
         >
           <Header />
           <main
-            className="flex-1 overflow-y-auto px-4 py-5 md:px-7 md:py-6"
+            className="flex-1 overflow-y-auto px-4 py-5 [scrollbar-gutter:stable] md:px-7 md:py-6"
             role="main"
             aria-label="메인 콘텐츠"
           >

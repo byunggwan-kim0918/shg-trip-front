@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import Portal from '@/components/common/Portal';
+import { useModalA11y } from '@/lib/hooks/useModalA11y';
 
 interface Props {
   open: boolean;
@@ -11,6 +12,8 @@ interface Props {
   cancelLabel?: string;
   danger?: boolean;
   busy?: boolean;
+  /** 연 버튼이 메뉴 안에 있어 열리면서 사라질 때 닫은 뒤 돌아갈 곳. */
+  returnFocusRef?: RefObject<HTMLElement | null>;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -23,10 +26,13 @@ export default function ConfirmModal({
   cancelLabel = '취소',
   danger = false,
   busy = false,
+  returnFocusRef,
   onConfirm,
   onCancel,
 }: Props) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(open, dialogRef, returnFocusRef);
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +56,7 @@ export default function ConfirmModal({
         }}
       >
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label={title}
@@ -63,7 +70,7 @@ export default function ConfirmModal({
               type="button"
               onClick={(e) => { e.stopPropagation(); onCancel(); }}
               disabled={busy}
-              className="px-4 py-2 rounded-[10px] text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 min-h-[40px]"
+              className="px-4 py-2 rounded-[10px] text-sm font-medium text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 min-h-[44px]"
             >
               {cancelLabel}
             </button>
@@ -72,7 +79,7 @@ export default function ConfirmModal({
               type="button"
               onClick={(e) => { e.stopPropagation(); onConfirm(); }}
               disabled={busy}
-              className={`px-4 py-2 rounded-[10px] text-sm font-medium text-accent-fg transition-colors disabled:opacity-50 min-h-[40px] ${
+              className={`px-4 py-2 rounded-[10px] text-sm font-medium text-accent-fg transition-colors disabled:opacity-50 min-h-[44px] ${
                 danger ? 'bg-danger hover:opacity-90' : 'bg-accent hover:bg-accent-hover'
               }`}
             >

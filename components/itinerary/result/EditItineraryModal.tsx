@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { X, Plus } from 'lucide-react';
 import Portal from '@/components/common/Portal';
+import { useModalA11y } from '@/lib/hooks/useModalA11y';
 
 interface Props {
   open: boolean;
@@ -12,6 +13,8 @@ interface Props {
   error?: string | null;
   onSave: (payload: { title: string; tags: string[] }) => void;
   onCancel: () => void;
+  /** Safari는 클릭한 버튼에 포커스를 주지 않아 닫은 뒤 돌아갈 곳을 따로 받는다. */
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 const MAX_TAGS = 8;
@@ -23,6 +26,7 @@ export default function EditItineraryModal({
   initialTags,
   busy = false,
   error,
+  returnFocusRef,
   onSave,
   onCancel,
 }: Props) {
@@ -30,19 +34,23 @@ export default function EditItineraryModal({
   const [tags, setTags] = useState<string[]>(initialTags);
   const [tagInput, setTagInput] = useState('');
   const titleRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(open, dialogRef, returnFocusRef);
+
+  // 열 때마다 key로 새로 마운트되므로 초기값은 useState가 맡는다. 태그가 없으면 부모가 매 렌더 새 []를
+  // 넘겨, 여기서 되돌리면 폴링 리렌더마다 입력 중인 제목·태그가 지워진다.
+  useEffect(() => {
+    if (open) titleRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
-    setTitle(initialTitle);
-    setTags(initialTags);
-    setTagInput('');
-    titleRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && !busy) onCancel();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, initialTitle, initialTags, busy, onCancel]);
+  }, [open, busy, onCancel]);
 
   if (!open) return null;
 
@@ -64,6 +72,7 @@ export default function EditItineraryModal({
         onClick={() => { if (!busy) onCancel(); }}
       >
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label="일정 편집"
@@ -81,7 +90,7 @@ export default function EditItineraryModal({
               onChange={(e) => setTitle(e.target.value)}
               maxLength={100}
               placeholder="여행 제목"
-              className="w-full rounded-[10px] border border-card-border bg-surface-3 px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-accent"
+              className="w-full rounded-[10px] border border-card-border bg-surface-3 px-3.5 py-2.5 text-base text-foreground outline-none focus:border-accent sm:text-sm"
             />
           </div>
 
@@ -98,7 +107,7 @@ export default function EditItineraryModal({
                 }}
                 maxLength={MAX_TAG_LEN}
                 placeholder="태그 입력 후 Enter"
-                className="flex-1 rounded-[10px] border border-card-border bg-surface-3 px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-accent"
+                className="flex-1 rounded-[10px] border border-card-border bg-surface-3 px-3.5 py-2.5 text-base text-foreground outline-none focus:border-accent sm:text-sm"
               />
               <button
                 type="button"
@@ -115,7 +124,7 @@ export default function EditItineraryModal({
                 {tags.map((t) => (
                   <span key={t} className="inline-flex items-center gap-1 rounded-full bg-surface-3 px-2.5 py-1 text-xs font-semibold text-muted">
                     {t}
-                    <button type="button" onClick={() => removeTag(t)} aria-label={`${t} 삭제`} className="opacity-60 hover:opacity-100">
+                    <button type="button" onClick={() => removeTag(t)} aria-label={`${t} 삭제`} className="relative opacity-60 after:absolute after:-inset-3 after:content-[''] hover:opacity-100">
                       <X size={12} aria-hidden="true" />
                     </button>
                   </span>
@@ -131,7 +140,7 @@ export default function EditItineraryModal({
               type="button"
               onClick={onCancel}
               disabled={busy}
-              className="min-h-[40px] rounded-[10px] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
+              className="min-h-[44px] rounded-[10px] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
             >
               취소
             </button>
@@ -139,7 +148,7 @@ export default function EditItineraryModal({
               type="button"
               onClick={() => onSave({ title: title.trim(), tags })}
               disabled={!canSave}
-              className="min-h-[40px] rounded-[10px] bg-accent px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="min-h-[44px] rounded-[10px] bg-accent px-4 py-2 text-sm font-bold text-accent-fg transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               {busy ? '저장 중...' : '저장'}
             </button>

@@ -48,6 +48,9 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
   const [openCardMenuId, setOpenCardMenuId] = useState<number | null>(null);
   const cardMenuRef = useRef<HTMLDivElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<ItinerarySummary | null>(null);
+  // 삭제 확인은 메뉴 항목에서 열리고 그 항목은 바로 사라지므로, 닫은 뒤에는 그 카드의 메뉴 버튼으로 돌아간다.
+  const menuButtons = useRef(new Map<number, HTMLButtonElement>());
+  const deleteReturnRef = useRef<HTMLElement | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,13 +104,14 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
       ref={openCardMenuId === item.id ? cardMenuRef : undefined}
     >
       <button
+        ref={(el) => { if (el) menuButtons.current.set(item.id, el); else menuButtons.current.delete(item.id); }}
         type="button"
         aria-label="일정 메뉴"
         onClick={(e) => {
           e.stopPropagation();
           setOpenCardMenuId((prev) => (prev === item.id ? null : item.id));
         }}
-        className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${buttonClassName}`}
+        className={`relative after:absolute after:-inset-2 after:content-[''] flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${buttonClassName}`}
       >
         <MoreHorizontal size={15} />
       </button>
@@ -120,10 +124,11 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              deleteReturnRef.current = menuButtons.current.get(item.id) ?? null;
               setOpenCardMenuId(null);
               setDeleteTarget(item);
             }}
-            className="w-full px-4 py-2.5 text-left text-sm text-danger transition-colors hover:bg-surface-hover"
+            className="min-h-[44px] w-full px-4 py-2.5 text-left text-sm text-danger transition-colors hover:bg-surface-hover"
           >
             삭제
           </button>
@@ -326,6 +331,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
 
       <ConfirmModal
         open={deleteTarget !== null}
+        returnFocusRef={deleteReturnRef}
         title="일정을 삭제할까요?"
         message={`'${deleteTarget?.title ?? deleteTarget?.destination ?? ''}' 일정을 삭제합니다. 이 작업은 되돌릴 수 없습니다.`}
         confirmLabel="삭제"

@@ -101,9 +101,12 @@ export default function StepCard({
                 {formatOpeningHours(place.openingHours)}
               </span>
             )}
-            <span className="tabular-nums">
-              예상 <b className="font-bold text-text-2">{(step.estimatedCost ?? 0).toLocaleString()}원</b>
-            </span>
+            {/* 0원은 공항·시장처럼 비용 정보가 없는 경우라 "무료"로도 단정할 수 없어 숨긴다. */}
+            {(step.estimatedCost ?? 0) > 0 && (
+              <span className="tabular-nums">
+                예상 <b className="font-bold text-text-2">{step.estimatedCost!.toLocaleString()}원</b>
+              </span>
+            )}
             {!readOnly && !editMode && step.alternatives.length > 0 && (
               <button
                 type="button"
