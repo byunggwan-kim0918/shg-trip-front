@@ -17,6 +17,10 @@ import {
 } from '@/lib/trips/content';
 import { getRegion } from '@/lib/trips/regions';
 import type { CuratedStop, CuratedTrip } from '@/lib/trips/types';
+import type { TransportType } from '@/lib/types/itinerary';
+import TransitInfo from '@/components/itinerary/result/TransitInfo';
+import { getCategoryIcon } from '@/lib/constants/placeIcons';
+import { getDayColor } from '@/lib/constants/dayColors';
 
 export const dynamicParams = false;
 
@@ -49,21 +53,29 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-const MOVE_LABEL: Record<string, string> = {
-  CAR: '차로',
-  WALK: '걸어서',
-  BUS: '버스로',
-  SUBWAY: '지하철로',
-  TRAIN: '열차로',
-  TAXI: '택시로',
+/** 생성기는 대중교통 일정의 짧은 구간도 CAR로 남겨 택시로 보여 준다. */
+function legMode(stop: CuratedStop, transport: CuratedTrip['transport']): TransportType {
+  const mode = stop.move?.mode ?? 'WALK';
+  return mode === 'CAR' && transport !== 'car' ? 'TAXI' : mode;
+}
+
+const KIND_ICON_KEY: Record<string, string> = {
+  숙소: '숙소',
+  카페: '카페',
+  베이커리: '카페',
+  디저트: '카페',
+  식당: '맛집',
+  가이세키: '맛집',
+  다코야키: '맛집',
+  버거: '맛집',
 };
 
-function moveText(stop: CuratedStop, transport: CuratedTrip['transport']): string | null {
-  if (!stop.move) return null;
-  // 생성기는 대중교통 일정의 구간도 CAR로 남긴다.
-  const label = stop.move.mode === 'CAR' && transport !== 'car' ? '대중교통·택시로' : MOVE_LABEL[stop.move.mode] ?? '이동';
-  return `${label} ${stop.move.minutes}분 · ${stop.move.km}km`;
+function kindIcon(kind: string) {
+  if (kind === '공항' || kind === '역') return getCategoryIcon('');
+  return getCategoryIcon(KIND_ICON_KEY[kind] ?? '관광');
 }
+
+const httpsImage = (url: string | null) => (url ? url.replace(/^http:\/\//, 'https://') : null);
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
 
@@ -186,45 +198,60 @@ export default async function TripPage({ params }: { params: Params }) {
           const dayKm = Math.round(d.stops.reduce((sum, s) => sum + (s.move?.km ?? 0), 0));
           return (
             <section key={d.day} className="mt-10">
-              <h2 className="text-[20px] font-extrabold tracking-[-0.02em] text-foreground">
-                <span className="text-accent-weak-fg">{d.day}일차</span> · {d.title}
+              <h2 className="flex items-center gap-2.5 text-[20px] font-extrabold tracking-[-0.02em] text-foreground">
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold text-white"
+                  style={{ background: getDayColor(d.day).bg }}
+                  aria-hidden="true"
+                >
+                  {d.day}
+                </span>
+                <span>
+                  {d.day}일차 · {d.title}
+                </span>
               </h2>
-              <p className="mt-1 text-xs font-semibold text-muted">
+              <p className="mt-1 pl-[38px] text-xs font-semibold text-muted">
                 {d.stops.length}곳 · 이동 {dayKm}km · {d.stops[0]?.start}–{d.stops[d.stops.length - 1]?.end}
               </p>
 
-              <ol className="mt-4 space-y-0">
+              <ol className="mt-3">
                 {d.stops.map((s, i) => {
-                  const move = moveText(s, trip.transport);
+                  const Icon = kindIcon(s.kind);
+                  const image = httpsImage(s.imageUrl);
                   return (
                     <li key={`${d.day}-${i}`}>
-                      {move && (
-                        <p className="ml-[68px] border-l-2 border-dashed border-divider py-2 pl-4 text-[12px] font-medium text-muted">
-                          {move}
-                        </p>
+                      {s.move && (
+                        <TransitInfo mode={legMode(s, trip.transport)} duration={s.move.minutes} distance={s.move.km} />
                       )}
-                      <article className="flex gap-4">
-                        <time className="w-[52px] shrink-0 pt-3.5 text-right text-[13px] font-bold tabular-nums text-foreground">
-                          {s.start}
-                        </time>
-                        <div className="min-w-0 flex-1 rounded-xl border border-card-border bg-card-bg p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-[16px] font-extrabold tracking-[-0.02em] text-foreground">{s.name}</h3>
-                            <span className="shrink-0 rounded-full bg-surface-3 px-2.5 py-0.5 text-[11px] font-semibold text-muted">
-                              {s.kind}
-                            </span>
+                      <article className="flex gap-3 rounded-[10px] bg-card-bg px-3.5 py-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2">
+                            <time className="shrink-0 text-[13px] font-extrabold tabular-nums text-accent-weak-fg">{s.start}</time>
+                            <Icon size={14} className="shrink-0 translate-y-[2px] text-muted" aria-hidden="true" />
+                            <h3 className="min-w-0 text-[15px] font-bold text-foreground">{s.name}</h3>
+                            <span className="ml-auto shrink-0 text-[11px] font-semibold text-muted-2">{s.kind}</span>
                           </div>
-                          <p className="mt-1.5 text-[14px] leading-relaxed text-text-2">{s.note}</p>
-                          <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-muted">
-                            <span>{s.start}–{s.end}</span>
-                            {s.cost != null && s.cost > 0 && <span>예상 {won(s.cost)}</span>}
-                            {s.address && (
-                              <span className="flex items-center gap-1">
-                                <MapPin size={11} aria-hidden="true" /> {s.address}
+                          <p className="mt-1 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{s.note}</p>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-2">
+                            <span className="tabular-nums">{s.start} - {s.end}</span>
+                            {s.cost != null && s.cost > 0 && (
+                              <span className="tabular-nums">
+                                예상 <b className="font-bold text-text-2">{won(s.cost)}</b>
                               </span>
                             )}
-                          </p>
+                            {s.address && (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin size={10} className="shrink-0" aria-hidden="true" /> {s.address}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        {image && (
+                          <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[10px] bg-surface-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={image} alt={s.name} loading="lazy" className="h-full w-full object-cover" />
+                          </div>
+                        )}
                       </article>
                     </li>
                   );
@@ -296,6 +323,9 @@ export default async function TripPage({ params }: { params: Params }) {
             <Link href={`/trips/${region}`} className="underline hover:text-foreground">{info.name} 여행 코스 전체 보기</Link>
             {' · '}검수일 {trip.reviewedAt}
           </p>
+          {trip.days.some((d) => d.stops.some((st) => st.imageUrl?.includes('visitkorea.or.kr'))) && (
+            <p className="mt-1 text-[11px] text-muted-2">장소 사진 출처: 한국관광공사</p>
+          )}
         </section>
       </main>
 
