@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/main/', '/onboarding/', '/callback/'],
     },
-    sitemap: 'https://shg-trip.cloud/sitemap.xml',
+    sitemap: 'https://myshgtrip.com/sitemap.xml',
   };
 }
