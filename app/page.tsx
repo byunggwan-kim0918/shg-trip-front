@@ -58,12 +58,6 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5">
-            <a
-              href="#features"
-              className="hidden text-sm font-semibold text-text-2 transition-colors hover:text-foreground sm:block"
-            >
-              기능
-            </a>
             <ThemeToggle />
             <Link
               href="/login"
