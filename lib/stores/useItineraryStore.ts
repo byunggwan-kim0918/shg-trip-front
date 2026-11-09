@@ -2,11 +2,29 @@ import { create } from 'zustand';
 import type { Itinerary, ItinerarySummary } from '@/lib/types/itinerary';
 import {
   fetchMyItineraries,
+  fetchItinerary,
   selectAlternative,
   deleteItinerary,
   reorderSteps,
   deleteStep,
+  StepEditError,
 } from '@/lib/data/itineraryService';
+
+const STALE_EDIT_MESSAGE = '다른 곳에서 일정이 바뀌었어요. 최신 내용으로 다시 불러왔어요.';
+
+/** 낡은 화면에서 고른 편집이면 최신 일정을 다시 불러온다. 그대로 두면 이미 없는 스텝·대안을 계속 보여 준다. */
+async function refreshIfStale(e: unknown, itineraryId: number, fallback: string): Promise<string> {
+  if (!(e instanceof StepEditError) || !e.stale) return e instanceof Error ? e.message : fallback;
+  try {
+    const fresh = await fetchItinerary(itineraryId);
+    if (useItineraryStore.getState().currentItinerary?.id === itineraryId) {
+      useItineraryStore.setState({ currentItinerary: fresh, expandedStepId: null });
+    }
+    return STALE_EDIT_MESSAGE;
+  } catch {
+    return e.message;
+  }
+}
 
 /**
  * 백엔드 assignSlot과 같게 시간은 위치(슬롯)에 고정하고 이동한 스텝이 그 시간을 물려받는다.
@@ -150,8 +168,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
       const updated = await selectAlternative(itineraryId, stepId, alternativeId);
       set({ currentItinerary: updated, expandedStepId: null });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '대안 선택에 실패했습니다.';
-      set({ alternativeError: msg });
+      set({ alternativeError: await refreshIfStale(e, itineraryId, '대안 선택에 실패했습니다.') });
     } finally {
       set({ isSelectingAlternative: false });
     }
@@ -171,8 +188,8 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
       const updated = await reorderSteps(itineraryId, dayNumber, orderedStepIds);
       set({ currentItinerary: updated });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '순서 변경에 실패했습니다.';
-      set({ currentItinerary: snapshot, stepError: msg });
+      set({ currentItinerary: snapshot });
+      set({ stepError: await refreshIfStale(e, itineraryId, '순서 변경에 실패했습니다.') });
     } finally {
       set({ isEditingSteps: false });
     }
@@ -186,8 +203,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
       const updated = await deleteStep(itineraryId, stepId);
       set({ currentItinerary: updated, expandedStepId: null });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '일정 삭제에 실패했습니다.';
-      set({ stepError: msg });
+      set({ stepError: await refreshIfStale(e, itineraryId, '일정 삭제에 실패했습니다.') });
     } finally {
       set({ isEditingSteps: false });
     }

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Search, ChevronDown, X } from 'lucide-react';
-import { useWizardStore, isSameDayTimeInverted } from '@/lib/stores/useWizardStore';
+import { useWizardStore, isInvalidRange } from '@/lib/stores/useWizardStore';
 import CalendarPicker from '@/components/itinerary/wizard/CalendarPicker';
 import FieldError from '@/components/common/FieldError';
 import { POPULAR_DESTINATIONS, MAX_TRIP_DAYS } from '@/lib/constants/wizardOptions';
@@ -28,7 +28,7 @@ function TimeField({ label, value, onChange }: {
           type="time"
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value || null)}
-          className="min-w-[6rem] bg-transparent text-right text-[15px] font-bold text-foreground outline-none"
+          className="min-w-[6rem] bg-transparent text-right text-base font-bold sm:text-[15px] text-foreground outline-none"
           aria-label={label}
         />
         {value && (
@@ -86,7 +86,7 @@ export default function TripBasicsStep() {
             }}
             maxLength={DESTINATION_MAX_LENGTH}
             placeholder="여행지를 입력하세요 (예: 제주도)"
-            className="w-full bg-transparent text-[15px] font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
+            className="w-full bg-transparent text-base font-semibold sm:text-[15px] text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
             aria-label="여행지"
           />
         </label>
@@ -122,8 +122,12 @@ export default function TripBasicsStep() {
           maxRangeDays={MAX_TRIP_DAYS}
         />
         {!data.startDate && (
-          <p className="mt-2 text-xs text-muted-2">시작일과 종료일을 선택하세요 (최대 {MAX_TRIP_DAYS}일).</p>
+          <p className="mt-2 text-xs text-muted-2">시작일과 종료일을 선택하세요 (1박부터, 최대 {MAX_TRIP_DAYS}일).</p>
         )}
+        {data.startDate && !data.endDate && (
+          <p className="mt-2 text-xs text-muted-2">종료일을 골라 주세요. 시작일을 다시 누르면 선택이 풀려요.</p>
+        )}
+        {isInvalidRange(data) && <FieldError message="당일 여행은 아직 만들 수 없어요. 종료일을 다음 날 이후로 골라 주세요." />}
       </div>
 
       <div>
@@ -148,9 +152,7 @@ export default function TripBasicsStep() {
           <div className="mt-2 space-y-2">
             <TimeField label="첫날 도착" value={data.arrivalTime} onChange={(v) => updateData({ arrivalTime: v })} />
             <TimeField label="마지막 날 출발" value={data.departureTime} onChange={(v) => updateData({ departureTime: v })} />
-            {isSameDayTimeInverted(data)
-              ? <FieldError message="당일 여행은 출발 시간이 도착 시간보다 늦어야 해요." />
-              : <p className="text-xs text-muted-2">비행기·기차 시간을 넣으면 첫날과 마지막 날 일정을 거기에 맞춰요.</p>}
+            <p className="text-xs text-muted-2">비행기·기차 시간을 넣으면 첫날과 마지막 날 일정을 거기에 맞춰요.</p>
           </div>
         )}
       </div>

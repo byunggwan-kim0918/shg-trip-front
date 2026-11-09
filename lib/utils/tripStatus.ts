@@ -64,8 +64,8 @@ export function dateRange(startDate: string, endDate: string): string {
   return `${shortDate(startDate)} - ${shortDate(endDate)}`;
 }
 
-export function displayStatus(trip: DatedTrip, now: Date = new Date()): TripDisplayStatus {
-  if (trip.status === 'DRAFT') return 'draft';
+/** 확정 여부와 무관하게 날짜로만 본 상태. 필터와 "가장 가까운 여행"은 초안도 날짜로 고른다. */
+export function dateStatus(trip: DatedTrip, now: Date = new Date()): Exclude<TripDisplayStatus, 'draft'> {
   const today = midnight(now).getTime();
   const start = midnight(new Date(trip.startDate)).getTime();
   const end = midnight(new Date(trip.endDate)).getTime();
@@ -74,10 +74,14 @@ export function displayStatus(trip: DatedTrip, now: Date = new Date()): TripDisp
   return 'ongoing';
 }
 
-/** draft는 예정/여행중/완료 어디에도 안 잡혀 'all'에서만 보인다. */
+/** 점·라벨용. 초안은 날짜와 별개로 "초안"으로 보여 확정 여부를 구분한다. */
+export function displayStatus(trip: DatedTrip, now: Date = new Date()): TripDisplayStatus {
+  return trip.status === 'DRAFT' ? 'draft' : dateStatus(trip, now);
+}
+
 export function matchesFilter(trip: DatedTrip, filter: TripFilter, now: Date = new Date()): boolean {
   if (filter === 'all') return true;
-  return displayStatus(trip, now) === filter;
+  return dateStatus(trip, now) === filter;
 }
 
 /** 상태별 라벨/색 토큰(CSS 변수명). 점·칩·텍스트에 공통 사용. */

@@ -147,21 +147,12 @@ export interface DayGroup {
 }
 
 /**
- * 구조 일정을 먼저 저장(notes=null)하고 Haiku가 notes를 비동기로 채우므로 DRAFT에서 빈 notes가 있으면 생성 중으로 본다.
- * FINALIZED/fallback 경로는 notes가 이미 채워져 있다.
+ * 구조 일정을 먼저 저장(notes=null)하고 story가 한 트랜잭션으로 모든 스텝의 notes를 채운다.
+ * 그래서 하나라도 채워졌으면 story는 끝난 것이다. 대안으로 바꾼 스텝은 notes가 없어도 영영 채워지지 않는다.
  */
 export function hasPendingStory(itin: Itinerary): boolean {
-  if (itin.status !== 'DRAFT') return false;
-  return itin.steps.some((s) => !s.notes || s.notes.trim().length === 0);
-}
-
-/**
- * 백엔드는 imageUrl=null로 저장하고 사진을 비동기로 올린다. 매칭 실패로 끝내 null인 장소가 있어
- * 폴링은 max attempts로 끝난다.
- */
-export function hasPendingImage(itin: Itinerary): boolean {
-  if (itin.status !== 'DRAFT') return false;
-  return itin.steps.some((s) => s.place != null && !s.place.imageUrl);
+  if (itin.status !== 'DRAFT' || itin.steps.length === 0) return false;
+  return itin.steps.every((s) => !s.notes || s.notes.trim().length === 0);
 }
 
 export function groupStepsByDay(steps: ItineraryStep[]): DayGroup[] {

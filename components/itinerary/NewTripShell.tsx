@@ -8,6 +8,7 @@ import { parseTripSentence, type ParsedTrip } from '@/lib/data/itineraryService'
 import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
 import { THEME_LABEL, PACE_LABEL } from '@/lib/constants/wizardOptions';
 import { dateRange, nightsLabel } from '@/lib/utils/tripStatus';
+import { formatBudget } from '@/lib/utils/format';
 import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 
 const BUDGET_CHIPS: Array<{ label: string; phrase: string }> = [
@@ -136,9 +137,10 @@ export default function NewTripShell() {
     ? parsed.themes.map((t) => THEME_LABEL[t] ?? t).join('·')
     : null;
   const paceValue = parsed?.pace ? PACE_LABEL[parsed.pace] ?? parsed.pace : null;
+  const budgetValue = parsed?.budget != null ? `${formatBudget(parsed.budget)}원` : null;
 
   const hasAnyParsed = Boolean(
-    parsed?.destination || periodValue || parsed?.party || themeValue || paceValue,
+    parsed?.destination || periodValue || parsed?.party || themeValue || paceValue || budgetValue,
   );
   const sentenceEmpty = sentence.trim().length === 0;
   const understoodNothing = !parsing && parsed != null && !hasAnyParsed;
@@ -228,7 +230,8 @@ export default function NewTripShell() {
               <UnderstandRow label="기간" value={periodValue} />
               <UnderstandRow label="인원" value={parsed?.party ?? null} />
               <UnderstandRow label="테마" value={themeValue} />
-              <UnderstandRow label="페이스" value={paceValue} last />
+              <UnderstandRow label="페이스" value={paceValue} />
+              <UnderstandRow label="예산" value={budgetValue} last />
             </div>
             <div className="mt-4 rounded-[10px] bg-surface-3 px-4 py-3 text-xs leading-[1.55] text-muted">
               표에 없는 취향(좋아하는 음식 등)도 문장 그대로 &lsquo;추가 요청&rsquo;으로 전달돼 장소를 고를 때 참고해요.

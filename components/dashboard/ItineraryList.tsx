@@ -17,6 +17,7 @@ import {
   type TripFilter,
   matchesFilter,
   displayStatus,
+  dateStatus,
   daysUntil,
   ddayLabel,
   dateRange,
@@ -66,20 +67,14 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
     [itineraries, filter],
   );
 
-  /** 현재 필터 안의 예정/여행중 일정 중 startDate가 가장 가까운 것. */
+  /** 현재 필터 안에서 여행 중인 일정, 없으면 시작일이 가장 가까운 예정 일정. */
   const hero = useMemo(() => {
-    const candidates = filtered
-      .filter((t) => {
-        const s = displayStatus(t);
-        return s === 'upcoming' || s === 'ongoing';
-      })
-      .sort((a, b) => {
-        const da = daysUntil(a.startDate);
-        const db = daysUntil(b.startDate);
-        // 여행중(음수~0)도 임박한 것으로 보고 절대값으로 비교한다.
-        return Math.abs(da) - Math.abs(db);
-      });
-    return candidates[0] ?? null;
+    const ongoing = filtered.find((t) => dateStatus(t) === 'ongoing');
+    if (ongoing) return ongoing;
+    const upcoming = filtered
+      .filter((t) => dateStatus(t) === 'upcoming')
+      .sort((a, b) => daysUntil(a.startDate) - daysUntil(b.startDate));
+    return upcoming[0] ?? null;
   }, [filtered]);
 
   const gridItems = useMemo(
@@ -332,8 +327,8 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
       <ConfirmModal
         open={deleteTarget !== null}
         returnFocusRef={deleteReturnRef}
-        title="일정을 삭제할까요?"
-        message={`'${deleteTarget?.title ?? deleteTarget?.destination ?? ''}' 일정을 삭제합니다. 이 작업은 되돌릴 수 없습니다.`}
+        title="이 일정을 삭제할까요?"
+        message={`'${deleteTarget?.title ?? deleteTarget?.destination ?? ''}' 일정을 삭제해요. 삭제한 일정은 되돌릴 수 없고, 공유 링크도 더 이상 열리지 않아요.`}
         confirmLabel="삭제"
         danger
         busy={isDeleting}

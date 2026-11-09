@@ -9,9 +9,11 @@ interface WizardLayoutProps {
   children: ReactNode[];
   /** 선택(건너뛰기 가능) 단계 인덱스. "선택" 배지 + "건너뛰기" 노출. */
   optionalSteps?: number[];
+  /** 건너뛰기 직전에 호출된다. 그 단계에서 입력한 값을 비워야 "건너뛰기"가 이름대로 동작한다. */
+  onSkip?: (step: number) => void;
 }
 
-export default function WizardLayout({ children, optionalSteps = [] }: WizardLayoutProps) {
+export default function WizardLayout({ children, optionalSteps = [], onSkip }: WizardLayoutProps) {
   const { currentStep, isStepValid, nextStep, prevStep, getTotalSteps } = useWizardStore();
   const totalSteps = getTotalSteps();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,7 +65,7 @@ export default function WizardLayout({ children, optionalSteps = [] }: WizardLay
           {isOptional ? (
             <button
               type="button"
-              onClick={nextStep}
+              onClick={() => { onSkip?.(currentStep); nextStep(); }}
               className="rounded-[10px] px-5 py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-hover"
             >
               건너뛰기

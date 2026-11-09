@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState, useMemo, useRef, Fragment } from 'rea
 import { Star } from 'lucide-react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
+import { placeCategoryLabel } from '@/lib/utils/placeCategory';
 import 'leaflet/dist/leaflet.css';
 import { setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -141,9 +142,10 @@ function pathMidpoint(path: LatLngTuple[]): { pos: LatLngTuple; angle: number } 
 }
 
 function StepMarker({
-  lat, lng, label, fill, stroke, selected, onClick,
+  lat, lng, label, name, fill, stroke, selected, onClick,
 }: {
-  lat: number; lng: number; label: string; fill: string; stroke: string; selected: boolean; onClick: () => void;
+  lat: number; lng: number; label: string; name: string; fill: string; stroke: string; selected: boolean;
+  onClick: () => void;
 }) {
   const icon = useMemo(() => stepIcon(fill, stroke, label, selected), [fill, stroke, label, selected]);
   return (
@@ -151,6 +153,7 @@ function StepMarker({
       position={[lat, lng]}
       icon={icon}
       zIndexOffset={selected ? 1000 : 0}
+      title={`${label}번 ${name}`}
       eventHandlers={{ click: onClick }}
     />
   );
@@ -355,10 +358,12 @@ export default function MapPanelInner({
 
           return (
             <StepMarker
-              key={step.id}
+              // title은 Leaflet이 생성 때만 읽어 번호·장소가 바뀌면 다시 만들어야 한다.
+              key={`${step.id}-${indexInDay}-${step.place.name}`}
               lat={step.place.latitude}
               lng={step.place.longitude}
               label={String(indexInDay)}
+              name={step.place.name}
               fill={color.bg}
               stroke={isSelected ? '#ffffff' : color.border}
               selected={isSelected}
@@ -401,9 +406,11 @@ export default function MapPanelInner({
                   </div>
                   <p className="font-semibold text-foreground">{place.name}</p>
                   <p className="text-muted text-xs mt-0.5">{place.address}</p>
-                  <p style={{ color: color.bg }} className="text-xs mt-0.5">
-                    {place.category}
-                  </p>
+                  {placeCategoryLabel(place.category) && (
+                    <p style={{ color: color.bg }} className="text-xs mt-0.5">
+                      {placeCategoryLabel(place.category)}
+                    </p>
+                  )}
                   {/* 별점은 데이터라 amber(경고 계열)나 상태색을 쓰지 않는다 */}
                   {place.rating != null && (
                     <div className="flex items-center gap-1 text-xs mt-0.5 text-text-2">

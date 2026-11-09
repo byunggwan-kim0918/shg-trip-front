@@ -31,7 +31,7 @@ export const THEME_OPTIONS: { id: Theme; label: string; icon: LucideIcon }[] = [
 
 export const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
   { id: 'attraction', label: '관광지' },
-  { id: 'restaurant', label: '맛집' },
+  { id: 'restaurant', label: '식당' },
   { id: 'cafe', label: '카페' },
   { id: 'viewpoint', label: '전망대/뷰포인트' },
   { id: 'beach', label: '해변/바다' },
@@ -39,7 +39,7 @@ export const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
   { id: 'trail', label: '산책로/둘레길' },
   { id: 'accommodation', label: '숙박' },
   { id: 'experience', label: '체험/액티비티' },
-  { id: 'shopping', label: '쇼핑' },
+  { id: 'shopping', label: '쇼핑 장소' },
   { id: 'nightlife', label: '나이트라이프' },
   { id: 'nature', label: '자연/공원' },
   { id: 'museum', label: '박물관/미술관' },
