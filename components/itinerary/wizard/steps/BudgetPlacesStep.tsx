@@ -9,6 +9,12 @@ import { BUDGET_QUICK_CHIPS, MAX_BUDGET, MAX_CUSTOM_PLACES } from '@/lib/constan
 import type { WizardPlace } from '@/lib/types/itinerary';
 import { MANUAL_PLACE_NAME_MAX_LENGTH } from '@/lib/constants/newTrip';
 
+/** 숙박 1박 기본 단가(ScheduleTuning.LODGING_HOTEL_DEFAULT_WON)보다 적으면 일정 하나도 맞추기 어렵다. */
+const LOW_BUDGET_WARNING = 120_000;
+
+/** 띄어쓰기만 다른 이름(성산일출봉 / 성산 일출봉)을 같은 장소로 본다. */
+const compactName = (name: string) => name.replace(/\s+/g, '');
+
 export default function BudgetPlacesStep() {
   const { data, updateData } = useWizardStore();
   const [query, setQuery] = useState('');
@@ -24,13 +30,20 @@ export default function BudgetPlacesStep() {
 
   const handleBudgetChange = (raw: string) => {
     setBudgetTouched(true);
+    const normalized = raw
+      .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+      .replace(/\s+/g, '')
+      .replace(/원$/, '');
+    // 붙여넣은 "50만"은 받는다. 입력칸이 숫자 자판이라 직접 칠 때는 숫자만 들어온다.
+    const manMatch = /^([\d,]+)만$/.exec(normalized);
     // 숫자 외 문자를 버리고 남은 숫자만 쓰면 1e5 → 15, -5000 → 5000처럼 조용히 다른 값이 된다
-    if (/[^0-9,\s]/.test(raw)) {
+    if (!manMatch && /[^0-9,]/.test(normalized)) {
       setBudgetHint('숫자만 입력할 수 있어요.');
       return;
     }
-    const digits = raw.replace(/[^0-9]/g, '');
-    const parsed = digits ? parseBudget(digits) : null;
+    const digits = (manMatch ? manMatch[1] : normalized).replace(/[^0-9]/g, '');
+    const value = digits ? parseBudget(digits) * (manMatch ? 10_000 : 1) : 0;
+    const parsed = value > 0 ? value : null;
     if (parsed !== null && parsed > MAX_BUDGET) {
       setBudgetHint(`최대 ${formatBudget(MAX_BUDGET)}원까지 입력할 수 있어요.`);
       updateData({ budget: MAX_BUDGET });
@@ -38,6 +51,13 @@ export default function BudgetPlacesStep() {
     }
     setBudgetHint(null);
     updateData({ budget: parsed });
+  };
+
+  // 입력 중에는 5 → 50 → 500처럼 작은 값을 거치므로 칸을 떠날 때만 알린다.
+  const warnIfLowBudget = () => {
+    if (data.budget !== null && data.budget < LOW_BUDGET_WARNING) {
+      setBudgetHint(`${formatBudget(data.budget)}원은 숙박비만으로도 넘을 수 있어요. 일행 전체 예산인지 확인해 주세요.`);
+    }
   };
 
   const search = useCallback(async (q: string) => {
@@ -68,7 +88,7 @@ export default function BudgetPlacesStep() {
 
   const customPlaceCount = data.selectedPlaces.filter((p) => p.id < 0).length;
   const hasNoResults = !isSearching && !searchFailed && query.trim().length > 0 && results.length === 0;
-  const isDuplicateName = data.selectedPlaces.some((p) => p.name.trim() === query.trim());
+  const isDuplicateName = data.selectedPlaces.some((p) => compactName(p.name) === compactName(query));
 
   // 검색 결과가 없을 때 이름만으로 추가한다. 백엔드가 저장된 장소에서 이름으로 찾고, 못 찾으면 뺀다
   const addCustomPlace = () => {
@@ -85,7 +105,7 @@ export default function BudgetPlacesStep() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-[23px] font-extrabold tracking-[-0.02em] text-foreground">예산 · 필수 장소</h2>
-        <span className="rounded-full bg-surface-3 px-3 py-1.5 text-xs font-bold text-muted-2">선택 · 건너뛰기</span>
+        <span className="text-xs font-bold text-muted-2">선택 사항</span>
       </div>
       <p className="-mt-3 text-[13px] text-muted">비워두면 알아서 채워요.</p>
 
@@ -100,8 +120,9 @@ export default function BudgetPlacesStep() {
             inputMode="numeric"
             value={budgetDisplay}
             onChange={(e) => handleBudgetChange(e.target.value)}
+            onBlur={warnIfLowBudget}
             placeholder="0"
-            className="flex-1 bg-transparent text-[15px] font-bold text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
+            className="flex-1 bg-transparent text-base font-bold sm:text-[15px] text-foreground outline-none placeholder:font-normal placeholder:text-muted-2"
             aria-label="예산"
           />
           <span className="text-sm font-semibold text-muted-2">원</span>
@@ -166,7 +187,7 @@ export default function BudgetPlacesStep() {
         {hasNoResults && !isSearching && (
           <p className="mt-1.5 text-xs text-muted-2">
             {customPlaceCount >= MAX_CUSTOM_PLACES
-              ? `직접 입력은 최대 ${MAX_CUSTOM_PLACES}개까지 가능합니다`
+              ? `직접 입력은 ${MAX_CUSTOM_PLACES}개까지 넣을 수 있어요`
               : isDuplicateName
                 ? '이미 추가한 장소예요'
                 : '직접 입력한 장소는 이름으로 찾아 넣어요. 못 찾으면 빠질 수 있어요'}
@@ -203,14 +224,14 @@ export default function BudgetPlacesStep() {
           {data.selectedPlaces.map((place) => (
             <span
               key={place.id}
-              className="inline-flex max-w-full items-center gap-1.5 break-all rounded-full bg-accent-soft px-3 py-2 text-[13px] font-semibold text-accent-weak-fg"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-accent-soft px-3 py-2 text-[13px] font-semibold text-accent-weak-fg"
             >
-              {place.name}
-              {place.latitude === 0 && <span className="text-xs opacity-70">(직접입력)</span>}
+              <span className="min-w-0 truncate" title={place.name}>{place.name}</span>
+              {place.latitude === 0 && <span className="shrink-0 whitespace-nowrap text-xs opacity-70">(직접입력)</span>}
               <button
                 type="button"
                 onClick={() => removePlace(place.id)}
-                className="opacity-60 transition-opacity hover:opacity-100"
+                className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
                 aria-label={`${place.name} 제거`}
               >
                 <X size={13} aria-hidden="true" />

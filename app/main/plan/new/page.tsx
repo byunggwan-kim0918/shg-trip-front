@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useWizardStore } from '@/lib/stores/useWizardStore';
+import { useWizardStore, MAX_TASTE_SELECTIONS } from '@/lib/stores/useWizardStore';
 import {
   NEW_TRIP_SENTENCE_KEY, NEW_TRIP_PARSED_KEY, DESCRIPTION_MAX_LENGTH, DESTINATION_MAX_LENGTH,
 } from '@/lib/constants/newTrip';
@@ -55,8 +55,10 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
     if (parsed.destination) partial.destination = parsed.destination.slice(0, DESTINATION_MAX_LENGTH);
     if (parsed.startDate) partial.startDate = parsed.startDate;
     if (parsed.endDate) partial.endDate = parsed.endDate;
-    if (parsed.themes?.length) partial.themes = parsed.themes as Theme[];
-    if (parsed.categories?.length) partial.categories = parsed.categories as Category[];
+    if (parsed.themes?.length) partial.themes = (parsed.themes as Theme[]).slice(0, MAX_TASTE_SELECTIONS);
+    if (parsed.categories?.length) {
+      partial.categories = (parsed.categories as Category[]).slice(0, MAX_TASTE_SELECTIONS);
+    }
     if (parsed.pace) partial.pace = parsed.pace as TripPace;
     if (parsed.transportPref) partial.transportPref = parsed.transportPref as TransportPref;
     if (parsed.budget != null) partial.budget = parsed.budget;
@@ -85,6 +87,18 @@ function applyPrefill(sentence: string, parsed: ParsedTrip | null) {
   }
 }
 
+let reloadChecked = false;
+
+/** 이 문서를 마법사 주소에서 새로고침해 열었는지. 같은 문서 안에서 다시 들어오는 건 새 여행으로 본다. */
+function isWizardReload(): boolean {
+  if (reloadChecked) return false;
+  reloadChecked = true;
+  const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  if (nav?.type !== 'reload') return false;
+  const url = new URL(nav.name);
+  return url.pathname === '/main/plan/new' && url.searchParams.get('builder') === '1';
+}
+
 /**
  * - `?builder=1` 없음 → NewTripShell(자연어 입력 + 실시간 파싱).
  * - `?builder=1` → 5단계 마법사. 파싱 결과 프리필 + ConfirmStep 점프.
@@ -97,6 +111,9 @@ export default function PlanNewPage() {
   const { reset } = useWizardStore();
   // StrictMode(dev) 이중 실행에서 2회차가 프리필을 지우지 않게 한 번만 소비한다.
   const didInit = useRef(false);
+  // 단계 컴포넌트는 달력 달·시간 펼침 같은 상태를 마운트 때 store에서 한 번 읽는다.
+  // 복원·프리필이 끝난 뒤 다시 마운트해야 그 값이 반영된다. 0이면 아직 준비 전이다.
+  const [wizardKey, setWizardKey] = useState(0);
 
   useEffect(() => {
     // ?builder 토글은 같은 라우트라 리마운트되지 않으므로, 가드를 풀지 않으면
@@ -105,41 +122,53 @@ export default function PlanNewPage() {
     if (didInit.current) return;
     didInit.current = true;
 
-    if (stepParam != null) {
-      const n = Number(stepParam);
-      if (Number.isFinite(n)) useWizardStore.getState().setStep(n);
-      return;
-    }
+    const remount = () => setWizardKey((k) => k + 1);
+    void initialize().then(remount);
 
-    reset();
-
-    const rawParsed = sessionStorage.getItem(NEW_TRIP_PARSED_KEY);
-    if (rawParsed) {
-      sessionStorage.removeItem(NEW_TRIP_PARSED_KEY);
-      sessionStorage.removeItem(NEW_TRIP_SENTENCE_KEY);
-      try {
-        const payload = JSON.parse(rawParsed);
-        if (payload && typeof payload === 'object' && typeof payload.sentence === 'string') {
-          applyPrefill(payload.sentence, (payload.parsed ?? null) as ParsedTrip | null);
-        }
-      } catch {
-        /* 손상된 페이로드는 버리고 빈 마법사로 시작한다 */
+    async function initialize() {
+      if (isWizardReload()) {
+        await useWizardStore.persist.rehydrate();
+        const { currentStep, setStep } = useWizardStore.getState();
+        setStep(currentStep);
+        return;
       }
-      return;
+
+      if (stepParam != null) {
+        const n = Number(stepParam);
+        if (Number.isFinite(n)) useWizardStore.getState().setStep(n);
+        return;
+      }
+
+      reset();
+
+      const rawParsed = sessionStorage.getItem(NEW_TRIP_PARSED_KEY);
+      if (rawParsed) {
+        sessionStorage.removeItem(NEW_TRIP_PARSED_KEY);
+        sessionStorage.removeItem(NEW_TRIP_SENTENCE_KEY);
+        try {
+          const payload = JSON.parse(rawParsed);
+          if (payload && typeof payload === 'object' && typeof payload.sentence === 'string') {
+            applyPrefill(payload.sentence, (payload.parsed ?? null) as ParsedTrip | null);
+          }
+        } catch {
+          /* 손상된 페이로드는 버리고 빈 마법사로 시작한다 */
+        }
+        return;
+      }
+
+      // 비로그인 상태에서 넘어온 문장은 파싱되지 않았으므로 로그인한 지금 파싱한다.
+      const sentence = sessionStorage.getItem(NEW_TRIP_SENTENCE_KEY);
+      if (!sentence) return;
+      sessionStorage.removeItem(NEW_TRIP_SENTENCE_KEY);
+      // 파싱이 실패해도 description은 남게 먼저 채운다.
+      useWizardStore.getState().updateData({ description: sentence.slice(0, DESCRIPTION_MAX_LENGTH) });
+
+      // abort하면 StrictMode(dev) 2회차의 조기 return과 겹쳐 구조화 프리필이 유실된다.
+      // applyPrefill은 스토어만 바꾸므로 언마운트 뒤 늦게 도착해도 다음 진입에서 reset된다.
+      parseTripSentence(sentence)
+        .then((parsed) => { if (parsed) { applyPrefill(sentence, parsed); remount(); } })
+        .catch(() => { /* 파싱 실패 → description만 유지 */ });
     }
-
-    // 비로그인 상태에서 넘어온 문장은 파싱되지 않았으므로 로그인한 지금 파싱한다.
-    const sentence = sessionStorage.getItem(NEW_TRIP_SENTENCE_KEY);
-    if (!sentence) return;
-    sessionStorage.removeItem(NEW_TRIP_SENTENCE_KEY);
-    // 파싱이 실패해도 description은 남게 먼저 채운다.
-    useWizardStore.getState().updateData({ description: sentence.slice(0, DESCRIPTION_MAX_LENGTH) });
-
-    // abort하면 StrictMode(dev) 2회차의 조기 return과 겹쳐 구조화 프리필이 유실된다.
-    // applyPrefill은 스토어만 바꾸므로 언마운트 뒤 늦게 도착해도 다음 진입에서 reset된다.
-    parseTripSentence(sentence)
-      .then((parsed) => { if (parsed) applyPrefill(sentence, parsed); })
-      .catch(() => { /* 파싱 실패 → description만 유지 */ });
   }, [builder, reset, stepParam]);
 
   if (!builder) {
@@ -157,7 +186,13 @@ export default function PlanNewPage() {
   return (
     <div className="h-[calc(100dvh-8rem)]">
       <h1 className="sr-only">새 여행 만들기</h1>
-      <WizardLayout optionalSteps={[3]}>{steps}</WizardLayout>
+      {wizardKey > 0 && <WizardLayout
+        key={wizardKey}
+        optionalSteps={[3]}
+        onSkip={() => useWizardStore.getState().updateData({ budget: null, selectedPlaces: [] })}
+      >
+        {steps}
+      </WizardLayout>}
     </div>
   );
 }

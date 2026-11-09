@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
-import { useWizardStore, isSameDayTimeInverted } from '@/lib/stores/useWizardStore';
+import { useWizardStore, isInvalidRange } from '@/lib/stores/useWizardStore';
 import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
 import { formatBudget } from '@/lib/utils/format';
 import { nightsLabel, dateRange } from '@/lib/utils/tripStatus';
@@ -56,11 +56,10 @@ export default function ConfirmStep() {
   // ?step=4로 바로 들어오면 앞 단계를 거치지 않아 필수값이 비어 있을 수 있다
   const missing: string[] = [];
   if (!data.destination.trim()) missing.push('여행지');
-  if (!data.startDate || !data.endDate) missing.push('기간');
-  if (isSameDayTimeInverted(data)) missing.push('출발 시간');
+  if (!data.startDate || !data.endDate || isInvalidRange(data)) missing.push('기간');
   if (data.themes.length === 0 || data.categories.length === 0) missing.push('취향');
   const firstMissingStep = !data.destination.trim() || !data.startDate || !data.endDate
-    || isSameDayTimeInverted(data) ? 0 : 1;
+    || isInvalidRange(data) ? 0 : 1;
 
   const handleGenerate = () => {
     if (missing.length > 0) {

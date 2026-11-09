@@ -4,6 +4,7 @@ import { backendFetch } from '@/lib/server/backendFetch';
 import type { Itinerary } from '@/lib/types/itinerary';
 import { normalizeText } from '@/lib/utils/text';
 import { nightsLabel } from '@/lib/utils/tripStatus';
+import { placeCategoryLabel } from '@/lib/utils/placeCategory';
 import SharedItineraryView from '@/components/itinerary/SharedItineraryView';
 
 interface ApiEnvelope<T> {
@@ -28,6 +29,13 @@ async function fetchShared(token: string): Promise<Itinerary | null> {
   return body.data;
 }
 
+/** 첫 스텝은 대개 공항·역이라 사진이 있는 관광지를 먼저 고른다. */
+function coverFromSteps(itinerary: Itinerary): string | null {
+  const withImage = itinerary.steps.filter((s) => s.place?.imageUrl);
+  const sight = withImage.find((s) => placeCategoryLabel(s.place?.category) === '관광');
+  return (sight ?? withImage[0])?.place?.imageUrl ?? null;
+}
+
 /** 페이지와 같은 fetchShared 요청은 Next가 dedupe하므로 메타데이터 때문에 왕복이 늘지 않는다. */
 export async function generateMetadata({
   params,
@@ -50,6 +58,10 @@ export async function generateMetadata({
   const period = `${itinerary.startDate} - ${itinerary.endDate}`;
   const description = `${itinerary.destination} · ${period} · ${nightsLabel(itinerary.startDate, itinerary.endDate)}`;
 
+  // openGraph를 직접 정하면 루트 opengraph-image가 이어지지 않아 이미지를 명시한다.
+  // 저장된 coverImage 컬럼은 만료된 presigned·프록시 주소라 쓰지 않는다.
+  const image = coverFromSteps(itinerary) ?? '/opengraph-image';
+
   return {
     title: `${title} · SHG trip`,
     description,
@@ -60,8 +72,9 @@ export async function generateMetadata({
       description,
       type: 'article',
       siteName: 'SHG trip',
+      images: [image],
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, images: [image] },
   };
 }
 

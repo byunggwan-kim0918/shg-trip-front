@@ -26,6 +26,17 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
   return body?.error?.message ?? fallback;
 }
 
+/** 스텝 편집 실패. 404·409는 다른 탭·기기에서 일정이 바뀌어 화면이 낡았다는 뜻이다. */
+export class StepEditError extends Error {
+  constructor(message: string, readonly stale: boolean) {
+    super(message);
+  }
+}
+
+async function stepEditError(res: Response, fallback: string): Promise<StepEditError> {
+  return new StepEditError(await errorMessage(res, fallback), res.status === 404 || res.status === 409);
+}
+
 async function parseJson<T>(res: Response): Promise<T> {
   const body: ApiResponse<T> = await res.json();
   if (!body.success) {
@@ -112,7 +123,7 @@ export async function selectAlternative(
       body: JSON.stringify({ alternativeId }),
     },
   );
-  if (!res.ok) throw new Error(await errorMessage(res, '대안 선택에 실패했습니다.'));
+  if (!res.ok) throw await stepEditError(res, '대안 선택에 실패했습니다.');
   return parseJson<Itinerary>(res);
 }
 
@@ -130,7 +141,7 @@ export async function reorderSteps(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dayNumber, orderedStepIds }),
   });
-  if (!res.ok) throw new Error(await errorMessage(res, '순서 변경에 실패했습니다.'));
+  if (!res.ok) throw await stepEditError(res, '순서 변경에 실패했습니다.');
   return parseJson<Itinerary>(res);
 }
 
@@ -139,7 +150,7 @@ export async function deleteStep(itineraryId: number, stepId: number): Promise<I
   const res = await authFetch(`/api/itineraries/${itineraryId}/steps/${stepId}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error(await errorMessage(res, '일정 삭제에 실패했습니다.'));
+  if (!res.ok) throw await stepEditError(res, '일정 삭제에 실패했습니다.');
   return parseJson<Itinerary>(res);
 }
 

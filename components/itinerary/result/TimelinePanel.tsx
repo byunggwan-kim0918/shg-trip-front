@@ -9,6 +9,8 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type Announcements,
+  type ScreenReaderInstructions,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -27,6 +29,10 @@ import TransitInfo from './TransitInfo';
 import QualityNotices from './QualityNotices';
 
 const FREE_TIME_THRESHOLD_MIN = 90;
+
+const DRAG_INSTRUCTIONS: ScreenReaderInstructions = {
+  draggable: '스페이스나 엔터로 집고, 위아래 화살표로 옮긴 뒤 다시 스페이스나 엔터로 놓아요. Esc를 누르면 취소돼요.',
+};
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 interface TimelinePanelProps {
@@ -97,6 +103,19 @@ export default function TimelinePanel({
   );
 
   if (!currentGroup) return null;
+
+  // 기본 안내는 영어이고 내부 id를 읽는다.
+  const placeName = (id: string | number) =>
+    currentGroup.steps.find((s) => s.id === Number(id))?.place?.name ?? '장소';
+  const positionOf = (id: string | number) => currentGroup.steps.findIndex((s) => s.id === Number(id)) + 1;
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `${placeName(active.id)}을(를) 집었어요. 지금 ${positionOf(active.id)}번째예요.`,
+    onDragOver: ({ active, over }) =>
+      over ? `${placeName(active.id)}이(가) ${positionOf(over.id)}번째 자리 위에 있어요.` : undefined,
+    onDragEnd: ({ active, over }) =>
+      over ? `${placeName(active.id)}을(를) ${positionOf(over.id)}번째로 옮겼어요.` : `${placeName(active.id)}을(를) 놓았어요.`,
+    onDragCancel: ({ active }) => `${placeName(active.id)} 옮기기를 취소했어요.`,
+  };
 
   const handleSelectAlternative = async (step: ItineraryStep, alt: AlternativeOption) => {
     clearAlternativeError();
@@ -174,7 +193,7 @@ export default function TimelinePanel({
         )}
         {editMode && !readOnly && (
           <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-accent-weak-fg">
-            <GripVertical size={13} aria-hidden="true" /> 끌어서 순서 변경 · 휴지통으로 삭제
+            <GripVertical size={13} aria-hidden="true" /> 끌어서 순서 변경 · 휴지통으로 삭제 · 숙소·공항은 자리 고정
           </span>
         )}
       </div>
@@ -182,7 +201,12 @@ export default function TimelinePanel({
       <QualityNotices items={dayNotices} />
 
       {editMode && !readOnly ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          accessibility={{ announcements, screenReaderInstructions: DRAG_INSTRUCTIONS }}
+        >
           <SortableContext
             items={currentGroup.steps.map((s) => s.id)}
             strategy={verticalListSortingStrategy}

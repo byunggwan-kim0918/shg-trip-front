@@ -153,7 +153,7 @@ export default function ResultLayout() {
     if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
   }, []);
 
-  // 표시 커버는 coverImage ?? 첫 스텝 이미지라, firstStepImage가 폴링으로 바뀔 때도 리셋해야
+  // 표시 커버는 coverImage ?? 첫 스텝 이미지라, 대안 선택·삭제로 firstStepImage가 바뀔 때도 리셋해야
   // 그라데이션 폴백에 고착되지 않는다.
   useEffect(() => { setCoverError(false); }, [
     currentItinerary?.id,
@@ -343,12 +343,12 @@ export default function ResultLayout() {
 
       {editMode && (
         <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
-          편집 모드 · 같은 날 안에서 끌어서 순서를 바꾸거나 휴지통으로 삭제하세요. 시간은 그대로 유지돼요.
+          편집 모드 · 같은 날 안에서 끌어서 순서를 바꾸거나 휴지통으로 삭제하세요. 시간과 숙소·공항 자리는 그대로예요.
         </div>
       )}
 
       {shareNotice && (
-        <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
+        <div role="status" className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
           {shareNotice}
         </div>
       )}
@@ -459,7 +459,7 @@ export default function ResultLayout() {
       <ConfirmModal
         open={finalizeConfirmOpen}
         title="이 일정을 확정할까요?"
-        message="확정하면 스톱 순서 변경·삭제와 대안 선택을 더 이상 할 수 없어요. 제목과 태그는 계속 고칠 수 있어요."
+        message="확정은 되돌릴 수 없어요. 확정하면 스톱 순서 변경·삭제와 대안 선택을 더 이상 할 수 없고, 제목과 태그만 고칠 수 있어요."
         confirmLabel="확정"
         busy={finalizing}
         onConfirm={handleFinalize}
