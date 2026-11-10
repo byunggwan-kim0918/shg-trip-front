@@ -14,12 +14,12 @@ import { displayStatus, dateRange } from '@/lib/utils/tripStatus';
 export default function Sidebar() {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
-  const { itineraries, loadItineraries } = useItineraryStore();
+  const { itineraries, listStatus, loadItineraries } = useItineraryStore();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    loadItineraries();
+    void loadItineraries();
   }, [loadItineraries]);
 
   // 스토어 기본값(sidebarOpen: true)은 데스크톱 기준이라 모바일에서 드로어가 열린 채 시작해
@@ -87,7 +87,27 @@ export default function Sidebar() {
           </h2>
 
           <div className="flex flex-col gap-0.5">
-            {itineraries.length === 0 ? (
+            {listStatus === 'error' ? (
+              <p className="px-2.5 py-2 text-xs leading-relaxed text-muted">
+                목록을 불러오지 못했어요.{' '}
+                <button
+                  type="button"
+                  onClick={() => void loadItineraries()}
+                  className="font-semibold text-foreground underline underline-offset-4 pointer-coarse:min-h-11"
+                >
+                  다시 시도
+                </button>
+              </p>
+            ) : listStatus !== 'success' ? (
+              <div className="flex flex-col gap-4 px-2.5 py-2" aria-busy="true" aria-label="여행 목록을 불러오는 중">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex flex-col gap-2">
+                    <div className="h-3.5 w-4/5 rounded shg-shimmer" />
+                    <div className="h-3 w-1/2 rounded shg-shimmer" />
+                  </div>
+                ))}
+              </div>
+            ) : itineraries.length === 0 ? (
               <div className="flex flex-col items-center gap-2.5 px-5 py-6 text-center">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-3 text-muted-2">
                   <MapPin size={18} aria-hidden="true" />

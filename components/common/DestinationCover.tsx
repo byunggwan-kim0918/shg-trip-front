@@ -15,6 +15,8 @@ interface Props {
   labelSize?: number;
   scrim?: boolean;
   className?: string;
+  /** 사진을 불러오지 못하면 한 번 부른다. */
+  onImageError?: () => void;
   children?: React.ReactNode;
 }
 
@@ -26,6 +28,7 @@ export default function DestinationCover({
   labelSize = 40,
   scrim = false,
   className = '',
+  onImageError,
   children,
 }: Props) {
   const img = proxyImageUrl(imageUrl);
@@ -52,7 +55,10 @@ export default function DestinationCover({
           alt={destination}
           className="absolute inset-0 h-full w-full object-cover"
           loading="lazy"
-          onError={() => setImgError(true)}
+          onError={() => {
+            setImgError(true);
+            onImageError?.();
+          }}
         />
       ) : (
         <div
@@ -80,19 +86,16 @@ export default function DestinationCover({
 
       {showLabel && (
         <span
-          className={
-            onPhoto
-              ? 'absolute right-3 bottom-1.5 font-extrabold leading-none'
-              : 'absolute left-3.5 top-3 font-semibold leading-none text-muted'
-          }
+          aria-hidden="true"
+          className={`absolute right-3 bottom-1.5 max-w-[calc(100%-1.5rem)] overflow-hidden whitespace-nowrap font-extrabold leading-none ${
+            onPhoto ? '' : 'text-foreground/15'
+          }`}
           style={{
-            // 사진이 없을 때 큰 워터마크는 카드 제목을 반복하고 긴 목적지명이 잘리므로
-            // 좌상단 작은 식별 라벨로만 둔다.
-            fontSize: onPhoto ? labelSize : Math.max(12, Math.round(labelSize * 0.3)),
+            fontSize: labelSize,
             color: onPhoto ? 'rgba(255,255,255,0.88)' : undefined,
             // 밝은 사진에서는 하단 스크림만으로 흰 글자가 묻힌다.
             textShadow: onPhoto ? '0 1px 3px rgba(6,8,12,0.55)' : undefined,
-            letterSpacing: onPhoto ? '-0.03em' : '-0.01em',
+            letterSpacing: '-0.03em',
           }}
         >
           {destination}

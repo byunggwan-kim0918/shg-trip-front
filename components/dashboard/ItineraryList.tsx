@@ -25,25 +25,12 @@ import {
 } from '@/lib/utils/tripStatus';
 
 interface Props {
-  /** 미지정 시 스토어에서 직접 로드(내 여행 페이지 겸용). */
-  itineraries?: ItinerarySummary[];
+  itineraries: ItinerarySummary[];
 }
 
-export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
+export default function ItineraryList({ itineraries }: Props) {
   const router = useRouter();
-  const {
-    itineraries: storeItineraries,
-    loadItineraries,
-    removeItinerary,
-    isDeleting,
-  } = useItineraryStore();
-
-  const selfLoad = itinerariesProp === undefined;
-  useEffect(() => {
-    if (selfLoad) loadItineraries();
-  }, [selfLoad, loadItineraries]);
-
-  const itineraries = itinerariesProp ?? storeItineraries;
+  const { removeItinerary, isDeleting } = useItineraryStore();
 
   const [filter, setFilter] = useState<TripFilter>('all');
   const [openCardMenuId, setOpenCardMenuId] = useState<number | null>(null);
@@ -134,6 +121,11 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
 
   const goToStep = (item: ItinerarySummary) => router.push(`/main/itinerary/${item.id}`);
 
+  // 큰 카드는 사진 위에 흰 글자를 얹으므로, 사진을 못 불러오면 사진 없는 배치로 바꿔야 글자가 읽힌다.
+  const [brokenCovers, setBrokenCovers] = useState<ReadonlySet<string>>(() => new Set());
+  const markCoverBroken = (url: string) => setBrokenCovers((prev) => new Set(prev).add(url));
+  const heroCover = hero?.coverImage && !brokenCovers.has(hero.coverImage) ? hero.coverImage : null;
+
   return (
     <div className="mx-auto max-w-6xl px-1 py-2">
       <div className="mb-4 flex items-end justify-between">
@@ -177,11 +169,12 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
             className="group relative block w-full overflow-hidden rounded-xl border border-card-border bg-card-bg text-left transition-[box-shadow] duration-150 hover:shadow-[0_14px_30px_-20px_rgba(20,22,28,0.35)]"
           >
             {/* 커버 사진이 없으면 색 배너 대신 정보를 주역으로 둔다. */}
-            {hero.coverImage ? (
+            {heroCover ? (
               <div className="relative h-[200px] w-full">
                 <DestinationCover
                   destination={hero.destination}
-                  imageUrl={hero.coverImage}
+                  imageUrl={heroCover}
+                  onImageError={() => markCoverBroken(heroCover)}
                   scrim
                   labelSize={84}
                   className="absolute inset-0 h-full w-full"
@@ -243,7 +236,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
           <div className="absolute right-3 top-3">
             {renderCardMenu(
               hero,
-              hero.coverImage
+              heroCover
                 ? 'bg-white/92 text-[#14161c] hover:bg-white'
                 : 'text-muted-2 hover:bg-surface-hover hover:text-foreground',
             )}
@@ -261,9 +254,7 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
           />
         </div>
       ) : (
-        // 사진 있는 카드와 없는 카드가 섞이면 짧은 카드 가운데에 빈 구멍이 생기므로
-        // items-start로 각 카드를 내용 높이대로 세운다.
-        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {gridItems.map((item, idx) => {
             const st = displayStatus(item);
             return (
@@ -275,20 +266,18 @@ export default function ItineraryList({ itineraries: itinerariesProp }: Props) {
                 onKeyDown={(e) => e.key === 'Enter' && goToStep(item)}
                 className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
               >
-                {/* 사진 없이 색 밴드를 깔면 카드가 같은 색 면으로만 구분되므로 사진이 있을 때만 커버를 그린다. */}
-                {item.coverImage ? (
-                  <DestinationCover
-                    destination={item.destination}
-                    imageUrl={item.coverImage}
-                    seedOffset={idx * 7}
-                    labelSize={30}
-                    className="h-[88px] w-full"
-                  >
-                    <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold text-[#14161c]">
-                      <span className="tabular-nums">{ddayLabel(item.startDate)}</span>
-                    </span>
-                  </DestinationCover>
-                ) : null}
+                {/* 사진이 없어도 커버 자리를 두어야 사진 있는 카드와 한 줄에 섰을 때 구성이 같다. */}
+                <DestinationCover
+                  destination={item.destination}
+                  imageUrl={item.coverImage}
+                  seedOffset={idx * 7}
+                  labelSize={30}
+                  className="h-[88px] w-full"
+                >
+                  <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold text-[#14161c]">
+                    <span className="tabular-nums">{ddayLabel(item.startDate)}</span>
+                  </span>
+                </DestinationCover>
 
                 {/* flex-1 + 메타 mt-auto로 제목 줄수·태그 유무와 무관하게 카드 높이를 맞춘다. */}
                 <div className="flex flex-1 flex-col p-5">
