@@ -6,7 +6,8 @@ import { defineConfig, devices } from '@playwright/test';
  * 세션은 e2e/fixtures/session.ts가 .env.local / ../shg-trip-back/.env 의 시크릿으로 런타임 위조.
  *
  * 실행:
- *   npm run e2e        # 기본 — 생성/변형 없는 안전 검증 (실데이터 무변경, 쿼터 소모 X)
+ *   npm run e2e        # 기본 — 생성/변형 없는 안전 검증 (실데이터 무변경, 쿼터 소모 X, Haiku 호출 X)
+ *   npm run e2e:haiku  # 대화 입력 실연동 (@haiku, Haiku 호출 비용 발생)
  *   npm run e2e:full   # 생성 포함 전체 플로우 (스로어웨이 자동 생성→검증→자동 삭제)
  *   npm run e2e:gen    # 생성 플로우만
  *   npm run e2e:report # 마지막 HTML 리포트 열기
@@ -31,5 +32,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'off',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // 대화 입력은 모바일 키보드·줄바꿈이 핵심이라 모바일 폭에서도 돌린다.
+    { name: 'mobile', use: { ...devices['Pixel 7'] }, testMatch: /trip-chat\.spec\.ts/ },
+  ],
 });

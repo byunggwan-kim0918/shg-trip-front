@@ -1,15 +1,3 @@
-
-export type TripMode = 'AUTO' | 'MANUAL';
-
-export type Theme = 'healing' | 'activity' | 'food' | 'culture' | 'shopping' | 'nature' | 'adventure' | 'romance' | 'family' | 'budget' | 'luxury' | 'photo' | 'walking' | 'ocean' | 'mountain' | 'nightview' | 'local' | 'art' | 'festival' | 'pet';
-
-export type Category = 'attraction' | 'restaurant' | 'cafe' | 'accommodation' | 'experience' | 'shopping' | 'nightlife' | 'nature' | 'museum' | 'theme_park' | 'spa' | 'market' | 'beach' | 'temple' | 'street_food' | 'viewpoint' | 'trail';
-
-export type TripPace = 'tight' | 'normal' | 'relaxed';
-
-export type TransportPref = 'walk' | 'car' | 'any';
-export type Companion = 'solo' | 'couple' | 'friends' | 'family' | 'parents';
-
 /** 백엔드 TransportationMode enum 값 */
 export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI' | 'BIKE' | 'FLIGHT';
 
@@ -87,58 +75,6 @@ export interface ItinerarySummary {
   createdAt: string;
   coverImage: string | null;
   tags: string[];
-}
-
-/** 생성 요청 mode는 selectedPlaces 유무로 파생하므로 별도 mode 필드를 두지 않는다. */
-export interface WizardData {
-  destination: string;
-  themes: Theme[];
-  categories: Category[];
-  pace: TripPace;
-  transportPref: TransportPref;
-  budget: number | null;
-  companion: Companion | null;
-  partySize: number | null;
-  /** 첫날 도착·마지막 날 출발 "HH:mm". 모르면 null */
-  arrivalTime: string | null;
-  departureTime: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  description: string;
-  selectedPlaces: WizardPlace[];
-}
-
-/** 위자드 장소 선택용 임시 타입 (Place 검색 결과) */
-export interface WizardPlace {
-  id: number;
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  category: string;
-  /** 표준 지역명(예: "Seoul", "Jeju"). 여행지-장소 지역 일치 경고에 사용. 자유입력 장소는 undefined */
-  region?: string;
-}
-
-/** 백엔드 ItineraryGenerateRequest */
-export interface ItineraryGenerateRequest {
-  mode: 'AUTO' | 'MANUAL';
-  destination: string;
-  themes: string[];
-  categories: string[];
-  pace: string;
-  transportPref: string;
-  budget: number | null;
-  companion: Companion | null;
-  partySize: number | null;
-  arrivalTime: string | null;
-  departureTime: string | null;
-  startDate: string;
-  endDate: string;
-  description: string | null;
-  selectedPlaceIds: number[];
-  /** 자유입력 장소명(최대 5개). 백엔드가 저장된 장소에서 이름으로 찾고, 못 찾으면 뺀다 */
-  customPlaceNames: string[];
 }
 
 export interface DayGroup {

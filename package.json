@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "e2e": "playwright test --grep-invert @generation",
+    "e2e": "playwright test --grep-invert \"@generation|@haiku\"",
+    "e2e:haiku": "playwright test --grep @haiku --project=chromium",
     "e2e:full": "playwright test",
     "e2e:gen": "playwright test --grep @generation",
     "e2e:report": "playwright show-report"

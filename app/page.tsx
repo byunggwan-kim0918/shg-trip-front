@@ -45,7 +45,7 @@ export default function Home() {
     if (sentence.trim()) {
       sessionStorage.setItem(NEW_TRIP_SENTENCE_KEY, sentence.trim());
     }
-    router.push('/main/plan/new?builder=1');
+    router.push('/main/plan/new');
   };
 
   return (

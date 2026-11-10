@@ -2,14 +2,13 @@ import { test, expect } from '../fixtures/auth';
 import { mintSessionCookie } from '../fixtures/session';
 
 /**
- * @generation — 실제 AI 생성을 포함한 전체 사용자 플로우.
- * 스로어웨이 일정을 자연어로 생성 → 대안선택 → 제목편집 → 공유 → 확정 → 스톱삭제,
+ * @generation — 실제 생성을 포함한 전체 사용자 플로우.
+ * 스로어웨이 일정을 대화로 입력해 생성 → 대안선택 → 제목편집 → 공유 → 확정 → 스톱삭제,
  * 마지막에 생성한 일정을 자동 삭제(afterAll)해 실데이터를 남기지 않는다.
  * 기본 `npm run e2e`에서는 --grep-invert @generation 으로 제외된다 (쿼터/비용 절약).
  */
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
-const SENTENCE =
-  '2026년 8월 22일부터 8월 24일까지 제주도 커플 여행, 자연이랑 맛집 위주로 여유롭게, 예산 100만원';
+const SENTENCE = '12월 18일부터 20일까지 제주도 커플 여행, 자연이랑 맛집 위주로 여유롭게, 차 빌릴 거야';
 
 test.describe('@generation full user flow', () => {
   test.describe.configure({ mode: 'serial' });
@@ -28,30 +27,44 @@ test.describe('@generation full user flow', () => {
     }
   });
 
-  test('create a trip via natural language (real AI generation)', async ({ page }) => {
-    test.setTimeout(280_000); // 실제 AI 생성은 보통 10~30초지만, 폴백 경로/지연 시 느려질 수 있음
+  test('create a trip through the conversation (real generation)', async ({ page }) => {
+    test.setTimeout(320_000);
+    await page.request.delete('/api/proxy/trip-chats/current');
     await page.goto('/main/plan/new');
-    await page.getByLabel('여행 문장 입력').fill(SENTENCE);
-    await page.waitForTimeout(1000); // 디바운스 파싱이 먼저 끝나면 동기 PARSED 프리필 경로를 탄다
+    const input = page.getByLabel('답변', { exact: true });
+    const review = page.getByRole('heading', { name: '생각한 여행이 맞나요?' });
+    const answered = () => page.waitForResponse((r) => r.url().includes('/answers'), { timeout: 30_000 });
+    await input.fill(SENTENCE);
+    await Promise.all([answered(), input.press('Enter')]);
 
-    await page.getByRole('button', { name: /AI로 일정 만들기/ }).click();
+    // 모델이 더 묻는 질문은 무난하게 답하고 확인 화면까지 간다.
+    for (let i = 0; i < 8; i++) {
+      await expect(review.or(input)).toBeVisible({ timeout: 30_000 });
+      if (await review.isVisible()) break;
+      const none = page.getByRole('button', { name: '정해둔 건 없어요' });
+      const unknown = page.getByRole('button', { name: '아직 모르겠어요' });
+      if (await none.isVisible()) await Promise.all([answered(), none.click()]);
+      else if (await unknown.isVisible()) await Promise.all([answered(), unknown.click()]);
+      else {
+        await input.fill('상관없어');
+        await Promise.all([answered(), input.press('Enter')]);
+      }
+    }
+    await expect(review).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath('review-before-generate.png'), fullPage: true });
 
-    // WizardLayout은 5스텝을 모두 DOM에 렌더하는 translateX 캐러셀 → ConfirmStep의 생성 버튼이
-    // 화면 밖이어도 항상 클릭 가능하다. builder가 재파싱으로 위저드에 "날짜"를 채워 ConfirmStep으로
-    // 점프하기 전에 클릭하면 handleGenerate가 조용히 무시된다. 요약에 기간(N박M일)이 뜬 것 =
-    // 스토어에 startDate/endDate가 실제로 들어갔다는 뜻이므로, 이를 게이트로 삼아 레이스를 제거한다.
-    await expect(page.getByText(/\d+박\s?\d+일/).first()).toBeVisible({ timeout: 30_000 });
-
-    const overQuota = await page.getByRole('button', { name: /생성 한도 초과/ }).count();
-    test.skip(overQuota > 0, '30일 생성 쿼터 소진 — 생성 플로우 건너뜀');
-
-    await page.getByRole('button', { name: '이대로 일정 만들기' }).click();
-    // 생성 진입 실패(데이터 부족으로 위저드에 머무름) 조기 감지 → 190초 무한대기 방지.
+    const generate = page.getByRole('button', { name: /이 내용으로 (일정|다시) 만들기/ });
+    test.skip(await generate.isDisabled(), '생성 한도 소진 또는 보완할 조건이 있어 생성 플로우 건너뜀');
+    await generate.click();
     await expect(page).toHaveURL(/\/main\/itinerary\/(loading|\d)/, { timeout: 12_000 });
     await page.waitForURL(/\/main\/itinerary\/\d+/, { timeout: 250_000 });
     itineraryId = Number(page.url().match(/\/main\/itinerary\/(\d+)/)![1]);
     expect(itineraryId).toBeGreaterThan(0);
     await expect(page.locator('h1').first()).toBeVisible();
+
+    // 일정이 만들어지면 대화는 보관돼 다음 "새 여행"은 새 대화로 시작한다.
+    const current = await (await page.request.get('/api/proxy/trip-chats/current')).json();
+    expect(current.data).toBeNull();
   });
 
   test('select an alternative place', async ({ page }) => {

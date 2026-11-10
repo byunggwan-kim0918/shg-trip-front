@@ -28,6 +28,7 @@
   --surface-2: #fbfbfd;            /* 내부 카드 */
   --surface-3: #f4f5f8;            /* 칩 배경 */
   --surface-hover: #f4f5f8;
+  --field: #f4f5f8;                /* 대화 입력창·예시 칩. 다크에서는 칩 배경보다 카드에 가깝다 */
 
   /* line */
   --card-border: #e6e9ef;          /* hairline. 구획은 긋되 무게는 싣지 않는다(레퍼런스 실측: 0.5px solid 68곳) */
@@ -88,6 +89,7 @@
   --surface-2: #1b1e25;
   --surface-3: #23272f;
   --surface-hover: #23272f;
+  --field: #1b1e25;
 
   --card-border: #2a2e38;
   --skeleton: #252932;
@@ -136,6 +138,7 @@
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
   --color-surface-hover: var(--surface-hover);
+  --color-field: var(--field);
 
   --color-card-border: var(--card-border);
   --color-divider: var(--divider);
@@ -254,6 +257,38 @@ h1, h2, h3 {
 .animation-delay-100 { animation-delay: 100ms; }
 .animation-delay-200 { animation-delay: 200ms; }
 .animation-delay-300 { animation-delay: 300ms; }
+
+/* 대화 턴 전환. 질문이 바뀔 때 카드가 순간이동하면 방금 보낸 답과 다음 질문의 연결이 끊긴다. */
+@keyframes shg-turn-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes shg-bubble-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+}
+@keyframes shg-pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+}
+@keyframes shg-fade {
+  from { opacity: 0; }
+}
+/* 그림자로 칠해 여백을 넓히지 않는다. 패딩을 바꾸면 행 구분선 길이가 달라진다. */
+@keyframes shg-row-changed {
+  from { background-color: var(--accent-soft); box-shadow: 0 0 0 8px var(--accent-soft); }
+}
+
+.shg-turn-in { animation: shg-turn-in 280ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+.shg-rise-in { animation: shg-fade-in 240ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+.shg-bubble-in {
+  transform-origin: bottom right;
+  animation: shg-bubble-in 240ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+}
+.shg-pop-in { animation: shg-pop-in 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+.shg-backdrop-in { animation: shg-fade 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+.shg-row-changed { animation: shg-row-changed 1.4s cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shg-turn-in, .shg-rise-in, .shg-bubble-in, .shg-pop-in { animation-name: shg-fade; }
+}
 
 /* ============================================================
    테마 전환 (View Transitions API)
