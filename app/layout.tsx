@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     locale: "ko_KR",
   },
   twitter: { card: "summary_large_image" },
+  verification: { other: { "naver-site-verification": "aad69b2112354204435c59619a34aa93b0c0ed31" } },
 };
 
 /**
