@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { NEW_TRIP_SENTENCE_KEY } from '@/lib/constants/newTrip';
+import { ROUTES } from '@/lib/routes';
 
 interface Props {
   sentence: string;
@@ -24,7 +25,7 @@ export default function StartTripButton({ sentence, label, variant = 'primary' }
         } catch {
           /* 저장이 막혀도 빈 입력으로 시작한다 */
         }
-        router.push('/main/plan/new');
+        router.push(ROUTES.newTrip);
       }}
       className={
         primary

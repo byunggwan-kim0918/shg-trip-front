@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ROUTES } from '@/lib/routes';
 
 const LINK_CLASS =
   'rounded-[10px] border border-card-border px-4 py-2 text-[13px] font-bold text-foreground transition-colors hover:bg-surface-hover';
@@ -20,6 +21,6 @@ export default function AuthNavLink() {
   }, []);
 
   return signedIn
-    ? <Link href="/main" className={LINK_CLASS}>내 여행</Link>
+    ? <Link href={ROUTES.trips} className={LINK_CLASS}>내 여행</Link>
     : <Link href="/login" className={LINK_CLASS}>로그인</Link>;
 }

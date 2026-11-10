@@ -9,6 +9,7 @@ import { archiveTripChat } from '@/lib/data/tripChatService';
 import { isEnrichValidationError, enrichErrorFocus } from '@/lib/constants/enrichErrors';
 import { ACTIVE_CHAT_KEY, ACTIVE_JOB_KEY, NEW_TRIP_JOB_KEY } from '@/lib/constants/newTrip';
 import ErrorState from '@/components/common/ErrorState';
+import { ROUTES } from '@/lib/routes';
 
 /** step-stream 이벤트의 스텝(확정 뼈대). 백엔드 { name, startTime, category }. */
 interface StreamStep {
@@ -189,7 +190,7 @@ export default function LoadingScreen() {
         reconnectToJob(savedJobId);
         return;
       }
-      router.replace('/main/plan/new');
+      router.replace(ROUTES.newTrip);
     };
 
     // 개발 모드 StrictMode는 effect를 바로 정리했다가 다시 부른다. 정리 뒤에 연결해야 방금 연 스트림이 닫히지 않는다.
@@ -350,7 +351,7 @@ export default function LoadingScreen() {
       sessionStorage.removeItem(ACTIVE_CHAT_KEY);
       if (!aliveRef.current) return;
       setFadeOut(true);
-      setTimeout(() => router.push(`/main/itinerary/${itineraryId}`), 600);
+      setTimeout(() => router.push(ROUTES.trip(itineraryId)), 600);
     } catch {
       setError('일정을 불러오는데 실패했습니다.');
     }
@@ -369,9 +370,9 @@ export default function LoadingScreen() {
           description={error}
           errorCode={errorCode ?? undefined}
           retryLabel={isValidationError ? '조건 수정' : '다시 시도'}
-          onRetry={isBlocked ? undefined : () => router.push(`/main/plan/new${focus ? `?focus=${focus}` : ''}`)}
+          onRetry={isBlocked ? undefined : () => router.push(`${ROUTES.newTrip}${focus ? `?focus=${focus.toLowerCase()}` : ''}`)}
           secondaryLabel={isBlocked ? '확인' : lostJob ? '내 여행 보기' : '처음으로'}
-          onSecondary={() => router.push(lostJob && !isBlocked ? '/main/my-trips' : '/main')}
+          onSecondary={() => router.push(ROUTES.trips)}
         />
       </div>
     );

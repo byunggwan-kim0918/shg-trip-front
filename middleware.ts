@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RETURN_TO_PARAM, sanitizeReturnTo } from '@/lib/auth/returnTo';
+import { APP_ROOT, ROUTES } from '@/lib/routes';
 
 const AUTH_PAGES = ['/', '/login'];
-const PROTECTED_PAGES = ['/main', '/onboarding'];
+const PROTECTED_PAGES = [APP_ROOT, '/onboarding'];
 
 function loginUrl(request: NextRequest, returnTo: string | null): URL {
   const url = new URL('/login', request.url);
@@ -28,7 +29,7 @@ export function middleware(request: NextRequest) {
   if (hasSession) {
     const isAuthPage = pathname === '/' || AUTH_PAGES.some((p) => p !== '/' && pathname.startsWith(p));
     if (isAuthPage) {
-      return NextResponse.redirect(new URL(returnTo ?? '/main', request.url));
+      return NextResponse.redirect(new URL(returnTo ?? ROUTES.trips, request.url));
     }
   }
 
@@ -40,5 +41,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/callback/:path*', '/main/:path*', '/onboarding/:path*'],
+  matcher: ['/', '/login', '/callback/:path*', '/app/:path*', '/onboarding/:path*'],
 };

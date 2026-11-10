@@ -3,7 +3,7 @@ import { test, expect } from '../fixtures/auth';
 /** 인증된 대시보드 + 헤더 위젯. 변형 없는 안전 검증 (실데이터 무변경). */
 test.describe('dashboard & header (authenticated)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/main');
+    await page.goto('/app/trips');
   });
 
   test('dashboard loads with content and avatar', async ({ page }) => {
@@ -36,7 +36,7 @@ test.describe('dashboard & header (authenticated)', () => {
       await new Promise((r) => setTimeout(r, 800));
       await route.continue();
     });
-    await page.goto('/main');
+    await page.goto('/app/trips');
     await expect(page.getByLabel('여행 목록을 불러오는 중')).toBeVisible();
     await expect(page.getByLabel('내 여행을 불러오는 중')).toBeVisible();
     await expect(page.getByText('여행이 쌓여요')).toHaveCount(0);
@@ -48,7 +48,7 @@ test.describe('dashboard & header (authenticated)', () => {
       ? route.fulfill({ status: 500, contentType: 'application/json',
         body: JSON.stringify({ success: false, data: null, error: { code: 'COMMON_001', message: 'x' } }) })
       : route.continue()));
-    await page.goto('/main');
+    await page.goto('/app/trips');
 
     await expect(page.getByText('내 여행을 불러오지 못했어요')).toBeVisible();
     await expect(page.getByText('목록을 불러오지 못했어요.')).toBeVisible();
@@ -62,7 +62,7 @@ test.describe('dashboard & header (authenticated)', () => {
   });
 
   test('my-trips list renders trip cards with menus', async ({ page }) => {
-    await page.goto('/main/my-trips');
+    await page.goto('/app/trips');
     await expect(page.locator('button[aria-label="일정 메뉴"]').first()).toBeVisible({ timeout: 6000 });
   });
 });

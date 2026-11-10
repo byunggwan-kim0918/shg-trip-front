@@ -10,6 +10,7 @@ import GenerationQuotaBadge from '@/components/itinerary/GenerationQuotaBadge';
 import type { GenerationQuota } from '@/lib/data/itineraryService';
 import type { FailedAnswer, OutgoingAnswer } from '@/lib/tripChat/reducer';
 import type { TripChat, TripChatFix, TripChatSlot } from '@/lib/types/tripChat';
+import { ROUTES } from '@/lib/routes';
 
 const EXTRA_QUESTION_ID = 'extra';
 
@@ -59,7 +60,7 @@ export default function TripSummary({
         <p className="mt-3 rounded-[10px] bg-surface-3 px-3.5 py-2.5 text-xs leading-[1.6] text-muted">
           이 내용으로 일정을 만든 적이 있어요. 다시 만들면 생성 횟수를 한 번 더 써요.
           {activeJob && (
-            <Link href="/main/itinerary/loading" className="ml-1.5 font-semibold text-accent-weak-fg underline underline-offset-4">
+            <Link href={ROUTES.generating} className="ml-1.5 font-semibold text-accent-weak-fg underline underline-offset-4">
               만들고 있는 일정 보기
             </Link>
           )}

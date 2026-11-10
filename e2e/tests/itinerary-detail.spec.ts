@@ -10,7 +10,7 @@ test.describe('itinerary detail (read-only)', () => {
     const first = (await res.json())?.data?.content?.[0];
     test.skip(!first, '테스트 유저에 일정이 없어 건너뜀');
 
-    await page.goto(`/main/itinerary/${first.id}`);
+    await page.goto(`/app/trips/${first.id}`);
     await expect(page.locator('h1').first()).toBeVisible();
 
     // Day 탭 전환 (비변형)
@@ -30,7 +30,7 @@ test.describe('itinerary detail (read-only)', () => {
   });
 
   test('card "···" menu opens with a 삭제 item', async ({ page }) => {
-    await page.goto('/main/my-trips');
+    await page.goto('/app/trips');
     const menu = page.locator('button[aria-label="일정 메뉴"]').first();
     await expect(menu).toBeVisible({ timeout: 6000 });
     await menu.click();

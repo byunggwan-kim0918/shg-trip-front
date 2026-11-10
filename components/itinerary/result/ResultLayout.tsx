@@ -15,6 +15,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
+import { ROUTES } from '@/lib/routes';
 
 /** LLM 태그 뒤쪽은 서로 비슷하거나 일정에 없는 장소라 앞쪽만 보이고 나머지는 "+N"으로 접는다. */
 const MAX_VISIBLE_TAGS = 6;
@@ -136,7 +137,7 @@ export default function ResultLayout() {
     try {
       await removeItinerary(currentItinerary.id);
       setDeleteConfirmOpen(false);
-      router.push('/main/my-trips');
+      router.push(ROUTES.trips);
     } catch (e) {
       setDeleteConfirmOpen(false);
       setDeleteError(e instanceof Error ? e.message : '일정 삭제에 실패했어요.');

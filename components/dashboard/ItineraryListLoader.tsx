@@ -36,7 +36,7 @@ function DashboardSkeleton() {
 }
 
 /** 내 여행 목록을 불러온 상태에 따라 골격·오류·목록을 고른다. 아직 못 불러온 빈 배열을 "일정 없음"으로 그리지 않는다. */
-export default function ItineraryListLoader({ empty }: { empty?: React.ReactNode }) {
+export default function ItineraryListLoader({ empty }: { empty: React.ReactNode }) {
   const { itineraries, listStatus, isLoading, loadItineraries } = useItineraryStore();
 
   useEffect(() => {
@@ -61,6 +61,6 @@ export default function ItineraryListLoader({ empty }: { empty?: React.ReactNode
     return <DashboardSkeleton />;
   }
 
-  if (itineraries.length === 0 && empty) return <>{empty}</>;
+  if (itineraries.length === 0) return <>{empty}</>;
   return <ItineraryList itineraries={itineraries} />;
 }

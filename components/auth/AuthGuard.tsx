@@ -40,7 +40,7 @@ export default function AuthGuard({ children, fallback = null }: AuthGuardProps)
   const user = useAuthStore((s) => s.user);
 
   // 스토어의 fetchSession은 5xx와 미인증을 구분하지 못한다. 5xx에 /login으로 보내면
-  // 미들웨어가 쿠키를 보고 /main으로 되돌려 무한히 튕기므로 여기서 직접 판정한다.
+  // 미들웨어가 쿠키를 보고 /app으로 되돌려 무한히 튕기므로 여기서 직접 판정한다.
   const applyCheck = useCallback(({ status, body }: SessionCheck) => {
     if (status >= 500) {
       setPhase('unavailable');

@@ -12,6 +12,16 @@ const SECURITY_HEADERS = [
 
 const APP_URL = new URL(process.env.NEXT_PUBLIC_APP_URL || "https://myshgtrip.com");
 
+// 옛 로그인 영역 주소. 북마크·설치한 앱·열어 둔 탭이 계속 쓴다. loading은 :id보다 먼저 와야 한다.
+const LEGACY_APP_ROUTES = [
+  { source: "/main", destination: "/app/trips" },
+  { source: "/main/my-trips", destination: "/app/trips" },
+  { source: "/main/plan/new", destination: "/app/trips/new" },
+  { source: "/main/itinerary/loading", destination: "/app/trips/generating" },
+  { source: "/main/itinerary/:id", destination: "/app/trips/:id" },
+  { source: "/main/:path*", destination: "/app/trips" },
+];
+
 const nextConfig: NextConfig = {
   devIndicators: false,
   output: "standalone",
@@ -29,7 +39,9 @@ const nextConfig: NextConfig = {
       has: [{ type: "host", value: `www\\.${APP_URL.hostname.replaceAll(".", "\\.")}` }],
       destination: `${APP_URL.origin}/:path*`,
       permanent: true,
-    }];
+    }, ...LEGACY_APP_ROUTES.map((r) => ({ ...r, permanent: true })),
+    // 로그인 영역의 첫 화면은 여행 목록이다. 나중에 /app에 다른 화면을 둘 수 있게 영구 이동으로 두지 않는다.
+    { source: "/app", destination: "/app/trips", permanent: false }];
   },
 };
 

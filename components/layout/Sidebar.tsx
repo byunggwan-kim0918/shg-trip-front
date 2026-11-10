@@ -10,6 +10,7 @@ import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import StatusDot from '@/components/common/StatusDot';
 import Logo from '@/components/common/Logo';
 import { displayStatus, dateRange } from '@/lib/utils/tripStatus';
+import { ROUTES } from '@/lib/routes';
 
 export default function Sidebar() {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
@@ -55,7 +56,7 @@ export default function Sidebar() {
       >
         <div className="flex items-center justify-between h-14 px-4 shrink-0">
           <Link
-            href="/main"
+            href={ROUTES.trips}
             aria-label="홈으로 이동"
             className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
           >
@@ -73,7 +74,7 @@ export default function Sidebar() {
 
         <div className="px-3.5 mb-5">
           <button
-            onClick={() => router.push('/main/plan/new')}
+            onClick={() => router.push(ROUTES.newTrip)}
             className="flex w-full items-center gap-2 rounded-[10px] border border-card-border bg-surface-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-accent hover:text-accent-weak-fg"
           >
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
@@ -118,11 +119,11 @@ export default function Sidebar() {
               </div>
             ) : (
               itineraries.map((item) => {
-                const isActive = pathname === `/main/itinerary/${item.id}`;
+                const isActive = pathname === ROUTES.trip(item.id);
                 return (
                   <Link
                     key={item.id}
-                    href={`/main/itinerary/${item.id}`}
+                    href={ROUTES.trip(item.id)}
                     className={`flex items-center gap-2.5 rounded-[10px] px-2 py-2 transition-colors ${
                       isActive ? 'bg-surface-3' : 'hover:bg-surface-hover'
                     }`}
