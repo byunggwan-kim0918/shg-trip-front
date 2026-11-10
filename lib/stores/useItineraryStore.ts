@@ -55,12 +55,22 @@ function reorderStepsLocally(
   };
 }
 
+/**
+ * 목록을 무엇으로 보여줄 수 있는지. idle·loading은 아직 보여줄 목록이 없고, error는 실패해서 보여줄 목록이 없다.
+ * 한 번 성공한 뒤 다시 부르다 실패하면 success로 남겨 이전 목록을 그대로 보여준다.
+ */
+export type ListStatus = 'idle' | 'loading' | 'success' | 'error';
+
+let listRequest: Promise<void> | null = null;
+
 interface ItineraryState {
   currentItinerary: Itinerary | null;
   itineraries: ItinerarySummary[];
+  listStatus: ListStatus;
   selectedDay: number;
   selectedStepId: number | null;
   expandedStepId: number | null;
+  /** 목록 요청이 진행 중. 이미 보여준 목록을 새로 고칠 때도 true다. */
   isLoading: boolean;
   isDeleting: boolean;
   isSelectingAlternative: boolean;
@@ -109,6 +119,7 @@ function isDraftTitle(title: string | null | undefined): boolean {
 export const useItineraryStore = create<ItineraryState & ItineraryActions>((set) => ({
   currentItinerary: null,
   itineraries: [],
+  listStatus: 'idle',
   selectedDay: 1,
   selectedStepId: null,
   expandedStepId: null,
@@ -219,19 +230,23 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
 
   setStoryPending: (pending) => set({ storyPending: pending }),
 
-  loadItineraries: async (size?: number) => {
-    // in-flight 가드: Sidebar/MainPage/HeaderSearch가 거의 동시에 호출해 생기는
-    // 중복 요청·레이스(작은 size 응답이 큰 size 응답을 덮어씀)를 방지한다.
-    if (useItineraryStore.getState().isLoading) return;
-    set({ isLoading: true });
-    try {
-      const page = await fetchMyItineraries(0, size ?? 20);
-      set({ itineraries: page.content });
-    } catch {
-      // 호출부가 UI 에러를 따로 처리하므로 삼킨다(unhandled rejection 방지).
-    } finally {
-      set({ isLoading: false });
-    }
+  loadItineraries: (size?: number) => {
+    // Sidebar·MainPage·HeaderSearch가 거의 동시에 부르면 같은 요청을 같이 기다린다.
+    // 따로 보내면 작은 size 응답이 큰 size 응답을 덮어쓸 수 있다.
+    if (listRequest) return listRequest;
+    const hadList = useItineraryStore.getState().listStatus === 'success';
+    set({ isLoading: true, ...(hadList ? {} : { listStatus: 'loading' as const }) });
+    // 실패는 listStatus로 알린다. 거부된 promise를 돌려주면 결과를 안 보는 호출부마다 처리되지 않은 거부가 남는다.
+    listRequest = fetchMyItineraries(0, size ?? 20)
+      .then((page) => set({ itineraries: page.content, listStatus: 'success' }))
+      .catch(() => {
+        if (!hadList) set({ listStatus: 'error' });
+      })
+      .finally(() => {
+        set({ isLoading: false });
+        listRequest = null;
+      });
+    return listRequest;
   },
 
   removeItinerary: async (id) => {

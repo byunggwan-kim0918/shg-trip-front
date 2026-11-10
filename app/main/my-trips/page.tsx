@@ -1,7 +1,7 @@
 'use client';
 
-import ItineraryList from '@/components/dashboard/ItineraryList';
+import ItineraryListLoader from '@/components/dashboard/ItineraryListLoader';
 
 export default function MyTripsPage() {
-  return <ItineraryList />;
+  return <ItineraryListLoader />;
 }

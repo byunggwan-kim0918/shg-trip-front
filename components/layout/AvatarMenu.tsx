@@ -35,6 +35,7 @@ export default function AvatarMenu() {
     };
   }, [open]);
 
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const initial = user?.nickname?.charAt(0) ?? user?.email?.charAt(0)?.toUpperCase() ?? '?';
 
   return (
@@ -50,13 +51,14 @@ export default function AvatarMenu() {
         title={user?.nickname ?? undefined}
         className="-m-[7px] flex h-11 w-11 items-center justify-center rounded-full"
       >
-        {user?.profileImage ? (
+        {user?.profileImage && user.profileImage !== failedImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={user.profileImage}
             alt=""
             className="h-[30px] w-[30px] rounded-full object-cover"
             referrerPolicy="no-referrer"
+            onError={() => setFailedImage(user.profileImage ?? null)}
           />
         ) : (
           <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-fg">
