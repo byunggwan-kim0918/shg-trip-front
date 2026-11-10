@@ -3,13 +3,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
-import { useWizardStore } from '@/lib/stores/useWizardStore';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
-import { startItineraryGeneration, fetchItinerary, GenerationRejectedError } from '@/lib/data/itineraryService';
-import { tripDays } from '@/lib/utils/tripStatus';
-import { isEnrichValidationError, enrichErrorStep } from '@/lib/constants/enrichErrors';
+import { fetchItinerary } from '@/lib/data/itineraryService';
+import { archiveTripChat } from '@/lib/data/tripChatService';
+import { isEnrichValidationError, enrichErrorFocus } from '@/lib/constants/enrichErrors';
+import { ACTIVE_CHAT_KEY, ACTIVE_JOB_KEY, NEW_TRIP_JOB_KEY } from '@/lib/constants/newTrip';
 import ErrorState from '@/components/common/ErrorState';
-import type { ItineraryGenerateRequest } from '@/lib/types/itinerary';
 
 /** step-stream 이벤트의 스텝(확정 뼈대). 백엔드 { name, startTime, category }. */
 interface StreamStep {
@@ -25,7 +24,24 @@ const STAGES: { key: string; label: string }[] = [
   { key: 'budget', label: '예산 정리' },
 ];
 
-const SESSION_KEY = 'shg_active_job_id';
+const SESSION_KEY = ACTIVE_JOB_KEY;
+
+/** 대화 확인 화면이 막 시작한 작업. 한 번 읽으면 지운다. */
+function takeNewJob(): { jobId: string; days: number; chatId: string | null } | null {
+  try {
+    const raw = sessionStorage.getItem(NEW_TRIP_JOB_KEY);
+    sessionStorage.removeItem(NEW_TRIP_JOB_KEY);
+    const job = raw ? (JSON.parse(raw) as { jobId?: unknown; days?: unknown; chatId?: unknown }) : null;
+    if (!job || typeof job.jobId !== 'string') return null;
+    return {
+      jobId: job.jobId,
+      days: typeof job.days === 'number' ? job.days : 3,
+      chatId: typeof job.chatId === 'string' ? job.chatId : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 // 서버 heartbeat는 SSE 주석이라 EventSource에 보이지 않는다. fallback 경로의 Sonnet 호출 하나가
 // 2분 가까이 진행 이벤트 없이 걸릴 수 있어 그보다 길게 잡는다.
@@ -116,21 +132,26 @@ const stageMessages: Record<string, string> = {
 
 export default function LoadingScreen() {
   const router = useRouter();
-  const { data, reset } = useWizardStore();
   const { setCurrentItinerary } = useItineraryStore();
   const { display: progress, setTarget } = useSmoothedProgress();
   const [stage, setStage] = useState('ENRICHING');
   const [error, setError] = useState<string | null>(null);
-  // "조건 수정" 단계 점프에 쓴다(UNREALISTIC_BUDGET 등).
+  // "조건 수정"으로 돌아갈 때 강조할 항목을 정한다(UNREALISTIC_BUDGET 등).
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [streamedDays, setStreamedDays] = useState<Record<number, StreamStep[]>>({});
   const [visible, setVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const startedRef = useRef(false);
+  // 화면을 떠난 뒤 늦게 온 완료 이벤트가 사용자를 상세 화면으로 끌고 가지 않게 한다.
+  const aliveRef = useRef(true);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => { aliveRef.current = false; };
+  }, []);
   const esRef = useRef<EventSource | null>(null);
   // complete 뒤 브라우저 재연결이 onerror를 발화시키므로 완료 여부를 기억한다.
   const completedRef = useRef(false);
-  // 새로고침 재연결로 wizard 데이터가 없으면 3열로 그린다.
+  // 새로고침 재연결로 일수를 모르면 3열로 그린다.
   const dayCountRef = useRef(3);
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 진행 중 작업을 놓친 경우(재연결·응답 없음) 서버에서 끝나 저장됐을 수 있어 목록으로 안내한다
@@ -150,70 +171,29 @@ export default function LoadingScreen() {
     if (startedRef.current) return;
     startedRef.current = true;
 
-    const run = async () => {
-      const hasWizardData = data.destination.trim().length > 0 && !!data.startDate && !!data.endDate;
-      const savedJobId = sessionStorage.getItem(SESSION_KEY);
-
-      if (hasWizardData) {
-        dayCountRef.current = Math.min(tripDays(data.startDate!, data.endDate!), 3);
+    const run = () => {
+      const job = takeNewJob();
+      if (job) {
+        dayCountRef.current = Math.min(Math.max(job.days, 1), 3);
+        // 새로고침 시 재연결에 쓴다.
+        sessionStorage.setItem(SESSION_KEY, job.jobId);
+        if (job.chatId) sessionStorage.setItem(ACTIVE_CHAT_KEY, job.chatId);
+        else sessionStorage.removeItem(ACTIVE_CHAT_KEY);
+        connectToJob(job.jobId);
+        return;
       }
 
-      if (!hasWizardData && savedJobId) {
+      const savedJobId = sessionStorage.getItem(SESSION_KEY);
+      if (savedJobId) {
         setLostJob(true);
         reconnectToJob(savedJobId);
         return;
       }
-
-      if (!hasWizardData) {
-        router.replace('/main/plan/new');
-        return;
-      }
-
-      const req: ItineraryGenerateRequest = {
-        mode: data.selectedPlaces.length > 0 ? 'MANUAL' : 'AUTO',
-        destination: data.destination,
-        themes: data.themes,
-        categories: data.categories,
-        pace: data.pace,
-        transportPref: data.transportPref,
-        budget: data.budget,
-        companion: data.companion,
-        partySize: data.partySize,
-        arrivalTime: data.arrivalTime,
-        departureTime: data.departureTime,
-        startDate: data.startDate!,
-        endDate: data.endDate!,
-        description: data.description || null,
-        selectedPlaceIds: data.selectedPlaces
-          .filter((p) => p.id > 0)
-          .map((p) => p.id),
-        // 자유입력(음수 임시 ID) 장소는 이름으로 넘긴다. 백엔드가 저장된 장소에서 이름으로 찾는다.
-        customPlaceNames: data.selectedPlaces
-          .filter((p) => p.id < 0)
-          .map((p) => p.name)
-          .slice(0, 5),
-      };
-
-      let jobId: string;
-      try {
-        jobId = await startItineraryGeneration(req);
-      } catch (e) {
-        // 429(차단·쿼터 초과)는 재시도해도 소용없어 종료 상태로 표시한다.
-        if (e instanceof GenerationRejectedError) {
-          setError(e.message);
-          setErrorCode(e.code);
-        } else {
-          setError(e instanceof Error ? e.message : '일정 생성 요청에 실패했습니다.');
-        }
-        return;
-      }
-
-      // 새로고침 시 재연결에 쓴다.
-      sessionStorage.setItem(SESSION_KEY, jobId);
-      connectToJob(jobId);
+      router.replace('/main/plan/new');
     };
 
-    run();
+    // 개발 모드 StrictMode는 effect를 바로 정리했다가 다시 부른다. 정리 뒤에 연결해야 방금 연 스트림이 닫히지 않는다.
+    void Promise.resolve().then(run);
     return () => { esRef.current?.close(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -363,8 +343,12 @@ export default function LoadingScreen() {
     try {
       const itinerary = await fetchItinerary(itineraryId);
       setCurrentItinerary(itinerary);
-      reset();
+      // 일정을 만든 대화만 보관한다. 그 사이 다른 탭에서 시작한 새 대화는 건드리지 않는다.
+      const chatId = sessionStorage.getItem(ACTIVE_CHAT_KEY);
+      if (chatId) void archiveTripChat(chatId).catch(() => {});
       sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(ACTIVE_CHAT_KEY);
+      if (!aliveRef.current) return;
       setFadeOut(true);
       setTimeout(() => router.push(`/main/itinerary/${itineraryId}`), 600);
     } catch {
@@ -375,10 +359,9 @@ export default function LoadingScreen() {
   if (error) {
     // 차단·쿼터 초과(PLANNING_003/004)는 재시도해도 소용없어 "확인"만 둔다.
     const isBlocked = errorCode === 'PLANNING_003' || errorCode === 'PLANNING_004';
-    // 입력 검증 실패는 "조건 수정"으로 해당 단계에, 그 외는 "다시 시도"로 확인 단계(4)에 보낸다.
-    // 두 경우 모두 입력값을 보존한다.
+    // 입력 검증 실패는 "조건 수정"으로 해당 항목을, 그 외는 "다시 시도"로 확인 화면을 연다. 대화 내용은 서버에 남아 있다.
     const isValidationError = isEnrichValidationError(errorCode);
-    const targetStep = isValidationError ? enrichErrorStep(errorCode) : 4;
+    const focus = isValidationError ? enrichErrorFocus(errorCode) : null;
     return (
       <div className="flex min-h-[65vh] items-center justify-center px-4">
         <ErrorState
@@ -386,7 +369,7 @@ export default function LoadingScreen() {
           description={error}
           errorCode={errorCode ?? undefined}
           retryLabel={isValidationError ? '조건 수정' : '다시 시도'}
-          onRetry={isBlocked ? undefined : () => router.push(`/main/plan/new?builder=1&step=${targetStep}`)}
+          onRetry={isBlocked ? undefined : () => router.push(`/main/plan/new${focus ? `?focus=${focus}` : ''}`)}
           secondaryLabel={isBlocked ? '확인' : lostJob ? '내 여행 보기' : '처음으로'}
           onSecondary={() => router.push(lostJob && !isBlocked ? '/main/my-trips' : '/main')}
         />

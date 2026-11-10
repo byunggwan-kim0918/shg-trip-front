@@ -24,7 +24,7 @@ export default function StartTripButton({ sentence, label, variant = 'primary' }
         } catch {
           /* 저장이 막혀도 빈 입력으로 시작한다 */
         }
-        router.push('/main/plan/new?builder=1');
+        router.push('/main/plan/new');
       }}
       className={
         primary

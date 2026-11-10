@@ -2,10 +2,6 @@ export function formatBudget(value: number): string {
   return Math.floor(value).toLocaleString('ko-KR');
 }
 
-export function parseBudget(formatted: string): number {
-  return Number(formatted.replace(/,/g, '')) || 0;
-}
-
 /** 60분 미만은 "N분", 정시는 "N시간", 그 외는 "X시간 Y분". */
 export function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}분`;

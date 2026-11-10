@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
-import EmptyDashboard from '@/components/dashboard/EmptyDashboard';
+import TripChat from '@/components/trip-chat/TripChat';
 import ItineraryList from '@/components/dashboard/ItineraryList';
 
 export default function MainPage() {
-  const { itineraries, loadItineraries } = useItineraryStore();
+  const { itineraries, loadItineraries, isLoading: listLoading } = useItineraryStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +17,8 @@ export default function MainPage() {
       .finally(() => setIsLoading(false));
   }, [loadItineraries]);
 
-  if (isLoading) {
+  // 사이드바가 먼저 목록을 부르면 여기 호출은 바로 끝난다. 그 사이 빈 목록으로 보고 대화를 열면 세션이 생긴다.
+  if (isLoading || listLoading) {
     return (
       <div className="flex items-center justify-center min-h-[65vh]">
         <div className="animate-spin w-8 h-8 border-3 border-accent border-t-transparent rounded-full" />
@@ -47,7 +48,7 @@ export default function MainPage() {
   }
 
   if (itineraries.length === 0) {
-    return <EmptyDashboard />;
+    return <TripChat focusSlot={null} />;
   }
 
   return <ItineraryList itineraries={itineraries} />;

@@ -1,8 +1,12 @@
 /** 랜딩·대시보드 입력창에서 새 여행 화면으로 넘기는 원문 문장(sessionStorage). */
 export const NEW_TRIP_SENTENCE_KEY = 'shg.newTripSentence';
 
-/** NewTripShell의 /parse 결과(원문 + 구조화 필드). builder가 프리필 후 ConfirmStep으로 점프한다. */
-export const NEW_TRIP_PARSED_KEY = 'shg.newTripParsed';
+/** 대화 확인으로 시작한 생성 작업. 생성 화면이 읽어 그 작업에 연결한다. */
+export const NEW_TRIP_JOB_KEY = 'shg.newTripJob';
+
+/** 생성 화면이 연결 중인 작업과 그 작업을 만든 대화. 새로고침 재연결과 완료 뒤 대화 보관에 쓴다. */
+export const ACTIVE_JOB_KEY = 'shg_active_job_id';
+export const ACTIVE_CHAT_KEY = 'shg_active_chat_id';
 
 // 모바일 한 줄 입력칸에서 잘리지 않는 길이로 둔다. 자세한 예시는 아래 예시 칩이 맡는다.
 export const SENTENCE_PLACEHOLDER = '예) 제주 2박 3일, 오름이랑 카페 위주로';
@@ -25,8 +29,3 @@ export const EXAMPLE_CHIPS: Array<{ label: string; sentence: string }> = [
     sentence: '경주로 1박 2일, 유적지랑 박물관 위주로 역사 테마 여행',
   },
 ];
-
-/** 서버 DTO 상한과 같다. 넘기면 생성 버튼을 눌러야 400을 본다. */
-export const DESCRIPTION_MAX_LENGTH = 500;
-export const DESTINATION_MAX_LENGTH = 50;
-export const MANUAL_PLACE_NAME_MAX_LENGTH = 100;

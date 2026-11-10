@@ -1,24 +1,27 @@
+import type { TripChatSlot } from '@/lib/types/tripChat';
+
 /**
- * errorCode 문자열은 백엔드 enrich-input.txt와 1:1이다.
- * 마법사 단계: 0=여행지·기간 / 1=테마·카테고리 / 2=스타일 / 3=예산 / 4=확인
+ * 생성 중 오류 코드 → 확인 화면에서 강조할 항목. enrich 코드는 백엔드 enrich-input.txt와 1:1이고,
+ * 나머지는 생성 중 SSE error 이벤트가 보내는 ErrorCode 값이다. null이면 확인 화면 맨 위로 연다.
  */
-export const ENRICH_ERROR_STEP: Record<string, number> = {
-  UNREALISTIC_BUDGET: 3,
-  CONFLICTING_THEMES: 1,
-  INVALID_DESTINATION: 0,
-  INVALID_DATE_RANGE: 0,
-  // 백엔드가 errorCode 누락 시 쓰는 일반 코드라 단계를 알 수 없다.
-  INVALID_INPUT: 0,
-  // 장소 데이터 부족(PLANNING_005)은 같은 조건으로 재시도해도 같은 결과다.
-  PLANNING_005: 0,
+export const ENRICH_ERROR_FOCUS: Record<string, TripChatSlot | null> = {
+  UNREALISTIC_BUDGET: 'EXTRAS',
+  CONFLICTING_THEMES: 'MOOD',
+  INVALID_DESTINATION: 'CITY',
+  INVALID_DATE_RANGE: 'DATES',
+  // enrich가 errorCode를 빠뜨렸을 때 쓰는 일반 코드라 항목을 알 수 없다.
+  INVALID_INPUT: null,
+  COMMON_001: null,
+  // 장소 데이터 부족은 같은 조건으로 다시 만들어도 같은 결과다.
+  PLANNING_005: 'CITY',
+  PLACE_002: 'ANCHORS',
 };
 
-/** 해당 errorCode가 "사용자 입력 조건" 문제라 마법사 수정으로 해결 가능한지. */
+/** 해당 errorCode가 "사용자 입력 조건" 문제라 조건을 고쳐서 해결할 수 있는지. */
 export function isEnrichValidationError(code: string | null | undefined): boolean {
-  return !!code && code in ENRICH_ERROR_STEP;
+  return !!code && code in ENRICH_ERROR_FOCUS;
 }
 
-/** 미매핑·무코드는 0. */
-export function enrichErrorStep(code: string | null | undefined): number {
-  return code && code in ENRICH_ERROR_STEP ? ENRICH_ERROR_STEP[code] : 0;
+export function enrichErrorFocus(code: string | null | undefined): TripChatSlot | null {
+  return code && code in ENRICH_ERROR_FOCUS ? ENRICH_ERROR_FOCUS[code] : null;
 }

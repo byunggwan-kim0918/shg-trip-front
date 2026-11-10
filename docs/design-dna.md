@@ -206,11 +206,13 @@
 | 텍스트 진입(접힘선 위) | `fade-in-up 400ms cubic-bezier(0.23,1,0.32,1)`, stagger 80ms |
 | 미디어/카드 진입 | `shg-fade-in 500ms` 동일 커브 (translateY 4px — 텍스트 16px보다 작게 "안착") |
 | 스크롤 진입(접힘선 아래) | `Reveal` 컴포넌트, `fade-in-up 300ms`, stagger 50ms |
+| 대화 턴 전환 | 카드 `shg-turn-in 280ms`(8px), 카드 안 문장 40ms 간격 `shg-rise-in`, 내 답 `shg-bubble-in 240ms`(오른쪽 아래 기준) |
 | 누름 | `active:scale-[0.98]` 100~160ms |
 | 호버 | 색 전환 150ms |
 
 **규칙**
 - 진입 모션은 **랜딩·로그인에만**. 매일 보는 제품 UI에는 걸지 않는다(MOTION_INTENSITY 3).
+  예외는 대화형 입력의 턴 전환이다. 여행 하나에 몇 번뿐이고, 없으면 보낸 답과 다음 질문 사이가 끊겨 보인다.
 - `transition-all` 금지 — 변하는 속성을 명시한다.
 - `ease-in` 금지. `cubic-bezier(0.4,0,0.2,1)`(Tailwind 기본) 금지 — 레퍼런스 6개 중 3개가 쓰지만 그것이 곧 tell이다.
 - `transform`·`opacity`만 애니메이션한다.
@@ -271,6 +273,7 @@ DNA에 `VISUAL_DENSITY 3 → 6`과 "radius 역할 분화"를 써놓고 실행하
 ## 7. 형태 언어
 
 - **radius**: 카드·패널 `rounded-xl`(12) / 버튼·입력 `rounded-[10px]` / 아이콘칩 `rounded-lg`(8) / 알약 `rounded-full` — **4단계뿐이고 그 외 값은 쓰지 않는다**
+  - 예외: 대화 입력(`components/trip-chat/`)은 승인된 대화 입력 시안 값을 쓴다. 질문 카드 `5px 21px 21px 21px`, 내 답 말풍선 `17px 17px 4px 17px`, 입력창 11, 예시 칩 7, 전송 버튼 9. 입력 배경은 `--field` 토큰
 - **보더**: `--card-border`를 `#e4e7ec` → `#e6e9ef`로 낮춰 hairline에 가깝게. 구획은 긋되 무게는 싣지 않는다
 - **타이포 스케일 (10단계)**: 11 · 12(`text-xs`) · 13 · 14(`text-sm`) · 15 · 17 · 23 · 30 · 34 · 52
 - **한글 줄바꿈**: `body { word-break: keep-all }` — 기본값이면 "자동 배치합 / 니다"처럼 어절 중간에서 잘린다
@@ -296,4 +299,4 @@ DNA에 `VISUAL_DENSITY 3 → 6`과 "radius 역할 분화"를 써놓고 실행하
 | 지도 `InfoWindow` | 마커 클릭 팝업. `pixelOffset={[0,-40]}`이 AdvancedMarker 기준으로 잡힌 값인데 legacy Marker(중앙 앵커)로 바뀌었다 — **클릭 상태를 렌더하지 않아 미검증** |
 | 편집 모드(`SortableStepCard` 드래그 재정렬) | **미렌더** |
 | `HeaderSearch` 드롭다운 · `AvatarMenu` 열린 상태 | **미렌더** |
-| 마법사 단계 화면(`StyleStep`·`TasteStep`·`TripBasicsStep`·`BudgetPlacesStep`) | 구성 컴포넌트(`ChipSelect`·`CalendarPicker`)만 개별 렌더. 단계 화면 전체는 **미렌더** |
+| ~~마법사 단계 화면~~ | 대화형 입력(`components/trip-chat/`)으로 대체돼 삭제. 대화 화면은 e2e `trip-chat.spec.ts`가 데스크톱·모바일·다크로 렌더 |

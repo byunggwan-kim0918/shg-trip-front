@@ -21,7 +21,7 @@
 
 ## 주요 기능
 
-- **자연어로 일정 요청** — "3월에 오사카 2박 3일, 미식 위주로" 같은 문장을 입력하면 백엔드가 목적지·기간·테마 등 구조화된 필드로 파싱해 마법사에 채워줍니다.
+- **대화로 일정 요청** — 질문에 하나씩 짧게 답하면 백엔드가 여행지·기간·동행·취향 등을 정리하고, 확인 화면에서 고친 뒤 일정을 만듭니다.
 - **AI 일정 생성 (실시간 스트리밍)** — 생성이 진행되는 동안 Day 카드가 SSE로 실시간 렌더링됩니다. 완성된 일정은 타임라인과 지도(OpenStreetMap 기반)로 함께 확인할 수 있습니다.
 - **일정 편집** — 같은 날짜 안에서 방문지를 드래그로 재정렬하거나 개별 스톱을 삭제할 수 있습니다.
 - **내 일정함 / 상세 보기** — 생성한 일정을 목록에서 관리하고, 제목·태그를 수정하며, 일정을 확정(finalize)할 수 있습니다.
@@ -50,7 +50,7 @@ app/
 │   └── proxy/[...path]/   # 범용 인증 API 프록시
 ├── main/                  # AuthGuard 보호 영역
 │   ├── page.tsx           # 대시보드
-│   ├── plan/new/          # 일정 생성 마법사
+│   ├── plan/new/          # 대화형 새 여행 입력
 │   ├── my-trips/          # 내 일정함
 │   └── itinerary/         # [id] 상세, loading 스트리밍
 ├── shared/[token]/        # 공유 일정 공개 페이지 (비인증)
@@ -60,14 +60,14 @@ app/
 components/
 ├── auth/                  # AuthGuard, 소셜 로그인
 ├── layout/                # Sidebar, Header, HeaderSearch, AvatarMenu, ThemeInitializer
-└── itinerary/             # 마법사, 결과 타임라인, 지도 패널, 편집 UI
+└── itinerary/             # 생성 화면, 결과 타임라인, 지도 패널, 편집 UI (대화 입력은 trip-chat/)
 
 lib/
 ├── api/fetchClient.ts     # authFetch (BFF 프록시 래퍼)
 ├── data/itineraryService.ts   # 일정 관련 백엔드 API 호출 (authFetch 기반)
 ├── server/session.ts      # AES-256-GCM 세션 쿠키 암복호화
 ├── server/backendFetch.ts # 서버사이드 Spring 호출 (BACKEND_URL)
-└── stores/                # Zustand: useAuthStore, useAppStore, useItineraryStore, useWizardStore
+└── stores/                # Zustand: useAuthStore, useAppStore, useItineraryStore
 
 e2e/                       # Playwright E2E 테스트
 ```
