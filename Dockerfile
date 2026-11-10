@@ -4,6 +4,7 @@ WORKDIR /shgapp
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+ARG ASSET_PREFIX
 RUN npm run build
 
 # STAGE 2 Run

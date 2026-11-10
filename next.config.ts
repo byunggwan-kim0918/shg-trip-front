@@ -15,6 +15,8 @@ const APP_URL = new URL(process.env.NEXT_PUBLIC_APP_URL || "https://myshgtrip.co
 const nextConfig: NextConfig = {
   devIndicators: false,
   output: "standalone",
+  // 앱 서버는 자기 빌드 청크만 갖고 있어 롤링 배포 중 이전 빌드 청크 요청이 404가 난다.
+  assetPrefix: process.env.ASSET_PREFIX || undefined,
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
