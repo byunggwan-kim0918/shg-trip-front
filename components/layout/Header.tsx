@@ -7,6 +7,7 @@ import { toggleThemeWithTransition } from '@/lib/theme';
 import HeaderSearch from './HeaderSearch';
 import AvatarMenu from './AvatarMenu';
 import Logo from '@/components/common/Logo';
+import { ROUTES } from '@/lib/routes';
 
 export default function Header() {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
@@ -23,7 +24,7 @@ export default function Header() {
         {!sidebarOpen && (
           <>
             <Link
-              href="/main"
+              href={ROUTES.trips}
               aria-label="홈으로 이동"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >

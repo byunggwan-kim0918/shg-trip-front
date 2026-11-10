@@ -89,7 +89,7 @@ async function shot(page: Page, name: string) {
 test.describe('trip chat input', () => {
   test('첫 화면은 질문 하나와 입력창 하나, 예시는 접혀 있고 누르면 입력창만 채운다', async ({ page }) => {
     const api = await mockTripChat(page, { current: chat({}) });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.getByRole('heading', { name: '어디로 떠나볼까요?' })).toBeVisible();
     await expect(page.getByText('우리, 여행 이야기부터 해볼까요?')).toBeVisible();
@@ -109,7 +109,7 @@ test.describe('trip chat input', () => {
       answer: (body) => ok(chat({ version: 2, question: MOOD, back: 'CITY',
         lastExchange: { question: '어디로 떠나볼까요?', answer: body.text }, history: [{ question: '어디로 떠나볼까요?', answer: body.text }] })),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     const input = page.getByLabel('답변', { exact: true });
     await input.fill('부산');
 
@@ -133,7 +133,7 @@ test.describe('trip chat input', () => {
         ? fail(503, 'PLANNING_010', '답변을 정리하지 못했어요. 잠시 후 다시 보내주세요.')
         : ok(chat({ version: 2, question: MOOD, lastExchange: { question: '어디로 떠나볼까요?', answer: body.text } })),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     const input = page.getByLabel('답변', { exact: true });
     await input.fill('부산');
     await input.press('Enter');
@@ -153,7 +153,7 @@ test.describe('trip chat input', () => {
         lastExchange: { question: '여행지에서는 어떻게 이동하나요?', answer: '흠 걸어서?' } }),
       answer: () => ok(chat({ version: 6, status: 'REVIEW', question: null, summary: { rows: ROWS, fixes: [], ready: true } })),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.getByText('걷는 쪽으로 생각 중이군요.', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: '먼 곳은 택시나 버스도 괜찮아요?' })).toBeVisible();
@@ -177,7 +177,7 @@ test.describe('trip chat input', () => {
           summary: { rows: ROWS, fixes: [], ready: true } }));
       },
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.getByRole('heading', { name: '생각한 여행이 맞나요?' })).toBeVisible();
     await expect(page.getByText('느긋한 일정 · 바다/해변·힐링 위주로 찾아요 (제안)')).toBeVisible();
@@ -188,7 +188,7 @@ test.describe('trip chat input', () => {
 
     await page.route('**/api/proxy/itineraries/generate/**', (route) => route.abort());
     await page.getByRole('button', { name: /이 내용으로 일정 만들기/ }).dblclick();
-    await expect(page).toHaveURL(/\/main\/itinerary\/loading/);
+    await expect(page).toHaveURL(/\/app\/trips\/generating/);
     expect(confirms).toBe(1);
     // 생성이 끝나면 이 대화만 보관하도록 생성 화면이 대화 id를 넘겨받는다.
     await expect.poll(() => page.evaluate(() => sessionStorage.getItem('shg_active_chat_id')))
@@ -206,7 +206,7 @@ test.describe('trip chat input', () => {
       current: chat({ version: 4, status: 'REVIEW', question: null, summary: { rows, fixes: [fix], ready: false } }),
       answer: () => ok(chat({ version: 5, status: 'REVIEW', question: null, summary: { rows: ROWS, fixes: [], ready: true } })),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.getByLabel('언제 떠날지 알려줄래요?')).toBeVisible();
     await expect(page.getByRole('button', { name: /이 내용으로 일정 만들기/ })).toBeDisabled();
@@ -221,7 +221,7 @@ test.describe('trip chat input', () => {
     await mockTripChat(page, {
       current: chat({ version: 3, question: MOOD, back: 'CITY', lastExchange: { question: '어디로 떠나볼까요?', answer: LONG_ANSWER } }),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     await expect(page.getByText(LONG_ANSWER)).toBeVisible();
 
     const overflow = await page.evaluate(() => {
@@ -240,7 +240,7 @@ test.describe('trip chat input', () => {
       content: [], totalElements: 0, totalPages: 0, number: 0, size: 20,
     })));
     await mockTripChat(page, { current: chat({}) });
-    await page.goto('/main');
+    await page.goto('/app/trips');
 
     await expect(page.getByRole('heading', { name: '어디로 떠나볼까요?' })).toBeVisible();
     await expect(page.getByLabel('답변', { exact: true })).toBeVisible();
@@ -257,7 +257,7 @@ test.describe('trip chat input', () => {
     });
     await page.goto('/');
     await page.evaluate((s) => sessionStorage.setItem('shg.newTripSentence', s), sentence);
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.getByRole('heading', { name: '이번 여행에서 뭘 하고 싶어요?' })).toBeVisible();
     expect(api.answerCalls()).toHaveLength(1);
@@ -271,7 +271,7 @@ test.describe('trip chat input', () => {
       current: () => (gets++ === 0 ? chat({}) : null),
       answer: () => fail(409, 'PLANNING_009', '대화가 바뀌었어요.'),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     const input = page.getByLabel('답변', { exact: true });
     await input.fill('부산');
     await input.press('Enter');
@@ -286,7 +286,7 @@ test.describe('trip chat input', () => {
         ? chat({ version: 2, pending: '부산' })
         : chat({ version: 3, question: MOOD, back: 'CITY', lastExchange: { question: '어디로 떠나볼까요?', answer: '부산' } })),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.getByText('부산', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: '어디로 떠나볼까요?' })).toHaveCount(0);
@@ -298,7 +298,7 @@ test.describe('trip chat input', () => {
       current: chat({ version: 9, status: 'REVIEW', question: null, history: [{ question: 'q', answer: 'a' }],
         summary: { rows: ROWS, fixes: [], ready: true } }),
     });
-    await page.goto('/main/plan/new?focus=EXTRAS');
+    await page.goto('/app/trips/new?focus=extras');
 
     await expect(page.getByPlaceholder(/첫날 오후 3시에 도착해/)).toBeVisible();
   });
@@ -309,7 +309,7 @@ test.describe('trip chat input', () => {
       current: chat({ version: 5, question: WALK_FOLLOW_UP, back: 'TRANSPORT',
         lastExchange: { question: '여행지에서는 어떻게 이동하나요?', answer: '흠 걸어서?' } }),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
 
     await expect(page.locator('html')).toHaveClass(/dark/);
     await expect(page.getByRole('heading', { name: '먼 곳은 택시나 버스도 괜찮아요?' })).toBeVisible();
@@ -322,7 +322,7 @@ test.describe('trip chat input', () => {
         history: [{ question: '어디로 떠나볼까요?', answer: '부산 11월 20일부터 25일까지 남자친구랑 둘이' }],
         summary: { rows: ROWS.slice(0, 3).concat(ROWS.slice(3).map((r) => ({ ...r, value: '아직 미정', notes: [], filled: false }))), fixes: [], ready: false } }),
     });
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     await page.getByRole('button', { name: '답변 모아보기' }).click();
 
     const dialog = page.getByRole('dialog', { name: '지금까지 나눈 이야기' });

@@ -27,11 +27,10 @@
 | `/login` | 인증 | — | ○ | 라이트·다크·390 · 에러 토스트 |
 | `/onboarding` | 폼 | 필요 | ○ | 라이트 (임시 라우트) |
 | `/callback/[provider]` | 전환 | — | ○ | 미확인 — 즉시 리다이렉트되는 중간 화면 |
-| `/main` | 대시보드 | 필요 | ○ | 라이트·다크·390 · 빈 상태 |
-| `/main/my-trips` | 목록 | 필요 | ○ | `/main`과 같은 `ItineraryList` 사용 |
-| `/main/plan/new` | 입력 | 필요 | ○ | 라이트 |
-| `/main/itinerary/loading` | 생성중 | 필요 | ○ | 라이트 (SSE 스텁) |
-| `/main/itinerary/[id]` | 상세 | 필요 | ○ | 라이트·다크·390 |
+| `/app/trips` | 내 여행(첫 화면) | 필요 | ○ | 라이트·다크·390 · 빈 상태는 대화 첫 질문. `/app`은 여기로 이동 |
+| `/app/trips/new` | 입력 | 필요 | ○ | 라이트·다크·390 |
+| `/app/trips/generating` | 생성중 | 필요 | ○ | 라이트 (SSE 스텁) |
+| `/app/trips/[id]` | 상세 | 필요 | ○ | 라이트·다크·390 |
 | `/shared/[token]` | 공유(비인증) | — | ○ | 라이트 |
 
 **브라우저 밖 표면** — `app/icon.svg` · `apple-icon.tsx` · `opengraph-image.tsx` · `manifest.ts` · `viewport.themeColor` ·

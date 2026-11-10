@@ -30,7 +30,7 @@ test.describe('@generation full user flow', () => {
   test('create a trip through the conversation (real generation)', async ({ page }) => {
     test.setTimeout(320_000);
     await page.request.delete('/api/proxy/trip-chats/current');
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     const input = page.getByLabel('답변', { exact: true });
     const review = page.getByRole('heading', { name: '생각한 여행이 맞나요?' });
     const answered = () => page.waitForResponse((r) => r.url().includes('/answers'), { timeout: 30_000 });
@@ -56,9 +56,9 @@ test.describe('@generation full user flow', () => {
     const generate = page.getByRole('button', { name: /이 내용으로 (일정|다시) 만들기/ });
     test.skip(await generate.isDisabled(), '생성 한도 소진 또는 보완할 조건이 있어 생성 플로우 건너뜀');
     await generate.click();
-    await expect(page).toHaveURL(/\/main\/itinerary\/(loading|\d)/, { timeout: 12_000 });
-    await page.waitForURL(/\/main\/itinerary\/\d+/, { timeout: 250_000 });
-    itineraryId = Number(page.url().match(/\/main\/itinerary\/(\d+)/)![1]);
+    await expect(page).toHaveURL(/\/app\/trips\/(generating|\d)/, { timeout: 12_000 });
+    await page.waitForURL(/\/app\/trips\/\d+/, { timeout: 250_000 });
+    itineraryId = Number(page.url().match(/\/app\/trips\/(\d+)/)![1]);
     expect(itineraryId).toBeGreaterThan(0);
     await expect(page.locator('h1').first()).toBeVisible();
 
@@ -69,7 +69,7 @@ test.describe('@generation full user flow', () => {
 
   test('select an alternative place', async ({ page }) => {
     test.skip(!itineraryId, '생성 실패로 건너뜀');
-    await page.goto(`/main/itinerary/${itineraryId}`);
+    await page.goto(`/app/trips/${itineraryId}`);
     await expect(page.locator('h1').first()).toBeVisible(); // 타임라인 렌더 대기(생성 직후 로딩 회피)
     const toggle = page.locator('button', { hasText: /대안 \d+개 보기/ });
     await toggle.first().waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
@@ -84,7 +84,7 @@ test.describe('@generation full user flow', () => {
 
   test('edit title & tags persists to the server', async ({ page }) => {
     test.skip(!itineraryId, '생성 실패로 건너뜀');
-    await page.goto(`/main/itinerary/${itineraryId}`);
+    await page.goto(`/app/trips/${itineraryId}`);
     await page.getByRole('button', { name: '제목·태그 편집' }).click();
     const title = `E2E 수정 ${Date.now()}`;
     await page.locator('input[type="text"]').first().fill(title);
@@ -96,7 +96,7 @@ test.describe('@generation full user flow', () => {
 
   test('share creates a public link that renders anonymously', async ({ page, browser }) => {
     test.skip(!itineraryId, '생성 실패로 건너뜀');
-    await page.goto(`/main/itinerary/${itineraryId}`);
+    await page.goto(`/app/trips/${itineraryId}`);
     await page.getByRole('button', { name: /^공유/ }).click();
     await expect(page.getByText(/공유 링크/)).toBeVisible({ timeout: 6000 });
     const shareUrl = await page.evaluate(() => navigator.clipboard.readText().catch(() => ''));
@@ -111,7 +111,7 @@ test.describe('@generation full user flow', () => {
 
   test('finalize marks the trip 확정됨', async ({ page }) => {
     test.skip(!itineraryId, '생성 실패로 건너뜀');
-    await page.goto(`/main/itinerary/${itineraryId}`);
+    await page.goto(`/app/trips/${itineraryId}`);
     await expect(page.locator('h1').first()).toBeVisible();
     // 생성 직후 비동기 story/이미지 백필이 엔티티 version을 올려 확정이 낙관락 충돌로 조용히
     // 실패할 수 있다(handleFinalize의 catch가 삼킴). 백필이 가라앉을 때까지 클릭을 재시도한다.
@@ -124,7 +124,7 @@ test.describe('@generation full user flow', () => {
 
   test('edit mode deletes a stop', async ({ page }) => {
     test.skip(!itineraryId, '생성 실패로 건너뜀');
-    await page.goto(`/main/itinerary/${itineraryId}`);
+    await page.goto(`/app/trips/${itineraryId}`);
     await page.getByRole('button', { name: '일정 편집' }).click();
     const del = page.getByRole('button', { name: '스톱 삭제' });
     const n = await del.count();

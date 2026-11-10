@@ -140,12 +140,14 @@ npm run e2e:report # 마지막 리포트 열기
 
 ### 라우트 보호
 
-`/main` 이하는 클라이언트 `AuthGuard`가 세션을 검증합니다. `middleware.ts`는 `__session` 쿠키 유무로 라우팅을 제어합니다.
+`/app` 이하는 클라이언트 `AuthGuard`가 세션을 검증합니다. `middleware.ts`는 `__session` 쿠키 유무로 라우팅을 제어합니다.
 
 | 상황 | 동작 |
 |------|------|
-| 비인증 → `/main` 접근 | `/login` 리다이렉트 |
-| 인증 → `/login` 접근 | `/main` 리다이렉트 |
+| 비인증 → `/app` 접근 | `/login` 리다이렉트 |
+| 인증 → `/login` 접근 | `/app/trips` 리다이렉트 |
+| `/app` | `/app/trips`로 307 |
+| 옛 `/main/*` 주소 | `next.config.ts`에서 새 주소로 308 |
 | `NEXT_PUBLIC_DEMO_MODE=true` | AuthGuard 인증 우회 (개발용) |
 
 ### API 호출 패턴
@@ -177,7 +179,7 @@ Tailwind CSS 4 + CSS 변수 기반 다크모드. 색상은 하드코딩하지 �
 
 ### 새 페이지 추가
 
-- 인증이 필요한 화면은 `app/main/` 하위에 추가하면 `AuthGuard`가 자동 적용됩니다.
+- 인증이 필요한 화면은 `app/app/` 하위에 추가하고 경로는 `lib/routes.ts`에서 만들면 `AuthGuard`가 자동 적용됩니다.
 - 서버 컴포넌트를 기본으로, 인터랙션이 필요할 때만 `'use client'`를 사용합니다.
 - 일정 관련 데이터 접근은 `lib/data/itineraryService.ts`의 함수를 사용합니다 (직접 fetch 지양).
 

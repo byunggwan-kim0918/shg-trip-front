@@ -8,6 +8,7 @@ import { hasPendingStory } from '@/lib/types/itinerary';
 import ResultLayout from '@/components/itinerary/result/ResultLayout';
 import EmptyState from '@/components/common/EmptyState';
 import { MapPinOff } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 
 // story 문장은 생성 완료 뒤 비동기로 채워지므로 약 40초 동안 재조회한다.
 const STORY_POLL_INTERVAL_MS = 2500;
@@ -94,7 +95,7 @@ export default function ItineraryDetailPage() {
           title="일정을 찾을 수 없어요"
           description="삭제됐거나 주소가 잘못됐어요."
           actionLabel="내 일정함으로 이동"
-          onAction={() => router.push('/main/my-trips')}
+          onAction={() => router.push(ROUTES.trips)}
           className="w-full max-w-sm"
         />
       </div>

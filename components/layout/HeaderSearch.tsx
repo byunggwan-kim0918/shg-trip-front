@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import StatusDot from '@/components/common/StatusDot';
 import { displayStatus, dateRange } from '@/lib/utils/tripStatus';
+import { ROUTES } from '@/lib/routes';
 
 const MAX_RESULTS = 8;
 
@@ -66,7 +67,7 @@ export default function HeaderSearch() {
   const go = (id: number) => {
     collapse();
     setQuery('');
-    router.push(`/main/itinerary/${id}`);
+    router.push(ROUTES.trip(id));
   };
 
   return (

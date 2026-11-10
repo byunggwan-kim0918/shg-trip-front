@@ -58,9 +58,9 @@ shg-trip-front/
 │   │   └── proxy/
 │   │       └── [...path]/route.ts     # 범용 인증 API 프록시
 │   │
-│   ├── main/                          # 메인 라우트 (AuthGuard 보호) ✅
+│   ├── app/                           # 로그인 영역 /app (AuthGuard 보호, 경로는 lib/routes.ts) ✅
 │   │   ├── layout.tsx                 # 'use client' - Sidebar + Header + main
-│   │   └── page.tsx                   # 대시보드
+│   │   └── trips/                     # 내 여행(첫 화면, 비었으면 대화 첫 질문) · new · generating · [id]
 │   │
 │   ├── layout.tsx                     # 루트 레이아웃 (ThemeInitializer, metadata)
 │   ├── page.tsx                       # 랜딩 페이지
@@ -105,7 +105,7 @@ shg-trip-front/
 │
 ├── middleware.ts                       # ✅ 인증 라우팅
 │                                       #   - __session 쿠키 기반
-│                                       #   - 로그인 유저 → /main 리다이렉트
+│                                       #   - 로그인 유저 → /app/trips 리다이렉트
 │                                       #   - 비로그인 유저 → /login 리다이렉트
 │                                       #   - force=true → 쿠키 삭제
 │
@@ -180,11 +180,11 @@ ANY  /api/proxy/[...path]     → 범용 인증 API 프록시
 ### 라우팅 보호
 ```
 middleware.ts:
-  / , /login           → 로그인(__session 있음) 시 /main으로 리다이렉트
-  /main/*, /onboarding/*  → 비로그인 시 /login으로 리다이렉트
+  / , /login           → 로그인(__session 있음) 시 /app/trips로 리다이렉트
+  /app/*, /onboarding/*  → 비로그인 시 /login으로 리다이렉트
 
 AuthGuard (컴포넌트):
-  main/layout.tsx에서 사용
+  app/app/layout.tsx에서 사용
   fetchSession() 호출 → 미인증 시 /login 리다이렉트
 ```
 
@@ -255,7 +255,7 @@ const res = await fetch('/api/xxx');
 ```bash
 npm run dev
 # http://localhost:3000
-# /main 접근 시 __session 쿠키 필요 (소셜 로그인 후 BFF가 자동 설정)
+# /app 접근 시 __session 쿠키 필요 (소셜 로그인 후 BFF가 자동 설정)
 # SESSION_SECRET 환경변수 필요 (.env.local)
 ```
 

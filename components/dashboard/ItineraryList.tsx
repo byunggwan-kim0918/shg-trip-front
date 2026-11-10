@@ -23,6 +23,7 @@ import {
   dateRange,
   nightsLabel,
 } from '@/lib/utils/tripStatus';
+import { ROUTES } from '@/lib/routes';
 
 interface Props {
   itineraries: ItinerarySummary[];
@@ -119,7 +120,7 @@ export default function ItineraryList({ itineraries }: Props) {
     </div>
   );
 
-  const goToStep = (item: ItinerarySummary) => router.push(`/main/itinerary/${item.id}`);
+  const goToStep = (item: ItinerarySummary) => router.push(ROUTES.trip(item.id));
 
   // 큰 카드는 사진 위에 흰 글자를 얹으므로, 사진을 못 불러오면 사진 없는 배치로 바꿔야 글자가 읽힌다.
   const [brokenCovers, setBrokenCovers] = useState<ReadonlySet<string>>(() => new Set());
@@ -135,7 +136,7 @@ export default function ItineraryList({ itineraries }: Props) {
         </div>
         <button
           type="button"
-          onClick={() => router.push('/main/plan/new')}
+          onClick={() => router.push(ROUTES.newTrip)}
           className="flex items-center gap-1.5 rounded-[10px] bg-accent px-4 py-2.5 text-[13px] font-bold text-accent-fg shadow-[0_8px_20px_-8px_rgba(20,22,28,0.45)] transition-[filter] hover:brightness-105"
         >
           <Plus size={15} strokeWidth={2.5} /> 새 여행

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { NEW_TRIP_SENTENCE_KEY } from '@/lib/constants/newTrip';
+import { ROUTES } from '@/lib/routes';
 
 export default function SentenceStart({ placeholder }: { placeholder: string }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function SentenceStart({ placeholder }: { placeholder: string }) 
         } catch {
           /* 저장이 막혀도 빈 입력으로 시작한다 */
         }
-        router.push('/main/plan/new');
+        router.push(ROUTES.newTrip);
       }}
       className="flex w-full flex-col gap-2.5 rounded-xl border-[1.5px] border-accent bg-card-bg p-3 focus-within:ring-2 focus-within:ring-accent/25 sm:flex-row sm:items-center sm:py-2 sm:pl-4 sm:pr-2"
     >

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/main/', '/onboarding/', '/callback/'],
+      disallow: ['/api/', '/app/', '/onboarding/', '/callback/'],
     },
     sitemap: 'https://myshgtrip.com/sitemap.xml',
   };

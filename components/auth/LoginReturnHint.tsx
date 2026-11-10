@@ -3,13 +3,14 @@
 import { useSyncExternalStore } from 'react';
 import { NEW_TRIP_SENTENCE_KEY } from '@/lib/constants/newTrip';
 import { RETURN_TO_PARAM, sanitizeReturnTo } from '@/lib/auth/returnTo';
+import { ROUTES } from '@/lib/routes';
 
 const noopSubscribe = () => () => {};
 
-/** 문장을 소비하는 새 여행 화면으로 돌아갈 때만 보여준다. 그 외엔 로그인 후 /main으로 가서 문장이 쓰이지 않는다. */
+/** 문장을 소비하는 새 여행 화면으로 돌아갈 때만 보여준다. 그 외엔 로그인 후 /app으로 가서 문장이 쓰이지 않는다. */
 function readSentence(): string | null {
   const returnTo = sanitizeReturnTo(new URLSearchParams(window.location.search).get(RETURN_TO_PARAM));
-  if (!returnTo?.startsWith('/main/plan/new')) return null;
+  if (!returnTo?.startsWith(ROUTES.newTrip)) return null;
   try {
     return sessionStorage.getItem(NEW_TRIP_SENTENCE_KEY);
   } catch {

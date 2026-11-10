@@ -13,6 +13,7 @@ import {
   SENTENCE_PLACEHOLDER,
   EXAMPLE_CHIPS,
 } from '@/lib/constants/newTrip';
+import { ROUTES } from '@/lib/routes';
 
 /** 유채색 예산(3개)을 넘기지 않게 같은 올리브 계열을 명도로만 나눈다. */
 const BUDGET_SPLIT = [
@@ -45,7 +46,7 @@ export default function Home() {
     if (sentence.trim()) {
       sessionStorage.setItem(NEW_TRIP_SENTENCE_KEY, sentence.trim());
     }
-    router.push('/main/plan/new');
+    router.push(ROUTES.newTrip);
   };
 
   return (

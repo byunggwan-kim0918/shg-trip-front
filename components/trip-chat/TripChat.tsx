@@ -14,6 +14,7 @@ import { useTripChat } from '@/lib/hooks/useTripChat';
 import { useGenerationQuota } from '@/lib/hooks/useGenerationQuota';
 import { ACTIVE_JOB_KEY, NEW_TRIP_JOB_KEY } from '@/lib/constants/newTrip';
 import type { TripChatExchange, TripChatSlot } from '@/lib/types/tripChat';
+import { ROUTES } from '@/lib/routes';
 
 const quietButton =
   'inline-flex items-center gap-[7px] whitespace-nowrap py-[5px] text-xs text-muted transition-colors hover:text-foreground disabled:opacity-40 pointer-coarse:min-h-11';
@@ -83,7 +84,7 @@ export default function TripChat({ focusSlot }: { focusSlot: TripChatSlot | null
         sessionStorage.setItem(NEW_TRIP_JOB_KEY,
           JSON.stringify({ jobId: result.jobId, days: result.days ?? 3, chatId: result.id }));
       } catch { /* 저장이 막히면 생성 화면이 작업을 찾지 못하고 이 화면으로 돌려보낸다 */ }
-      router.push('/main/itinerary/loading');
+      router.push(ROUTES.generating);
       return;
     }
     setLaunching(false);

@@ -6,6 +6,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { RETURN_TO_PARAM, consumeReturnTo } from '@/lib/auth/returnTo';
 import { WITHDRAWN_PARAM, clearWithdrawPending, isWithdrawPending, markWithdrawnNotice, useWithdrawPending } from '@/lib/auth/withdrawal';
+import { ROUTES } from '@/lib/routes';
 
 function errorCodeFor(status: number): string {
   if (status === 400) return 'state_mismatch';
@@ -95,7 +96,7 @@ export default function OAuthCallbackPage() {
         if (isNewUser) {
           router.replace('/onboarding');
         } else {
-          router.replace(consumeReturnTo() ?? '/main');
+          router.replace(consumeReturnTo() ?? ROUTES.trips);
         }
       })
       .catch((e: unknown) => {
@@ -117,7 +118,7 @@ export default function OAuthCallbackPage() {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-sm font-semibold text-foreground">{shownError}</p>
-        <Link href="/main" onClick={clearWithdrawPending} className="flex min-h-[44px] items-center rounded-[10px] bg-accent px-4 text-sm font-bold text-accent-fg">
+        <Link href={ROUTES.trips} onClick={clearWithdrawPending} className="flex min-h-[44px] items-center rounded-[10px] bg-accent px-4 text-sm font-bold text-accent-fg">
           돌아가기
         </Link>
       </div>

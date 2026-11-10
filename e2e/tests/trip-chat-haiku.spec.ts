@@ -43,7 +43,7 @@ class Conversation {
   constructor(private page: Page, public chat: Chat) {}
 
   static async start(page: Page) {
-    await page.goto('/main');
+    await page.goto('/app/trips');
     return new Conversation(page, await call(page, 'POST', '/trip-chats', { clientRequestId: crypto.randomUUID() }));
   }
 
@@ -217,7 +217,7 @@ test.describe('@haiku trip chat with real Haiku', () => {
 
   test('화면에서 대화하고 확인 화면까지 간다', async ({ page }) => {
     await page.request.delete('/api/proxy/trip-chats/current');
-    await page.goto('/main/plan/new');
+    await page.goto('/app/trips/new');
     const input = page.getByLabel('답변', { exact: true });
     const send = async (text: string) => {
       await input.fill(text);
