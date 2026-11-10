@@ -8,6 +8,7 @@ import Reveal from '@/components/common/Reveal';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import Logo from '@/components/common/Logo';
 import WithdrawnNotice from '@/components/auth/WithdrawnNotice';
+import JsonLd from '@/components/trips/JsonLd';
 import {
   NEW_TRIP_SENTENCE_KEY,
   SENTENCE_PLACEHOLDER,
@@ -36,6 +37,15 @@ const HERO_PREVIEW_STEPS = [
   { time: '16:40', name: '카페 서연의집', transit: null },
 ] as const;
 
+/** Google은 홈페이지 WebSite 구조화 데이터의 name을 검색 결과 사이트 이름으로 우선 쓴다. 없으면 도메인이 뜬다. */
+const WEBSITE_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'SHG trip',
+  alternateName: ['SHG 트립', 'myshgtrip'],
+  url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://myshgtrip.com'}/`,
+};
+
 
 export default function Home() {
   const router = useRouter();
@@ -51,6 +61,7 @@ export default function Home() {
 
   return (
     <div className="min-h-[100dvh] bg-surface">
+      <JsonLd data={WEBSITE_JSON_LD} />
       <header className="sticky top-0 z-50 border-b border-divider bg-header-bg backdrop-blur-xl">
         <div className="mx-auto flex h-[66px] max-w-6xl items-center justify-between px-5 sm:px-10">
           <div className="flex items-center gap-2.5">
