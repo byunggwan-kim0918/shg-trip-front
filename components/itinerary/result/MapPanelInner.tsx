@@ -16,6 +16,7 @@ import '@maplibre/maplibre-gl-leaflet';
 setWorkerUrl('/maplibre-gl-worker.mjs');
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
 import { getDayColor } from '@/lib/constants/dayColors';
 
 /**
@@ -359,11 +360,11 @@ export default function MapPanelInner({
           return (
             <StepMarker
               // title은 Leaflet이 생성 때만 읽어 번호·장소가 바뀌면 다시 만들어야 한다.
-              key={`${step.id}-${indexInDay}-${step.place.name}`}
+              key={`${step.id}-${indexInDay}-${displayName(step.place)}`}
               lat={step.place.latitude}
               lng={step.place.longitude}
               label={String(indexInDay)}
-              name={step.place.name}
+              name={displayName(step.place)}
               fill={color.bg}
               stroke={isSelected ? '#ffffff' : color.border}
               selected={isSelected}
@@ -384,6 +385,7 @@ export default function MapPanelInner({
           >
             {(() => {
               const place = infoStep.place!;
+              const original = originalName(place);
               const color = getDayColor(infoStep.dayNumber, isDark);
               return (
                 <div className="text-sm min-w-[180px] max-w-[220px]">
@@ -391,7 +393,7 @@ export default function MapPanelInner({
                     <div className="w-full h-24 rounded-lg mb-2 overflow-hidden bg-surface-3">
                       <img
                         src={proxyImageUrl(place.imageUrl)!}
-                        alt={place.name}
+                        alt={displayName(place)}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
@@ -404,7 +406,10 @@ export default function MapPanelInner({
                     />
                     <span className="text-xs text-muted-2">{infoStep.dayNumber}일차</span>
                   </div>
-                  <p className="font-semibold text-foreground">{place.name}</p>
+                  <p className="font-semibold text-foreground">{displayName(place)}</p>
+                  {original && (
+                    <p lang={originalNameLang(place)} className="text-xs text-muted-2">{original}</p>
+                  )}
                   <p className="text-muted text-xs mt-0.5">{place.address}</p>
                   {placeCategoryLabel(place.category) && (
                     <p style={{ color: color.bg }} className="text-xs mt-0.5">

@@ -10,10 +10,12 @@ import { isEnrichValidationError, enrichErrorFocus } from '@/lib/constants/enric
 import { ACTIVE_CHAT_KEY, ACTIVE_JOB_KEY, NEW_TRIP_JOB_KEY } from '@/lib/constants/newTrip';
 import ErrorState from '@/components/common/ErrorState';
 import { ROUTES } from '@/lib/routes';
+import { displayName } from '@/lib/utils/placeName';
 
-/** step-stream 이벤트의 스텝(확정 뼈대). 백엔드 { name, startTime, category }. */
+/** step-stream 이벤트의 스텝(확정 뼈대). 백엔드 { name, nameKo, startTime, category }. */
 interface StreamStep {
   name: string;
+  nameKo?: string | null;
   startTime: string | null;
   category: string | null;
 }
@@ -462,7 +464,7 @@ export default function LoadingScreen() {
                       key={r}
                       className="flex min-h-[52px] animate-[shg-fade-in_0.4s_ease-out] flex-col justify-center gap-0.5 rounded-[10px] border border-card-border bg-card-bg px-3 py-2"
                     >
-                      <div className="truncate text-xs font-bold text-foreground">{step.name}</div>
+                      <div className="truncate text-xs font-bold text-foreground">{displayName(step)}</div>
                       <div className="truncate text-xs font-semibold text-muted-2">
                         {step.startTime ?? ''}
                         {step.startTime && step.category ? ' · ' : ''}

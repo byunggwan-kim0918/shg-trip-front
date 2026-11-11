@@ -8,6 +8,7 @@ import { getCategoryIcon } from '@/lib/constants/placeIcons';
 import AlternativeList from './AlternativeList';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { formatOpeningHours } from '@/lib/utils/openingHours';
+import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
 
 interface StepCardProps {
   step: ItineraryStep;
@@ -42,6 +43,7 @@ export default function StepCard({
     setImgLoaded(false);
   }, [imageUrl]);
   const IconComponent = place ? getCategoryIcon(place.category) : null;
+  const original = place ? originalName(place) : null;
   // 공유 뷰(readOnly)는 store에 의존하지 않아 storyPending을 항상 false로 본다.
   const storyPendingFromStore = useItineraryStore((s) => s.storyPending);
   const storyPending = readOnly ? false : storyPendingFromStore;
@@ -76,7 +78,7 @@ export default function StepCard({
             )}
             {IconComponent && React.createElement(IconComponent, { size: 14, className: 'shrink-0 translate-y-[2px] text-muted', 'aria-hidden': 'true' })}
             <h3 className="truncate text-[15px] font-bold text-foreground">
-              {place?.name ?? '장소 정보 없음'}
+              {place ? displayName(place) : '장소 정보 없음'}
             </h3>
             {rating != null && (
               <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-bold tabular-nums text-muted">
@@ -84,6 +86,9 @@ export default function StepCard({
               </span>
             )}
           </div>
+          {place && original && (
+            <p lang={originalNameLang(place)} className="truncate text-xs text-muted-2">{original}</p>
+          )}
 
           {hasStory ? (
             <p className="mt-1 line-clamp-2 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{step.notes}</p>
@@ -139,7 +144,7 @@ export default function StepCard({
             {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
             <img
               src={imageUrl}
-              alt={place?.name ?? '장소 사진'}
+              alt={place ? displayName(place) : '장소 사진'}
               className={`h-full w-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading="lazy"
               onLoad={() => setImgLoaded(true)}

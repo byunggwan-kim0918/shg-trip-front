@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import type { AlternativeOption } from '@/lib/types/itinerary';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
 
 interface AlternativeCardProps {
   alternative: AlternativeOption;
@@ -13,6 +14,8 @@ interface AlternativeCardProps {
 
 export default function AlternativeCard({ alternative, isSelected, onSelect }: AlternativeCardProps) {
   const { place } = alternative;
+  const title = displayName(place);
+  const original = originalName(place);
   const img = proxyImageUrl(place.imageUrl);
   const [imgError, setImgError] = useState(false);
   useEffect(() => { setImgError(false); }, [img]);
@@ -27,16 +30,17 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
       <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg">
         {img && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt={place.name} className="h-full w-full object-cover" loading="lazy" onError={() => setImgError(true)} />
+          <img src={img} alt={title} className="h-full w-full object-cover" loading="lazy" onError={() => setImgError(true)} />
         ) : (
           // 빈 44px 블록은 surface-2 위에서 보이지 않으므로 장소명 이니셜을 둔다.
           <span className="flex h-full w-full items-center justify-center bg-surface-3 text-xs font-extrabold tracking-[-0.02em] text-muted">
-            {place.name.slice(0, 2)}
+            {title.slice(0, 2)}
           </span>
         )}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-[13px] font-bold text-foreground">{place.name}</span>
+        <span className="block truncate text-[13px] font-bold text-foreground">{title}</span>
+        {original && <span lang={originalNameLang(place)} className="block truncate text-xs text-muted-2">{original}</span>}
         <span className="block text-xs text-muted-2">
           {place.rating != null && (
             <span className="inline-flex items-center gap-0.5">

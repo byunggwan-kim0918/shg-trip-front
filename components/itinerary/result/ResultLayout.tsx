@@ -8,6 +8,7 @@ import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import { displayName } from '@/lib/utils/placeName';
 import { nightsLabel } from '@/lib/utils/tripStatus';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
@@ -481,8 +482,8 @@ export default function ResultLayout() {
       <ConfirmModal
         open={stepToDelete != null}
         title="이 스톱을 삭제할까요?"
-        message={stepToDelete?.place?.name
-          ? `'${stepToDelete.place.name}'을(를) 일정에서 제거합니다. 남은 스톱의 이동 경로가 다시 계산돼요.`
+        message={stepToDelete?.place
+          ? `'${displayName(stepToDelete.place)}'을(를) 일정에서 제거합니다. 남은 스톱의 이동 경로가 다시 계산돼요.`
           : '이 스톱을 일정에서 제거합니다.'}
         confirmLabel="삭제"
         danger
