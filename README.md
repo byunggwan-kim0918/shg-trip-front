@@ -3,7 +3,15 @@
 > Claude AI로 여행 일정을 만들어주는 서비스(shg-trip)의 Next.js 프론트엔드.
 > 목적지·기간·테마·예산을 입력하면 AI가 동선과 차선책까지 포함한 일정을 생성하고, 사용자는 이를 편집·확정·공유할 수 있습니다.
 
-<!-- 스크린샷 자리 (추후 추가): docs/screenshot.png -->
+**Live**: [myshgtrip.com](https://myshgtrip.com) · **Backend**: [shg-trip-back](https://github.com/byunggwan-kim0918/shg-trip-back)
+
+<p align="center">
+  <a href="https://myshgtrip.com"><img src="docs/images/landing.png" width="100%" alt="SHG trip 메인 화면"></a>
+</p>
+<p align="center">
+  <img src="docs/images/trips.png" width="49%" alt="도시별 추천 코스 목록">
+  <img src="docs/images/course.png" width="49%" alt="코스 상세 — 기간·이동 수단·총 이동·예상 비용 요약">
+</p>
 
 ## 기술 스택
 
@@ -188,3 +196,7 @@ Tailwind CSS 4 + CSS 변수 기반 다크모드. 색상은 하드코딩하지 �
 - 프론트엔드 상세 컨텍스트: [CLAUDE_FRONTEND.md](CLAUDE_FRONTEND.md)
 - 프로젝트 공통 규칙·백엔드·실행: [../CLAUDE.md](../CLAUDE.md)
 - 알려진 이슈: [docs/known-issues.md](docs/known-issues.md)
+
+## License
+
+All rights reserved. 자세한 내용은 [LICENSE.md](LICENSE.md)를 참고하세요.
