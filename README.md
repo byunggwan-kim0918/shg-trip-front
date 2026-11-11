@@ -199,4 +199,4 @@ Tailwind CSS 4 + CSS 변수 기반 다크모드. 색상은 하드코딩하지 �
 
 ## License
 
-All rights reserved — 포트폴리오·참고 목적으로만 공개합니다. 자세한 내용은 [LICENSE.md](LICENSE.md)를 참고하세요.
+All rights reserved. 자세한 내용은 [LICENSE.md](LICENSE.md)를 참고하세요.
