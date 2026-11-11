@@ -22,6 +22,7 @@ import type { AlternativeOption, DayGroup, Itinerary, ItineraryStep } from '@/li
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { formatDuration } from '@/lib/utils/format';
+import { displayName } from '@/lib/utils/placeName';
 import { parseQualityNotices } from '@/lib/utils/qualityNotices';
 import StepCard from './StepCard';
 import SortableStepCard from './SortableStepCard';
@@ -105,8 +106,10 @@ export default function TimelinePanel({
   if (!currentGroup) return null;
 
   // 기본 안내는 영어이고 내부 id를 읽는다.
-  const placeName = (id: string | number) =>
-    currentGroup.steps.find((s) => s.id === Number(id))?.place?.name ?? '장소';
+  const placeName = (id: string | number) => {
+    const place = currentGroup.steps.find((s) => s.id === Number(id))?.place;
+    return place ? displayName(place) : '장소';
+  };
   const positionOf = (id: string | number) => currentGroup.steps.findIndex((s) => s.id === Number(id)) + 1;
   const announcements: Announcements = {
     onDragStart: ({ active }) => `${placeName(active.id)}을(를) 집었어요. 지금 ${positionOf(active.id)}번째예요.`,

@@ -18,6 +18,8 @@ export interface Place {
   priceLevel: number | null;
   openingHours: string | null;
   imageUrl: string | null;
+  /** 해외 장소의 한국어 이름. 국내 장소와 과거 응답엔 없다. 화면 표시는 lib/utils/placeName을 거친다. */
+  nameKo?: string | null;
 }
 
 /** 백엔드 AlternativeOptionResponse */
