@@ -2,9 +2,9 @@
 
 # SHG trip
 
-대화로 여행 조건을 정하면 하루 단위 일정을 만들어 주는 여행 플래너
+대화로 만드는 나만의 여행 일정
 
-[myshgtrip.com](https://myshgtrip.com) · [추천 코스](https://myshgtrip.com/trips) · [백엔드](https://github.com/byunggwan-kim0918/shg-trip-back)
+[서비스](https://myshgtrip.com) · [추천 코스](https://myshgtrip.com/trips) · [백엔드](https://github.com/byunggwan-kim0918/shg-trip-back)
 
 <a href="https://myshgtrip.com">
   <picture>
@@ -24,57 +24,59 @@
 
 </div>
 
-SHG trip은 여행지, 날짜, 동행, 취향을 대화로 물어보고 동선과 방문 시각까지 정한 일정을 만들어 주는 서비스입니다. 이 저장소는 웹 프론트엔드이고, 일정 생성은 [shg-trip-back](https://github.com/byunggwan-kim0918/shg-trip-back)에서 합니다.
+SHG trip의 Next.js 웹 프론트엔드입니다. 여행지, 날짜, 동행, 취향을 대화로 입력하면 동선과 방문 시간이 포함된 일정을 확인하고 수정할 수 있습니다. 국내와 일본 여행지를 지원하며, 일정 생성은 [백엔드](https://github.com/byunggwan-kim0918/shg-trip-back)에서 처리합니다.
 
-## 기능
+## 주요 기능
 
-- 대화로 여행 조건 입력, 확인 화면에서 항목별 수정
-- 생성 중 완성된 날짜부터 바로 표시
-- 타임라인과 지도로 일정 보기
-- 드래그로 순서 변경, 방문지 삭제와 대안 교체
-- 로그인 없이 보는 공유 링크
-- 국내와 일본 도시별 추천 코스
+- **여행 조건 입력** — 대화로 조건을 정리하고, 확인 화면에서 항목별로 수정합니다.
+- **생성 중인 일정 확인** — 전체 생성이 끝나기 전에도 완성된 날짜부터 확인할 수 있습니다.
+- **타임라인과 지도** — 날짜별 방문 시간과 이동 동선을 함께 보여줍니다.
+- **일정 편집** — 드래그로 방문 순서를 바꾸거나, 방문지를 삭제하고 다른 장소로 교체합니다.
+- **일정 공유** — 로그인 없이 열람할 수 있는 공유 링크를 제공합니다.
+- **추천 코스** — 국내와 일본 도시별로 미리 구성된 여행 일정을 둘러볼 수 있습니다.
 
-## 구조
+## 서비스 구조
 
 ```mermaid
 flowchart LR
-    U([브라우저]) -- "페이지 · /api/*" --> CFL[Cloudflare]
+    U["브라우저"] -- "페이지 · API 요청" --> CF["Cloudflare"]
+
     subgraph AWS
-        ALB[ALB] --> WEB["Next.js 서버<br/>ECS Fargate"]
+        ALB["ALB"] --> WEB["Next.js<br/>ECS Fargate"]
         WEB -- "Bearer JWT" --> API["Spring Boot API<br/>ECS Fargate"]
-        CDN[CloudFront] --> S3[("S3<br/>_next/static")]
+        CDN["CloudFront"] --> S3["S3"]
     end
-    CFL --> ALB
+
+    CF --> ALB
     U -- "JS · CSS · 폰트" --> CDN
 ```
 
-브라우저는 백엔드를 직접 부르지 않습니다. API 요청과 SSE 구독은 모두 Next.js Route Handler(`/api/proxy`)를 거치고, JWT는 암호화된 HttpOnly 쿠키에만 있습니다.
+## 주요 설계
 
-JS와 CSS는 S3와 CloudFront에서 받습니다. 이전 빌드 파일을 지우지 않기 때문에 배포 중에도 열려 있던 탭이 깨지지 않습니다.
+### API 요청과 인증
 
-추천 코스는 운영 생성 파이프라인으로 만든 일정을 검수해 `content/trips`에 JSON으로 두고, 빌드할 때 정적 페이지로 만듭니다.
+API 요청과 SSE 연결은 Next.js Route Handler(`/api/proxy`)를 거칩니다. JWT는 암호화된 HttpOnly 쿠키로 관리하고, Next.js 서버가 백엔드 요청에 인증 정보를 전달합니다.
 
-## 로컬 실행
+### 배포 전후 정적 파일 유지
 
-```bash
-npm install
-npm run dev   # http://localhost:3000, 백엔드 http://localhost:8080 필요
-```
+JS, CSS, 폰트는 S3와 CloudFront로 제공합니다. 배포 후에도 이전 빌드 파일을 유지해, 이미 열려 있는 페이지에서 필요한 파일을 계속 불러올 수 있도록 했습니다.
 
-`.env.local` 키와 테스트 명령은 [AGENTS.md](AGENTS.md)에 있습니다.
+### 추천 코스 정적 페이지
+
+추천 코스는 일정 생성 파이프라인으로 만든 결과를 검수해 제공합니다. 코스 데이터는 `content/trips`에 JSON으로 관리하고, 빌드 시 정적 페이지로 생성합니다.
 
 ## 기술 스택
 
-- [Next.js 16](https://nextjs.org) – 프레임워크
-- [React 19](https://react.dev) – UI
-- [TypeScript](https://www.typescriptlang.org) – 언어
-- [Tailwind CSS 4](https://tailwindcss.com) – 스타일
-- [Zustand](https://zustand.docs.pmnd.rs) – 상태 관리
-- [MapLibre GL](https://maplibre.org) + [OpenFreeMap](https://openfreemap.org) – 지도
-- [dnd-kit](https://dndkit.com) – 드래그 앤 드롭
-- [Playwright](https://playwright.dev) – E2E 테스트
-- AWS ECS Fargate, S3, CloudFront – 배포
+| 구분 | 기술 |
+| --- | --- |
+| 프레임워크·UI | Next.js 16, React 19 |
+| 언어 | TypeScript |
+| 스타일 | Tailwind CSS 4 |
+| 상태 관리 | Zustand |
+| 지도 | MapLibre GL, OpenFreeMap |
+| 드래그 앤 드롭 | dnd-kit |
+| E2E 테스트 | Playwright |
+| 배포 | AWS ECS Fargate, S3, CloudFront |
 
 ## 라이선스
 
