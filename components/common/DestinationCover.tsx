@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { coverGradient } from '@/lib/utils/coverGradient';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import ImageCredit from './ImageCredit';
+import PlaceFallbackArt from './PlaceFallbackArt';
 
 interface Props {
   destination: string;
-  /** 없으면 hue 그라데이션으로 그린다. */
+  /** 없으면 분류 그림으로 그린다. */
   imageUrl?: string | null;
-  /** 같은 목적지 카드끼리 구분하는 hue 오프셋. */
-  seedOffset?: number;
+  /** 사진이 보일 때 왼쪽 아래 ⓘ로 보인다. 카드 전체가 버튼이면 넘기지 말고 버튼 밖에 따로 둔다. */
+  imageCredit?: string | null;
+  imageLicense?: string | null;
+  imageSourceUrl?: string | null;
   showLabel?: boolean;
   /** px (그리드 40 / 히어로 80). */
   labelSize?: number;
@@ -23,7 +26,9 @@ interface Props {
 export default function DestinationCover({
   destination,
   imageUrl,
-  seedOffset = 0,
+  imageCredit,
+  imageLicense,
+  imageSourceUrl,
   showLabel = true,
   labelSize = 40,
   scrim = false,
@@ -33,16 +38,6 @@ export default function DestinationCover({
 }: Props) {
   const img = proxyImageUrl(imageUrl);
   const [imgError, setImgError] = useState(false);
-  // `.dark` 클래스 토큰 방식이라 Tailwind `dark:` 변형으로는 두 그라데이션을 전환할 수 없다.
-  const [isDark, setIsDark] = useState(false);
-  useEffect(() => {
-    const el = document.documentElement;
-    const sync = () => setIsDark(el.classList.contains('dark'));
-    sync();
-    const mo = new MutationObserver(sync);
-    mo.observe(el, { attributes: true, attributeFilter: ['class'] });
-    return () => mo.disconnect();
-  }, []);
   // 라벨(흰색 18%)은 실사진 위에서 묻히므로 사진이 보일 때만 하단 스크림을 깔고 알파를 올린다.
   const onPhoto = Boolean(img) && !imgError;
   // imageUrl이 비동기로 채워지면 이전 에러 상태 때문에 새 URL을 건너뛰지 않게 한다.
@@ -61,10 +56,7 @@ export default function DestinationCover({
           }}
         />
       ) : (
-        <div
-          className="absolute inset-0"
-          style={{ background: coverGradient(destination, isDark ? 'dark' : 'light', seedOffset) }}
-        />
+        <PlaceFallbackArt size="banner" className="absolute inset-0" />
       )}
 
       {scrim && (
@@ -100,6 +92,10 @@ export default function DestinationCover({
         >
           {destination}
         </span>
+      )}
+
+      {onPhoto && (
+        <ImageCredit credit={imageCredit} license={imageLicense} sourceUrl={imageSourceUrl} className="bottom-2 left-2" />
       )}
 
       {children}

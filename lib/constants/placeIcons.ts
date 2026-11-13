@@ -31,6 +31,18 @@ import {
   PawPrint,
   Star,
   Ship,
+  Binoculars,
+  Castle,
+  Church,
+  Croissant,
+  FerrisWheel,
+  IceCreamCone,
+  Martini,
+  MoonStar,
+  MountainSnow,
+  Store,
+  Ticket,
+  TrainFront,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
@@ -142,4 +154,53 @@ export function getThemeIcon(theme: string): LucideIcon {
 
 export function getPaceIcon(pace: string): LucideIcon {
   return PACE_ICON_MAP[pace] || Footprints;
+}
+
+export type PlaceArtGroup = 'food' | 'culture' | 'nature' | 'leisure' | 'shopping' | 'stay' | 'transport' | 'default';
+
+export interface PlaceArt {
+  icon: LucideIcon;
+  group: PlaceArtGroup;
+}
+
+/**
+ * Foursquare 경로("Dining and Drinking > Bar > Sake Bar")를 위에서부터 읽어 처음 맞는 규칙을 쓴다.
+ * "Landmarks and Outdoors" 같은 넓은 경로가 세부 분류를 가리지 않게 세부 규칙을 앞에 둔다.
+ */
+const PLACE_ART_RULES: Array<[RegExp, LucideIcon, PlaceArtGroup]> = [
+  [/night market|야시장/, MoonStar, 'shopping'],
+  [/lodging|accommodation|숙소/, CATEGORY_ICON_MAP.accommodation, 'stay'],
+  [/airport|공항/, TRANSPORT_ICON_MAP.FLIGHT, 'transport'],
+  [/\btrain\b|rail station|metro station|tram station|subway/, TrainFront, 'transport'],
+  [/ferry|pier/, Ship, 'transport'],
+  [/travel and transportation|transport hub/, TRANSPORT_ICON_MAP.BUS, 'transport'],
+  [/bakery|donut|bagel|pastry|베이커리/, Croissant, 'food'],
+  [/dessert|ice cream|디저트/, IceCreamCone, 'food'],
+  [/caf[eé](?!teria)|coffee|tea room|tea house|juice bar|bubble tea|카페/, CATEGORY_ICON_MAP.cafe, 'food'],
+  [/\bbar\b|\bpub\b|night ?club|lounge|izakaya|brewery/, Martini, 'food'],
+  [/dining and drinking|restaurant|food court|food truck|맛집|식당/, CATEGORY_ICON_MAP.restaurant, 'food'],
+  [/amusement park|theme park|water park|\bzoo\b|aquarium|arcade/, FerrisWheel, 'leisure'],
+  [/church|cathedral|chapel/, Church, 'culture'],
+  [/castle|palace/, Castle, 'culture'],
+  [/museum|art gallery|exhibit|cultural center/, THEME_ICON_MAP.art_exhibition, 'culture'],
+  [/temple|shrine|spiritual center/, CATEGORY_ICON_MAP.attraction, 'culture'],
+  [/performing arts|theater|theatre|concert|music venue|movie|arts and entertainment/, Ticket, 'leisure'],
+  [/scenic lookout|observation|tower|viewpoint/, Binoculars, 'nature'],
+  [/beach|lake|river|waterfall|\bbay\b|harbor|marina|island|hot spring|coast/, THEME_ICON_MAP.beach_sea, 'nature'],
+  [/\bski\b/, MountainSnow, 'nature'],
+  [/mountain|volcano|hiking|trail/, THEME_ICON_MAP.mountain_trekking, 'nature'],
+  [/park|garden|forest|great outdoors|campground|\bfarm\b/, THEME_ICON_MAP.nature_landscape, 'nature'],
+  [/market/, Store, 'shopping'],
+  [/retail|shopping|mall|department store|store|boutique|쇼핑/, CATEGORY_ICON_MAP.shopping, 'shopping'],
+  [/historic|monument|memorial|structure|attraction|landmark|plaza|bridge|관광/, CATEGORY_ICON_MAP.attraction, 'culture'],
+  [/sports and recreation|outdoor activity|golf|indoor play|experience|액티비티/, CATEGORY_ICON_MAP.experience, 'leisure'],
+];
+
+/** 사진이 없는 자리에 그릴 분류 그림. 모르는 분류는 핀으로 그린다. */
+export function resolvePlaceArt(category: string | null | undefined): PlaceArt {
+  const lower = category?.toLowerCase() ?? '';
+  for (const [pattern, icon, group] of PLACE_ART_RULES) {
+    if (pattern.test(lower)) return { icon, group };
+  }
+  return { icon: MapPin, group: 'default' };
 }

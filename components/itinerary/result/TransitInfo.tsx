@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { getTransportIcon } from '@/lib/constants/placeIcons';
-import { formatDuration, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
+import { formatDuration, isUnrealisticLeg } from '@/lib/utils/format';
 import type { TransportType } from '@/lib/types/itinerary';
 
 interface TransitInfoProps {
@@ -10,7 +10,7 @@ interface TransitInfoProps {
   distance?: number | null; // km
 }
 
-const MODE_LABEL: Record<TransportType, string> = {
+export const MODE_LABEL: Record<TransportType, string> = {
   CAR: '차로',
   WALK: '걸어서',
   BUS: '버스로',
@@ -23,7 +23,7 @@ const MODE_LABEL: Record<TransportType, string> = {
 
 export default function TransitInfo({ mode, duration, distance }: TransitInfoProps) {
   const IconComponent = getTransportIcon(mode);
-  const isUnrealistic = distance != null && distance > UNREALISTIC_LEG_KM;
+  const isUnrealistic = isUnrealisticLeg(mode, distance);
 
   return (
     <div className="flex items-center gap-2 py-2 pl-1 text-xs font-semibold text-muted-2">

@@ -11,6 +11,7 @@ import Toast from '@/components/common/Toast';
 import StatusDot from '@/components/common/StatusDot';
 import TagChip from '@/components/common/TagChip';
 import DestinationCover from '@/components/common/DestinationCover';
+import ImageCredit from '@/components/common/ImageCredit';
 import EmptyState from '@/components/common/EmptyState';
 import {
   FILTER_TABS,
@@ -234,6 +235,14 @@ export default function ItineraryList({ itineraries }: Props) {
               </div>
             )}
           </button>
+          {heroCover && (
+            <ImageCredit
+              credit={hero.coverImageCredit}
+              license={hero.coverImageLicense}
+              sourceUrl={hero.coverImageSourceUrl}
+              className="bottom-2 left-2"
+            />
+          )}
           <div className="absolute right-3 top-3">
             {renderCardMenu(
               hero,
@@ -256,7 +265,7 @@ export default function ItineraryList({ itineraries }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {gridItems.map((item, idx) => {
+          {gridItems.map((item) => {
             const st = displayStatus(item);
             return (
               <div
@@ -271,7 +280,9 @@ export default function ItineraryList({ itineraries }: Props) {
                 <DestinationCover
                   destination={item.destination}
                   imageUrl={item.coverImage}
-                  seedOffset={idx * 7}
+                  imageCredit={item.coverImageCredit}
+                  imageLicense={item.coverImageLicense}
+                  imageSourceUrl={item.coverImageSourceUrl}
                   labelSize={30}
                   className="h-[88px] w-full"
                 >

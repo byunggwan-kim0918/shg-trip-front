@@ -18,6 +18,7 @@ import type { ItineraryStep } from '@/lib/types/itinerary';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
 import { getDayColor } from '@/lib/constants/dayColors';
+import ImageCredit from '@/components/common/ImageCredit';
 
 /**
  * cartocdn은 키 없이 200 + 워터마크 타일을 돌려줘 성공처럼 보이고 지도는 비므로 키·한도가 없는 OpenFreeMap을 쓴다.
@@ -390,12 +391,18 @@ export default function MapPanelInner({
               return (
                 <div className="text-sm min-w-[180px] max-w-[220px]">
                   {place.imageUrl && (
-                    <div className="w-full h-24 rounded-lg mb-2 overflow-hidden bg-surface-3">
+                    <div className="relative w-full h-24 rounded-lg mb-2 overflow-hidden bg-surface-3">
                       <img
                         src={proxyImageUrl(place.imageUrl)!}
                         alt={displayName(place)}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                      />
+                      <ImageCredit
+                        credit={place.imageCredit}
+                        license={place.imageLicense}
+                        sourceUrl={place.imageSourceUrl}
+                        className="bottom-1.5 right-1.5"
                       />
                     </div>
                   )}

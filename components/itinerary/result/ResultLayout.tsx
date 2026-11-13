@@ -6,8 +6,7 @@ import { AlertTriangle, Share2, Pencil, Trash2 } from 'lucide-react';
 import { normalizeText } from '@/lib/utils/text';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import type { ItineraryStep } from '@/lib/types/itinerary';
-import { formatBudget, UNREALISTIC_LEG_KM } from '@/lib/utils/format';
-import { proxyImageUrl } from '@/lib/utils/imageUrl';
+import { formatBudget, isUnrealisticLeg } from '@/lib/utils/format';
 import { displayName } from '@/lib/utils/placeName';
 import { nightsLabel } from '@/lib/utils/tripStatus';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
@@ -16,6 +15,7 @@ import ConfirmModal from '@/components/common/ConfirmModal';
 import EditItineraryModal from './EditItineraryModal';
 import TimelinePanel from './TimelinePanel';
 import MapPanel from './MapPanel';
+import ItineraryCoverThumb from '../ItineraryCoverThumb';
 import { ROUTES } from '@/lib/routes';
 
 /** LLM 태그 뒤쪽은 서로 비슷하거나 일정에 없는 장소라 앞쪽만 보이고 나머지는 "+N"으로 접는다. */
@@ -59,7 +59,6 @@ export default function ResultLayout() {
     deleteStepAction, isEditingSteps, stepError, clearStepError,
     patchItinerarySummary, removeItinerary, isDeleting } = useItineraryStore();
   const [showMap, setShowMap] = useState(true);
-  const [coverError, setCoverError] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
@@ -155,14 +154,6 @@ export default function ResultLayout() {
     if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
   }, []);
 
-  // 표시 커버는 coverImage ?? 첫 스텝 이미지라, 대안 선택·삭제로 firstStepImage가 바뀔 때도 리셋해야
-  // 그라데이션 폴백에 고착되지 않는다.
-  useEffect(() => { setCoverError(false); }, [
-    currentItinerary?.id,
-    currentItinerary?.coverImage,
-    currentItinerary?.steps.find((s) => s.place?.imageUrl)?.place?.imageUrl,
-  ]);
-
   // 탭 여러 개를 띄워도 어느 여행인지 구분되게 한다. 컴포넌트 <title>은 레이아웃 metadata 제목과
   // head에 함께 올라가 어느 쪽이 적용될지 보장되지 않아 직접 바꾼다.
   const pageTitle = currentItinerary
@@ -180,7 +171,7 @@ export default function ResultLayout() {
     );
   }
 
-  const { destination, startDate, endDate, totalBudget, coverImage, tags } = currentItinerary;
+  const { destination, startDate, endDate, totalBudget, tags } = currentItinerary;
   const finalized = currentItinerary.status === 'FINALIZED';
   const hasSteps = currentItinerary.steps.length > 0;
   // 과거 데이터에는 없는 필드다.
@@ -197,33 +188,17 @@ export default function ResultLayout() {
 
   const timeAnomaly = hasTimeAnomaly(currentItinerary.steps);
   const unrealisticLeg = currentItinerary.steps.some(
-    (s) => s.transportationDistance != null && s.transportationDistance > UNREALISTIC_LEG_KM,
+    (s) => isUnrealisticLeg(s.transportationMode, s.transportationDistance),
   );
-  // 과거 데이터의 상대경로(/api/places/{id}/photo)는 깨지므로 절대 URL(S3)만 쓰고,
-  // 없으면 비동기 업로드로 함께 채워지는 첫 스텝 imageUrl로 폴백한다.
-  const validCover = coverImage && /^https?:\/\//.test(coverImage) ? coverImage : null;
-  const firstStepImage = currentItinerary.steps.find((s) => s.place?.imageUrl)?.place?.imageUrl ?? null;
-  const cover = proxyImageUrl(validCover ?? firstStepImage);
 
   return (
     <div className="flex flex-col lg:h-[calc(100dvh-8rem)]">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3 border-b border-card-border px-4 py-4 sm:px-6 sm:py-5 lg:flex-nowrap">
-        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl lg:block">
-          {cover && !coverError ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cover}
-              alt={normalizeText(currentItinerary.title) || destination}
-              className="h-full w-full object-cover"
-              onError={() => setCoverError(true)}
-            />
-          ) : (
-            // 큰 그라데이션 블록은 정보 없이 헤더를 지배하므로 목적지 이니셜만 둔다.
-            <div className="flex h-full w-full items-center justify-center bg-surface-3">
-              <span className="text-[15px] font-extrabold tracking-[-0.02em] text-muted">{destination.slice(0, 2)}</span>
-            </div>
-          )}
-        </div>
+        <ItineraryCoverThumb
+          itinerary={currentItinerary}
+          alt={normalizeText(currentItinerary.title) || destination}
+          className="hidden lg:block"
+        />
 
         <div className="min-w-0 flex-1">
           {/* items-center면 제목이 2줄일 때 연필 버튼이 두 줄 사이 중앙에 놓인다. */}
