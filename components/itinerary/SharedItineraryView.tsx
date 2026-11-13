@@ -6,11 +6,11 @@ import { MapPinned, Sparkles } from 'lucide-react';
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import type { Itinerary } from '@/lib/types/itinerary';
 import { nightsLabel } from '@/lib/utils/tripStatus';
-import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import TimelinePanel from '@/components/itinerary/result/TimelinePanel';
 import MapPanel from '@/components/itinerary/result/MapPanel';
 import Logo from '@/components/common/Logo';
 import EmptyState from '@/components/common/EmptyState';
+import ItineraryCoverThumb from './ItineraryCoverThumb';
 
 interface Props {
   itinerary: Itinerary;
@@ -21,12 +21,8 @@ export default function SharedItineraryView({ itinerary }: Props) {
   const dayGroups = groupStepsByDay(itinerary.steps);
   const [selectedDay, setSelectedDay] = useState(dayGroups[0]?.dayNumber ?? 1);
   const [selectedStepId, setSelectedStepId] = useState<number | null>(null);
-  const [coverError, setCoverError] = useState(false);
 
-  const { destination, startDate, endDate, tags, coverImage } = itinerary;
-  const cover = proxyImageUrl(
-    coverImage && /^https?:\/\//.test(coverImage) ? coverImage : itinerary.steps.find((s) => s.place?.imageUrl)?.place?.imageUrl ?? null,
-  );
+  const { destination, startDate, endDate, tags } = itinerary;
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
@@ -45,18 +41,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
       </div>
 
       <div className="flex items-start gap-4 border-b border-card-border bg-card-bg px-4 py-4 sm:px-6 sm:py-5">
-        <div className="hidden h-[74px] w-[74px] shrink-0 overflow-hidden rounded-xl sm:block">
-          {cover && !coverError ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt={itinerary.title ?? destination} className="h-full w-full object-cover" onError={() => setCoverError(true)} />
-          ) : (
-            // 글자 없는 그라데이션 사각형은 정보 없이 헤더 좌측만 차지하므로
-            // ResultLayout처럼 목적지 이니셜만 둔다.
-            <div className="flex h-full w-full items-center justify-center bg-surface-3">
-              <span className="text-[15px] font-extrabold tracking-[-0.02em] text-muted">{destination.slice(0, 2)}</span>
-            </div>
-          )}
-        </div>
+        <ItineraryCoverThumb itinerary={itinerary} alt={itinerary.title ?? destination} className="hidden sm:block" />
         <div className="min-w-0 flex-1">
           <h1 className="line-clamp-2 text-[17px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
             {itinerary.title ?? destination}

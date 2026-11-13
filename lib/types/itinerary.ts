@@ -18,6 +18,10 @@ export interface Place {
   priceLevel: number | null;
   openingHours: string | null;
   imageUrl: string | null;
+  /** 위키미디어 공용 사진의 저작자·라이선스·원본 파일 페이지. TourAPI 사진과 과거 응답엔 없다. */
+  imageCredit?: string | null;
+  imageLicense?: string | null;
+  imageSourceUrl?: string | null;
   /** 해외 장소의 한국어 이름. 국내 장소와 과거 응답엔 없다. 화면 표시는 lib/utils/placeName을 거친다. */
   nameKo?: string | null;
 }
@@ -59,6 +63,10 @@ export interface Itinerary {
   totalBudget: number | null;
   estimatedCost: number | null;
   coverImage: string | null;
+  /** coverImage의 출처. 의미는 Place.imageCredit 등과 같다. */
+  coverImageCredit?: string | null;
+  coverImageLicense?: string | null;
+  coverImageSourceUrl?: string | null;
   tags: string[];
   status: ItineraryStatus;
   /** 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터엔 없다. */
@@ -76,6 +84,9 @@ export interface ItinerarySummary {
   status: ItineraryStatus;
   createdAt: string;
   coverImage: string | null;
+  coverImageCredit?: string | null;
+  coverImageLicense?: string | null;
+  coverImageSourceUrl?: string | null;
   tags: string[];
 }
 

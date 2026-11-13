@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, MapPinOff, Sparkles, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { getCategoryIcon } from '@/lib/constants/placeIcons';
 import AlternativeList from './AlternativeList';
+import ImageCredit from '@/components/common/ImageCredit';
+import PlaceFallbackArt from '@/components/common/PlaceFallbackArt';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { formatOpeningHours } from '@/lib/utils/openingHours';
 import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
@@ -34,13 +36,16 @@ export default function StepCard({
   const place = step.place;
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const imageUrl = proxyImageUrl(place?.imageUrl);
 
   // 대안 선택 시 같은 step.id로 place만 교체되면 StepCard 인스턴스가 재사용되어
   // 이전 이미지의 로드/에러 상태가 남는다. imageUrl이 바뀌면 상태를 초기화한다.
+  // 서버 렌더 페이지(공유)는 하이드레이션 전에 사진이 다 받아져 onLoad가 오지 않아 완료 여부를 직접 본다.
   useEffect(() => {
     setImgError(false);
-    setImgLoaded(false);
+    const img = imgRef.current;
+    setImgLoaded(Boolean(img?.complete && img.naturalWidth > 0));
   }, [imageUrl]);
   const IconComponent = place ? getCategoryIcon(place.category) : null;
   const original = place ? originalName(place) : null;
@@ -138,18 +143,34 @@ export default function StepCard({
           )}
         </div>
 
-        {/* 사진이 없을 때 빈 블록으로 채우면 정보 없는 면이 리스트를 지배한다. */}
-        {imageUrl && !imgError && (
+        {/* 사진이 없을 때 빈 블록으로 채우면 정보 없는 면이 리스트를 지배한다.
+            불러오기에 실패한 사진은 자리를 비우면 행 높이가 뒤늦게 줄어 분류 그림으로 채운다. */}
+        {imageUrl && (
           <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[10px]">
-            {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
-            <img
-              src={imageUrl}
-              alt={place ? displayName(place) : '장소 사진'}
-              className={`h-full w-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-              loading="lazy"
-              onLoad={() => setImgLoaded(true)}
-              onError={() => setImgError(true)}
-            />
+            {imgError ? (
+              <PlaceFallbackArt category={place?.category} className="h-full w-full" />
+            ) : (
+              <>
+                {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-surface-3" />}
+                <img
+                  ref={imgRef}
+                  src={imageUrl}
+                  alt={place ? displayName(place) : '장소 사진'}
+                  className={`h-full w-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  loading="lazy"
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgError(true)}
+                />
+                {imgLoaded && (
+                  <ImageCredit
+                    credit={place?.imageCredit}
+                    license={place?.imageLicense}
+                    sourceUrl={place?.imageSourceUrl}
+                    className="bottom-1.5 right-1.5"
+                  />
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

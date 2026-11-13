@@ -1,6 +1,6 @@
 'use client';
 
-import { BedDouble, Coffee, ArrowLeftRight, GripVertical } from 'lucide-react';
+import { BedDouble, Coffee, ArrowLeftRight, GripVertical, Plane, Train } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -21,12 +21,12 @@ import {
 import type { AlternativeOption, DayGroup, Itinerary, ItineraryStep } from '@/lib/types/itinerary';
 import { groupStepsByDay } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
-import { formatDuration } from '@/lib/utils/format';
+import { formatDuration, isIntercityMode } from '@/lib/utils/format';
 import { displayName } from '@/lib/utils/placeName';
 import { parseQualityNotices } from '@/lib/utils/qualityNotices';
 import StepCard from './StepCard';
 import SortableStepCard from './SortableStepCard';
-import TransitInfo from './TransitInfo';
+import TransitInfo, { MODE_LABEL } from './TransitInfo';
 import QualityNotices from './QualityNotices';
 
 const FREE_TIME_THRESHOLD_MIN = 90;
@@ -242,7 +242,18 @@ export default function TimelinePanel({
               </div>
 
               <div className="min-w-0 flex-1 pb-2">
-                {idx === 0 && step.transportationMode && (
+                {/* 도시를 옮기는 날은 그날 첫 구간이 열차·비행기 이동이다. */}
+                {idx === 0 && step.transportationMode && isIntercityMode(step.transportationMode) && (
+                  <div className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted-2 tabular-nums">
+                    {step.transportationMode === 'FLIGHT'
+                      ? <Plane size={12} aria-hidden="true" />
+                      : <Train size={12} aria-hidden="true" />}
+                    {MODE_LABEL[step.transportationMode]} 도시 이동
+                    {step.transportationDuration != null && ` · ${formatDuration(step.transportationDuration)}`}
+                    {step.transportationDistance != null && ` (${Math.round(step.transportationDistance)}km)`}
+                  </div>
+                )}
+                {idx === 0 && step.transportationMode && !isIntercityMode(step.transportationMode) && (
                   <div className="mb-2 flex items-center gap-2 text-xs text-muted-2">
                     <span className="inline-flex items-center gap-1">
                       <BedDouble size={12} aria-hidden="true" /> 숙소에서 출발

@@ -145,18 +145,34 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
         const f = freshById.get(s.id);
         if (!f) return s; // 편집으로 삭제된/추가된 스텝은 현재 상태 유지
         // 순서(stepOrder)·시간·교통은 편집 반영 값을 보존하고 비동기 채움 필드만 덮어쓴다.
-        const place =
-          s.place && f.place ? { ...s.place, imageUrl: f.place.imageUrl ?? s.place.imageUrl } : s.place;
+        // 출처는 사진에 딸려 있어 사진이 바뀔 때만 함께 바꾼다.
+        const place = s.place && f.place?.imageUrl
+          ? {
+              ...s.place,
+              imageUrl: f.place.imageUrl,
+              imageCredit: f.place.imageCredit,
+              imageLicense: f.place.imageLicense,
+              imageSourceUrl: f.place.imageSourceUrl,
+            }
+          : s.place;
         return { ...s, notes: f.notes ?? s.notes, place };
       });
       // 제목은 story가 끝나면 서버가 임시 제목을 교체한다. 화면 제목이 임시 제목일 때만 따라야
       // 사용자가 고친 직후 도착한 이전 폴링 응답이 되돌리지 않는다.
       const title = fresh.title && isDraftTitle(cur.title) ? fresh.title : cur.title;
+      const cover = fresh.coverImage
+        ? {
+            coverImage: fresh.coverImage,
+            coverImageCredit: fresh.coverImageCredit,
+            coverImageLicense: fresh.coverImageLicense,
+            coverImageSourceUrl: fresh.coverImageSourceUrl,
+          }
+        : {};
       return {
         currentItinerary: {
           ...cur,
           title,
-          coverImage: fresh.coverImage ?? cur.coverImage,
+          ...cover,
           steps,
         },
       };
