@@ -189,6 +189,7 @@ export default function ItineraryList({ itineraries }: Props) {
                     <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-[4px]">
                       가장 가까운 여행
                     </span>
+                    {needsAdjustment(hero) && <AdjustmentChip onPhoto />}
                   </div>
                   <div className="flex flex-col gap-2.5">
                     <span className="line-clamp-2 text-[23px] font-extrabold tracking-[-0.02em] text-white">
@@ -225,6 +226,7 @@ export default function ItineraryList({ itineraries }: Props) {
                     <span className="text-[13px] font-medium text-muted">
                       <span className="tabular-nums">{dateRange(hero.startDate, hero.endDate)}</span> · <span className="tabular-nums">{nightsLabel(hero.startDate, hero.endDate)}</span>
                     </span>
+                    {needsAdjustment(hero) && <AdjustmentChip />}
                     {hero.tags.slice(0, 3).map((t) => (
                       <span key={t} className="rounded-lg bg-surface-3 px-2 py-0.5 text-xs font-semibold text-text-2">
                         {t}
@@ -316,7 +318,10 @@ export default function ItineraryList({ itineraries }: Props) {
                     <span className="text-xs font-medium text-muted-2">
                       {dateRange(item.startDate, item.endDate)} · {nightsLabel(item.startDate, item.endDate)}
                     </span>
-                    <StatusDot status={st} />
+                    <span className="flex items-center gap-2">
+                      {needsAdjustment(item) && <AdjustmentChip />}
+                      <StatusDot status={st} />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -345,5 +350,21 @@ export default function ItineraryList({ itineraries }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+// 확정하면 편집이 잠겨 풀 수 없으므로 초안일 때만 보인다.
+function needsAdjustment(trip: ItinerarySummary): boolean {
+  return trip.qualityStatus === 'NEEDS_ADJUSTMENT' && trip.status === 'DRAFT';
+}
+
+// 다크 warn-bg는 반투명이라 사진 위에서는 옆 D-day 칩처럼 불투명 바탕을 쓴다.
+function AdjustmentChip({ onPhoto = false }: { onPhoto?: boolean }) {
+  return (
+    <span
+      className={`text-xs font-semibold text-warn-fg ${onPhoto ? 'rounded-full bg-card-bg px-2.5 py-1' : 'rounded-lg bg-warn-bg px-2 py-0.5'}`}
+    >
+      조정 필요
+    </span>
   );
 }

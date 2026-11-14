@@ -57,7 +57,11 @@ test.describe('@generation full user flow', () => {
     test.skip(await generate.isDisabled(), '생성 한도 소진 또는 보완할 조건이 있어 생성 플로우 건너뜀');
     await generate.click();
     await expect(page).toHaveURL(/\/app\/trips\/(generating|\d)/, { timeout: 12_000 });
-    await page.waitForURL(/\/app\/trips\/\d+/, { timeout: 250_000 });
+    // 관문 거부(PLANNING_011)면 생성 화면에 오류가 떠 주소가 바뀌지 않으므로 같이 기다려 원인과 함께 바로 실패시킨다.
+    await page.waitForFunction(
+      () => /\/app\/trips\/\d+/.test(location.pathname) || document.body.innerText.includes('일정을 만들지 못했어요'),
+      null, { timeout: 250_000 });
+    expect(page.url(), await page.locator('main').innerText()).toMatch(/\/app\/trips\/\d+/);
     itineraryId = Number(page.url().match(/\/app\/trips\/(\d+)/)![1]);
     expect(itineraryId).toBeGreaterThan(0);
     await expect(page.locator('h1').first()).toBeVisible();

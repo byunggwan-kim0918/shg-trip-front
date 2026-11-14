@@ -1,5 +1,5 @@
 /**
- * 백엔드는 완성된 문장 배열을 준다. "N일차"를 칩으로 빼고 반복되는 원인 문장은 한 번만 모으며,
+ * 백엔드는 완성된 문장 배열을 준다. "N일차"를 떼고 마지막 문장(할 일)은 따로 두며,
  * 파싱이 안 되면 화면이 비지 않게 원문을 그대로 통과시킨다.
  */
 
@@ -8,8 +8,8 @@ export interface ParsedNotice {
   day: number | null;
   /** 일차를 뗀 본문. 끝의 마침표는 제거한다. */
   text: string;
-  /** 본문 뒤에 붙은 원인 문장. 여러 항목이 공유하므로 화면에서 한 번만 모아 보인다. */
-  cause: string | null;
+  /** 본문 뒤에 붙은 마지막 문장(원인이나 할 일). 한 문장짜리 안내면 null. */
+  followUp: string | null;
 }
 
 export interface QualityNoticeSummary {
@@ -32,15 +32,16 @@ export function parseQualityNotices(notices: string[]): QualityNoticeSummary {
 
     const m = source.match(/^(\d+)일차(?:에)?\s*(.+)$/);
     if (!m) {
-      items.push({ day: null, text: trimPeriod(source), cause: null });
+      items.push({ day: null, text: trimPeriod(source), followUp: null });
       continue;
     }
 
     const day = Number(m[1]);
-    // "본문. 원인." 형태면 뒤 문장은 원인으로 따로 둔다.
-    const sentences = m[2].split(/(?<=\.)\s+/).map((x) => x.trim()).filter(Boolean);
-    const cause = trimPeriod(sentences.slice(1).join(' '));
-    items.push({ day, text: trimPeriod(sentences[0] ?? m[2]), cause: cause || null });
+    // 따옴표 안 장소 이름의 마침표("St. Mary")는 문장 경계로 보지 않는다.
+    const sentences = m[2].split(/(?<=\.)\s+(?=(?:[^']*'[^']*')*[^']*$)/).map((x) => x.trim()).filter(Boolean);
+    const followUp = sentences.length > 1 ? trimPeriod(sentences[sentences.length - 1]) : '';
+    const text = sentences.length > 1 ? sentences.slice(0, -1).join(' ') : (sentences[0] ?? m[2]);
+    items.push({ day, text: trimPeriod(text), followUp: followUp || null });
   }
 
   const days = [...new Set(items.map((i) => i.day).filter((d): d is number => d != null))]

@@ -9,6 +9,7 @@ import type { ItineraryStep } from '@/lib/types/itinerary';
 import { formatBudget, isUnrealisticLeg } from '@/lib/utils/format';
 import { displayName } from '@/lib/utils/placeName';
 import { nightsLabel } from '@/lib/utils/tripStatus';
+import { parseQualityNotices } from '@/lib/utils/qualityNotices';
 import { finalizeItinerary, shareItinerary, updateItinerary } from '@/lib/data/itineraryService';
 import Toast from '@/components/common/Toast';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -163,6 +164,18 @@ export default function ResultLayout() {
     if (pageTitle) document.title = pageTitle;
   }, [pageTitle]);
 
+  // 확정하면 편집이 잠겨 풀 수 없으므로 초안일 때만 조정 필요로 다룬다.
+  const needsAdjustment = currentItinerary?.qualityStatus === 'NEEDS_ADJUSTMENT' && currentItinerary.status === 'DRAFT';
+  const timelineRef = useRef<HTMLDivElement>(null);
+  // 편집으로 풀리면 배너가 말없이 사라지지 않게 알린다. 다른 일정으로 바뀐 경우는 풀린 것이 아니다.
+  const [seenQuality, setSeenQuality] = useState({ id: currentItinerary?.id, needs: needsAdjustment });
+  const [qualityCleared, setQualityCleared] = useState(false);
+  if (seenQuality.id !== currentItinerary?.id || seenQuality.needs !== needsAdjustment) {
+    setSeenQuality({ id: currentItinerary?.id, needs: needsAdjustment });
+    setQualityCleared(seenQuality.id === currentItinerary?.id && seenQuality.needs
+      && currentItinerary?.qualityStatus === 'OK');
+  }
+
   if (!currentItinerary) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -176,6 +189,7 @@ export default function ResultLayout() {
   const hasSteps = currentItinerary.steps.length > 0;
   // 과거 데이터에는 없는 필드다.
   const qualityNotices = currentItinerary.qualityNotices ?? [];
+  const noticeDays = parseQualityNotices(qualityNotices).days;
 
   // 이동비를 빼면 렌터카/택시 여행 지출이 과소 표시된다.
   // 대안 선택이 바로 반영되게 steps에서 합산한다.
@@ -330,6 +344,46 @@ export default function ResultLayout() {
         </div>
       )}
 
+      {/* 내용이 바뀌는 live region은 미리 있어야 읽힌다. */}
+      <p role="status" className="sr-only">{qualityCleared ? '조정이 필요한 부분이 모두 풀렸어요' : ''}</p>
+      {qualityCleared && (
+        <div className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
+          조정이 필요한 부분이 모두 풀렸어요 · 이제 기준을 채운 일정이에요
+        </div>
+      )}
+
+      {needsAdjustment && (
+        <div className="flex items-start gap-2 border-b border-warn-border bg-warn-bg px-4 py-2.5 text-xs sm:px-6">
+          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-warn-fg" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-bold text-warn-fg">조정이 필요한 일정이에요</p>
+            <p className="mt-0.5 leading-[1.6] text-text-2">
+              기준에 못 미친 부분이 있어 생성 횟수는 쓰지 않았어요. 아래 안내를 보고 대안 선택이나 순서 변경으로 고칠 수 있는 부분을 고쳐 보세요.
+            </p>
+            {noticeDays.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {noticeDays.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDay(day);
+                      // 넓은 화면은 타임라인이 따로 스크롤돼 그날 안내가 화면 밖에 있을 수 있다.
+                      timelineRef.current?.scrollTo({ top: 0 });
+                      timelineRef.current?.scrollIntoView({ block: 'nearest' });
+                    }}
+                    aria-label={`${day}일차 안내 보기`}
+                    className="min-h-[28px] rounded-lg border border-warn-border bg-card-bg px-2.5 font-semibold text-warn-fg transition-colors hover:bg-surface-hover"
+                  >
+                    Day {day}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {(timeAnomaly || unrealisticLeg) && (
         <div className="px-4 py-2 bg-warn-bg border-b border-warn-border flex items-start gap-2 text-xs text-warn-fg">
           <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
@@ -357,7 +411,7 @@ export default function ResultLayout() {
         </div>
 
         {/* 폭은 flex-1이 정하므로 비율은 지도의 lg:w-[52%]로만 바뀐다. 여기 w-[48%]는 실효가 없다. */}
-        <div className="w-full flex-1 lg:order-1 lg:w-[48%] lg:overflow-y-auto">
+        <div ref={timelineRef} className="w-full flex-1 lg:order-1 lg:w-[48%] lg:overflow-y-auto">
           <TimelinePanel
             itinerary={currentItinerary}
             selectedDay={selectedDay}
@@ -436,7 +490,7 @@ export default function ResultLayout() {
       <ConfirmModal
         open={finalizeConfirmOpen}
         title="이 일정을 확정할까요?"
-        message="확정은 되돌릴 수 없어요. 확정하면 스톱 순서 변경·삭제와 대안 선택을 더 이상 할 수 없고, 제목과 태그만 고칠 수 있어요."
+        message={`${needsAdjustment ? '조정이 필요한 부분이 남아 있어요. ' : ''}확정은 되돌릴 수 없어요. 확정하면 스톱 순서 변경·삭제와 대안 선택을 더 이상 할 수 없고, 제목과 태그만 고칠 수 있어요.`}
         confirmLabel="확정"
         busy={finalizing}
         onConfirm={handleFinalize}

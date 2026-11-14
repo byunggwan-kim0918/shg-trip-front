@@ -129,7 +129,7 @@ export default function Sidebar() {
                     }`}
                   >
                     <StatusDot status={displayStatus(item)} showLabel={false} size={8} />
-                    <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span
                         className={`truncate text-[13px] font-semibold ${
                           isActive ? 'text-foreground' : 'text-text-2'
@@ -141,6 +141,10 @@ export default function Sidebar() {
                         {item.destination} · {dateRange(item.startDate, item.endDate)}
                       </span>
                     </span>
+                    {/* 아래 줄은 잘리므로 따로 두어 긴 여행지 이름에도 남게 한다. 확정하면 편집이 잠겨 보이지 않는다. */}
+                    {item.qualityStatus === 'NEEDS_ADJUSTMENT' && item.status === 'DRAFT' && (
+                      <span className="shrink-0 text-xs font-semibold text-warn-fg">조정 필요</span>
+                    )}
                   </Link>
                 );
               })
