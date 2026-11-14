@@ -19,6 +19,7 @@ export const MODE_LABEL: Record<TransportType, string> = {
   TAXI: '택시로',
   BIKE: '자전거로',
   FLIGHT: '비행기로',
+  DRIVE: '차로',
 };
 
 export default function TransitInfo({ mode, duration, distance }: TransitInfoProps) {
