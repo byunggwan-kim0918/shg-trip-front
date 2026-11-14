@@ -70,6 +70,7 @@ export const TRANSPORT_ICON_MAP: Record<string, LucideIcon> = {
   CAR: Car,
   BIKE: Bike,
   FLIGHT: Plane,
+  DRIVE: Car,
 };
 
 export const THEME_ICON_MAP: Record<string, LucideIcon> = {

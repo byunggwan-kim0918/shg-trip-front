@@ -1,6 +1,6 @@
 'use client';
 
-import { BedDouble, Coffee, ArrowLeftRight, GripVertical, Plane, Train } from 'lucide-react';
+import { BedDouble, Car, Coffee, ArrowLeftRight, GripVertical, Plane, Train } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -244,12 +244,12 @@ export default function TimelinePanel({
               </div>
 
               <div className="min-w-0 flex-1 pb-2">
-                {/* 도시를 옮기는 날은 그날 첫 구간이 열차·비행기 이동이다. */}
+                {/* 도시를 옮기는 날은 그날 첫 구간이 열차·비행기·차 이동이다. */}
                 {idx === 0 && step.transportationMode && isIntercityMode(step.transportationMode) && (
                   <div className="mb-2 flex items-center gap-1 text-xs font-semibold text-muted-2 tabular-nums">
-                    {step.transportationMode === 'FLIGHT'
-                      ? <Plane size={12} aria-hidden="true" />
-                      : <Train size={12} aria-hidden="true" />}
+                    {step.transportationMode === 'FLIGHT' && <Plane size={12} aria-hidden="true" />}
+                    {step.transportationMode === 'DRIVE' && <Car size={12} aria-hidden="true" />}
+                    {step.transportationMode === 'TRAIN' && <Train size={12} aria-hidden="true" />}
                     {MODE_LABEL[step.transportationMode]} 도시 이동
                     {step.transportationDuration != null && ` · ${formatDuration(step.transportationDuration)}`}
                     {step.transportationDistance != null && ` (${Math.round(step.transportationDistance)}km)`}

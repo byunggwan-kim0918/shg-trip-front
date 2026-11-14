@@ -1,5 +1,5 @@
-/** 백엔드 TransportationMode enum 값 */
-export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI' | 'BIKE' | 'FLIGHT';
+/** 백엔드 TransportationMode 값. DRIVE는 차로 국내 도시를 옮기는 구간이다. */
+export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI' | 'BIKE' | 'FLIGHT' | 'DRIVE';
 
 /** 백엔드 Itinerary status enum 값 */
 export type ItineraryStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
