@@ -58,7 +58,7 @@ export default function TripSummary({
       <p className="mt-[9px] text-[13px] leading-[1.7] text-muted">다르게 이해한 부분이 있다면 편하게 고쳐주세요.</p>
       {confirmed && (
         <p className="mt-3 rounded-[10px] bg-surface-3 px-3.5 py-2.5 text-xs leading-[1.6] text-muted">
-          이 내용으로 일정을 만든 적이 있어요. 다시 만들면 생성 횟수를 한 번 더 써요.
+          이 내용으로 만든 적이 있어요. 생성 횟수는 기준을 채운 일정이 나올 때만 써요.
           {activeJob && (
             <Link href={ROUTES.generating} className="ml-1.5 font-semibold text-accent-weak-fg underline underline-offset-4">
               만들고 있는 일정 보기

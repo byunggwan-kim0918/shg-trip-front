@@ -4,6 +4,9 @@ export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI'
 /** 백엔드 Itinerary status enum 값 */
 export type ItineraryStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 
+/** 백엔드 QualityStatus. NEEDS_ADJUSTMENT는 핵심 품질 기준에 못 미쳐 편집이 필요한 일정이고 생성 횟수를 쓰지 않았다. */
+export type QualityStatus = 'OK' | 'NEEDS_ADJUSTMENT';
+
 /** 백엔드 PlaceResponse */
 export interface Place {
   id: number;
@@ -69,7 +72,9 @@ export interface Itinerary {
   coverImageSourceUrl?: string | null;
   tags: string[];
   status: ItineraryStatus;
-  /** 생성 시 해소하지 못한 품질 문제(숙소 미배정·식사 누락 등). 과거 데이터엔 없다. */
+  /** 백엔드 배포 전 응답엔 없다. 없으면 OK로 본다. */
+  qualityStatus?: QualityStatus;
+  /** 해소하지 못한 품질 문제 안내("N일차 본문. 할 일."). 편집하면 서버가 지금 일정 기준으로 다시 만든다. */
   qualityNotices?: string[];
   steps: ItineraryStep[];
 }
@@ -82,6 +87,7 @@ export interface ItinerarySummary {
   startDate: string;
   endDate: string;
   status: ItineraryStatus;
+  qualityStatus?: QualityStatus;
   createdAt: string;
   coverImage: string | null;
   coverImageCredit?: string | null;

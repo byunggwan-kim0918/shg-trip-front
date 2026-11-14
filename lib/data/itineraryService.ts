@@ -46,6 +46,16 @@ export interface GenerationQuota {
   limit: number;
   resetAt: string | null;  // ISO. 쿼터 창 리셋(첫 생성 +30일)
   blockedUntil: string | null;  // ISO. 검증 실패 차단 해제 시각
+  /** 24시간 창에서 쿼터를 쓰지 않고 끝난 생성 수(조정 필요 저장·판정 거부). 백엔드 배포 전 응답엔 없다. */
+  unbilledUsed?: number;
+  unbilledLimit?: number;
+  unbilledResetAt?: string | null;  // ISO. 미차감 창 리셋
+}
+
+/** 미차감 생성이 한도에 닿아 창이 끝날 때까지 생성이 막혔는지. */
+export function isUnbilledBlocked(quota: GenerationQuota | null): boolean {
+  return !!quota && quota.unbilledLimit != null && quota.unbilledLimit > 0
+    && (quota.unbilledUsed ?? 0) >= quota.unbilledLimit;
 }
 
 /** GET /api/itineraries/generation-quota */

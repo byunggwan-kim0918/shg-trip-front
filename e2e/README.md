@@ -29,6 +29,7 @@ npx playwright test --ui   # 인터랙티브 UI 모드
 | `tests/dashboard.spec.ts` | 대시보드·테마·검색·아바타·목록 | 없음 |
 | `tests/itinerary-detail.spec.ts` | 상세 렌더·Day탭·대안 펼침·카드 메뉴 | 없음(읽기 전용) |
 | `tests/trip-chat.spec.ts` | 대화 입력 화면(대화 API 대역). 데스크톱 + 모바일(Pixel 7) | 없음 |
+| `tests/quality-status.spec.ts` | 저장 관문의 조정 필요 표시·미차감 생성 한도(일정·대화·생성 API 대역) | 없음 |
 | `tests/trip-chat-haiku.spec.ts` `@haiku` | 대화 입력 실연동(실제 Haiku). `npm run e2e:haiku`, 대화 기록은 `TRIP_CHAT_TRANSCRIPT_DIR` | 대화 세션만, 끝나면 보관 |
 | `tests/full-flow.spec.ts` `@generation` | 대화 입력→생성→대안선택→편집→공유→확정→스톱삭제 | 스로어웨이만, 자동 삭제 |
 

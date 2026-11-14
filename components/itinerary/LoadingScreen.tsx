@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
-import { fetchItinerary } from '@/lib/data/itineraryService';
+import { fetchGenerationQuota, fetchItinerary, isUnbilledBlocked } from '@/lib/data/itineraryService';
 import { archiveTripChat } from '@/lib/data/tripChatService';
 import { isEnrichValidationError, enrichErrorFocus } from '@/lib/constants/enrichErrors';
 import { ACTIVE_CHAT_KEY, ACTIVE_JOB_KEY, NEW_TRIP_JOB_KEY } from '@/lib/constants/newTrip';
@@ -159,6 +159,8 @@ export default function LoadingScreen() {
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 진행 중 작업을 놓친 경우(재연결·응답 없음) 서버에서 끝나 저장됐을 수 있어 목록으로 안내한다
   const [lostJob, setLostJob] = useState(false);
+  // 저장 관문 거부(PLANNING_011)로 미차감 한도에 닿으면 확인 화면으로 보내도 만들 수 없다. null은 확인 중이다.
+  const [retryBlocked, setRetryBlocked] = useState<boolean | null>(false);
   const reconnectAttemptsRef = useRef(0);
   const [overEstimate, setOverEstimate] = useState(false);
 
@@ -321,6 +323,12 @@ export default function LoadingScreen() {
       setErrorCode(payload?.errorCode ?? null);
       // 서버가 작업을 모르면(재배포·만료) 이미 저장됐을 수 있어 목록으로 안내한다.
       if (payload?.errorCode === 'PLANNING_006') setLostJob(true);
+      if (payload?.errorCode === 'PLANNING_011') {
+        setRetryBlocked(null);
+        void fetchGenerationQuota()
+          .then((q) => { if (aliveRef.current) setRetryBlocked(isUnbilledBlocked(q)); })
+          .catch(() => { if (aliveRef.current) setRetryBlocked(false); });
+      }
       sessionStorage.removeItem(SESSION_KEY);
     });
 
@@ -360,8 +368,8 @@ export default function LoadingScreen() {
   }
 
   if (error) {
-    // 차단·쿼터 초과(PLANNING_003/004)는 재시도해도 소용없어 "확인"만 둔다.
-    const isBlocked = errorCode === 'PLANNING_003' || errorCode === 'PLANNING_004';
+    // 차단·쿼터 초과(PLANNING_003/004)와 미차감 한도에 닿은 거부는 재시도해도 소용없어 "확인"만 둔다.
+    const isBlocked = errorCode === 'PLANNING_003' || errorCode === 'PLANNING_004' || retryBlocked === true;
     // 입력 검증 실패는 "조건 수정"으로 해당 항목을, 그 외는 "다시 시도"로 확인 화면을 연다. 대화 내용은 서버에 남아 있다.
     const isValidationError = isEnrichValidationError(errorCode);
     const focus = isValidationError ? enrichErrorFocus(errorCode) : null;
@@ -372,7 +380,7 @@ export default function LoadingScreen() {
           description={error}
           errorCode={errorCode ?? undefined}
           retryLabel={isValidationError ? '조건 수정' : '다시 시도'}
-          onRetry={isBlocked ? undefined : () => router.push(`${ROUTES.newTrip}${focus ? `?focus=${focus.toLowerCase()}` : ''}`)}
+          onRetry={isBlocked || retryBlocked === null ? undefined : () => router.push(`${ROUTES.newTrip}${focus ? `?focus=${focus.toLowerCase()}` : ''}`)}
           secondaryLabel={isBlocked ? '확인' : lostJob ? '내 여행 보기' : '처음으로'}
           onSecondary={() => router.push(ROUTES.trips)}
         />

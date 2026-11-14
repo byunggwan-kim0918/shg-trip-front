@@ -5,22 +5,20 @@ import type { ParsedNotice } from '@/lib/utils/qualityNotices';
 export default function QualityNotices({ items }: { items: ParsedNotice[] }) {
   if (items.length === 0) return null;
 
-  // 같은 원인 문장을 공유하는 항목이 많아 원인은 한 번만 보인다.
-  const causes = [...new Set(items.map((i) => i.cause).filter((c): c is string => c != null))];
-
   return (
     <div className="mb-4 rounded-[10px] border border-warn-border bg-warn-bg px-3 py-2.5 text-xs">
       <ul className="space-y-1">
         {items.map((item, i) => (
           <li key={`${item.text}-${i}`} className="flex items-start gap-1.5 font-semibold text-text-2">
             <Info size={12} className="mt-[2px] shrink-0 text-warn-fg" aria-hidden="true" />
-            <span className="min-w-0">{item.text}</span>
+            <span className="min-w-0">
+              {item.text}
+              {/* 할 일은 항목마다 달라 해당 항목 바로 뒤에 둔다. */}
+              {item.followUp && <span className="font-medium text-muted"> · {item.followUp}</span>}
+            </span>
           </li>
         ))}
       </ul>
-      {causes.length > 0 && (
-        <p className="mt-1 pl-[18px] text-muted">{causes.join(' · ')}</p>
-      )}
     </div>
   );
 }

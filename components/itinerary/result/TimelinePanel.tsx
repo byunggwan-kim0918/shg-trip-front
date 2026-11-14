@@ -186,6 +186,8 @@ export default function TimelinePanel({
                 <span>이동 {formatDuration(totalTransitMin)}</span>
               </>
             )}
+            {/* 백엔드가 직선거리에 도로 계수를 곱해 거리·시간을 계산한다. 실제 경로 엔진이 없다. */}
+            <span className="text-xs font-medium text-muted-2">직선거리 기준 추정</span>
           </>
         )}
         {dateLabel && (
