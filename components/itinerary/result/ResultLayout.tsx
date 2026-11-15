@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Share2, Pencil, Trash2 } from 'lucide-react';
+import { AlertTriangle, Share2, Pencil, Trash2, X } from 'lucide-react';
 import { normalizeText } from '@/lib/utils/text';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import type { ItineraryStep } from '@/lib/types/itinerary';
@@ -70,29 +70,45 @@ export default function ResultLayout() {
   const [sharing, setSharing] = useState(false);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const shareNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pendingShare, setPendingShare] = useState<{ itineraryId: number; url: string; days: number } | null>(null);
+
+  const flashShareNotice = useCallback((message: string) => {
+    setShareNotice(message);
+    if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
+    shareNoticeTimer.current = setTimeout(() => setShareNotice(null), 4000);
+  }, []);
 
   const handleShare = useCallback(async () => {
     if (!currentItinerary || sharing) return;
     setSharing(true);
+    setPendingShare(null);
     try {
       const { shareToken, expiresAt } = await shareItinerary(currentItinerary.id);
       const url = `${window.location.origin}/shared/${shareToken}`;
+      const days = daysUntilExpiry(expiresAt);
       try {
         await navigator.clipboard.writeText(url);
-        setShareNotice(`공유 링크가 복사됐어요 · ${daysUntilExpiry(expiresAt)}일 후 만료`);
+        flashShareNotice(`공유 링크가 복사됐어요 · ${days}일 후 만료`);
       } catch {
-        // 클립보드 권한이 없으면 링크를 안내에 노출해 직접 복사하게 한다.
-        setShareNotice(`공유 링크: ${url}`);
+        // Safari는 서버 응답을 기다린 뒤의 클립보드 쓰기를 막아서, 링크를 남겨 두고 한 번 더 누르게 한다.
+        setPendingShare({ itineraryId: currentItinerary.id, url, days });
       }
-      if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
-      shareNoticeTimer.current = setTimeout(() => setShareNotice(null), 4000);
     } catch (e) {
-      setShareNotice(e instanceof Error ? e.message : '공유 링크 생성에 실패했어요.');
-      if (shareNoticeTimer.current) clearTimeout(shareNoticeTimer.current);
-      shareNoticeTimer.current = setTimeout(() => setShareNotice(null), 4000);
+      flashShareNotice(e instanceof Error ? e.message : '공유 링크 생성에 실패했어요.');
     }
     setSharing(false);
-  }, [currentItinerary, sharing]);
+  }, [currentItinerary, sharing, flashShareNotice]);
+
+  const copyPendingShare = useCallback(async () => {
+    if (!pendingShare) return;
+    try {
+      await navigator.clipboard.writeText(pendingShare.url);
+      setPendingShare(null);
+      flashShareNotice(`공유 링크가 복사됐어요 · ${pendingShare.days}일 후 만료`);
+    } catch {
+      flashShareNotice('복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요.');
+    }
+  }, [pendingShare, flashShareNotice]);
 
   const [editOpen, setEditOpen] = useState(false);
   const editButtonRef = useRef<HTMLButtonElement>(null);
@@ -204,6 +220,7 @@ export default function ResultLayout() {
   const unrealisticLeg = currentItinerary.steps.some(
     (s) => isUnrealisticLeg(s.transportationMode, s.transportationDistance),
   );
+  const shownPendingShare = pendingShare?.itineraryId === currentItinerary.id ? pendingShare : null;
 
   return (
     <div className="flex flex-col lg:h-[calc(100dvh-8rem)]">
@@ -302,7 +319,7 @@ export default function ResultLayout() {
               type="button"
               onClick={handleShare}
               disabled={sharing}
-              className="hidden min-h-[36px] items-center gap-1.5 rounded-lg border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover disabled:opacity-50 sm:inline-flex"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-card-border bg-card-bg px-3.5 py-2 text-[13px] font-semibold text-text-2 transition-colors hover:bg-surface-hover disabled:opacity-50"
             >
               <Share2 size={14} aria-hidden="true" /> {sharing ? '생성 중...' : '공유'}
             </button>
@@ -341,6 +358,37 @@ export default function ResultLayout() {
       {shareNotice && (
         <div role="status" className="border-b border-accent-soft bg-accent-soft px-4 py-2 text-center text-xs font-semibold text-accent-weak-fg sm:px-6">
           {shareNotice}
+        </div>
+      )}
+
+      <p role="status" className="sr-only">
+        {shownPendingShare
+          ? `자동 복사가 안 됐어요. ${navigator.clipboard ? '링크 복사 버튼을 눌러 주세요.' : '링크를 길게 눌러 복사해 주세요.'}`
+          : ''}
+      </p>
+      {shownPendingShare && (
+        <div className="flex items-center gap-2 border-b border-accent-soft bg-accent-soft px-4 py-2 text-xs font-semibold text-accent-weak-fg sm:px-6">
+          <p className="min-w-0 flex-1">
+            자동 복사가 안 됐어요 · {shownPendingShare.days}일 후 만료
+            <span className="mt-0.5 block select-all break-all font-medium">{shownPendingShare.url}</span>
+          </p>
+          {navigator.clipboard && (
+            <button
+              type="button"
+              onClick={copyPendingShare}
+              className="min-h-[32px] shrink-0 rounded-lg bg-accent px-3 font-bold text-accent-fg transition-[filter] hover:brightness-105"
+            >
+              링크 복사
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setPendingShare(null)}
+            aria-label="공유 링크 닫기"
+            className="min-h-[32px] shrink-0 rounded-lg p-1.5 transition-colors hover:bg-surface-hover"
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
         </div>
       )}
 
@@ -399,7 +447,7 @@ export default function ResultLayout() {
       <div className="flex flex-1 flex-col lg:flex-row lg:overflow-hidden">
         <div
           className={`w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l ${
-            showMap ? 'block h-[180px]' : 'hidden lg:block'
+            showMap ? 'block h-[50vh]' : 'hidden lg:block'
           }`}
         >
           <MapPanel

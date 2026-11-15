@@ -76,7 +76,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
           {/* ResultLayout과 같은 레이아웃 문자열을 복제하고 있어 비율을 같이 고쳐야 한다. */}
-          <div className="h-[180px] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l">
+          <div className="h-[50vh] w-full shrink-0 overflow-hidden border-b border-card-border lg:order-2 lg:h-auto lg:w-[52%] lg:shrink lg:border-b-0 lg:border-l">
             <MapPanel
               steps={itinerary.steps}
               selectedDay={selectedDay}
