@@ -152,7 +152,7 @@ export default async function TripPage({ params }: { params: Params }) {
           <span className="text-muted-2">{period}</span>
         </nav>
 
-        <h1 className="mt-3 text-[28px] font-extrabold leading-tight tracking-[-0.03em] text-foreground sm:text-[36px]">
+        <h1 className="mt-3 text-balance text-[28px] font-extrabold leading-tight tracking-[-0.03em] text-foreground sm:text-[36px]">
           {trip.title}
         </h1>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{trip.summary}</p>

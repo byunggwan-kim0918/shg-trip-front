@@ -17,7 +17,7 @@ export default function Header() {
   // 드로어가 열린 채 아바타·검색을 누르면 첫 클릭이 backdrop(z-30)에 먹히므로 그보다 위에 둔다.
   return (
     <header
-      className="sticky top-0 z-[35] flex h-[60px] items-center gap-4 border-b border-header-border bg-header-bg px-5 backdrop-blur-xl"
+      className="sticky top-0 z-[35] flex h-[60px] items-center gap-2.5 border-b border-header-border bg-header-bg px-5 backdrop-blur-xl sm:gap-4"
       role="banner"
     >
       <div className="flex items-center gap-3">
@@ -44,7 +44,8 @@ export default function Header() {
 
       <HeaderSearch />
 
-      <div className="ml-auto flex items-center gap-2.5">
+      {/* 모바일에서 아이콘들을 오른쪽으로 미는 ml-auto는 HeaderSearch가 갖는다. */}
+      <div className="flex items-center gap-2.5 sm:ml-auto">
         <button
           onClick={toggleThemeWithTransition}
           className="flex h-11 w-11 items-center justify-center rounded-[10px] text-muted hover:bg-surface-hover transition-colors"

@@ -75,7 +75,7 @@ export default function HeaderSearch() {
       ref={boxRef}
       className={expanded
         ? 'absolute inset-x-3 top-1/2 z-50 -translate-y-1/2 sm:relative sm:inset-x-auto sm:top-auto sm:max-w-[360px] sm:flex-1 sm:translate-y-0'
-        : 'relative sm:max-w-[360px] sm:flex-1'}
+        : 'relative ml-auto sm:ml-0 sm:max-w-[360px] sm:flex-1'}
     >
       {!expanded && (
         <button

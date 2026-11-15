@@ -235,7 +235,7 @@ export default function ResultLayout() {
           {/* items-center면 제목이 2줄일 때 연필 버튼이 두 줄 사이 중앙에 놓인다. */}
           <div className="flex items-start gap-2">
             {/* LLM 제목은 60자를 넘는 문장이라 30px + truncate면 무슨 여행인지 안 보여 23px 2줄로 둔다. */}
-            <h1 className="min-w-0 line-clamp-2 text-[23px] font-extrabold leading-[1.25] tracking-[-0.03em] text-foreground">
+            <h1 className="min-w-0 line-clamp-2 text-balance text-[23px] font-extrabold leading-[1.25] tracking-[-0.03em] text-foreground">
               {normalizeText(currentItinerary.title) || destination}
             </h1>
             <button

@@ -43,7 +43,7 @@ export default function SharedItineraryView({ itinerary }: Props) {
       <div className="flex items-start gap-4 border-b border-card-border bg-card-bg px-4 py-4 sm:px-6 sm:py-5">
         <ItineraryCoverThumb itinerary={itinerary} alt={itinerary.title ?? destination} className="hidden sm:block" />
         <div className="min-w-0 flex-1">
-          <h1 className="line-clamp-2 text-[17px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
+          <h1 className="line-clamp-2 text-balance text-[17px] font-extrabold tracking-[-0.02em] text-foreground sm:text-[23px]">
             {itinerary.title ?? destination}
           </h1>
           <p className="mt-1.5 text-[13px] font-medium text-muted">

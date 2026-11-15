@@ -197,7 +197,7 @@ export default function ItineraryList({ itineraries }: Props) {
                     {needsAdjustment(hero) && <AdjustmentChip onPhoto />}
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <span className="line-clamp-2 text-[23px] font-extrabold tracking-[-0.02em] text-white">
+                    <span className="line-clamp-2 text-balance text-[23px] font-extrabold tracking-[-0.02em] text-white">
                       {normalizeText(hero.title) || hero.destination}
                     </span>
                     <div className="flex flex-wrap items-center gap-2">
@@ -223,7 +223,7 @@ export default function ItineraryList({ itineraries }: Props) {
                   </span>
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 px-6 pb-5 pt-3 sm:px-7 sm:py-7">
-                  <span className="line-clamp-2 text-[23px] font-extrabold leading-[1.3] tracking-[-0.02em] text-foreground">
+                  <span className="line-clamp-2 text-balance text-[23px] font-extrabold leading-[1.3] tracking-[-0.02em] text-foreground">
                     {normalizeText(hero.title) || hero.destination}
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
@@ -274,6 +274,7 @@ export default function ItineraryList({ itineraries }: Props) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {gridItems.map((item) => {
             const st = displayStatus(item);
+            const cover = item.coverImage && !brokenCovers.has(item.coverImage) ? item.coverImage : null;
             return (
               <div
                 key={item.id}
@@ -283,7 +284,8 @@ export default function ItineraryList({ itineraries }: Props) {
                 onKeyDown={(e) => e.key === 'Enter' && goToStep(item)}
                 className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-card-border bg-card-bg transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_14px_30px_-18px_rgba(20,22,28,0.4)]"
               >
-                {/* 사진이 없어도 커버 자리를 두어야 사진 있는 카드와 한 줄에 섰을 때 구성이 같다. */}
+                {/* 사진이 없어도 커버 자리를 두어야 사진 있는 카드와 한 줄에 섰을 때 구성이 같다.
+                    한 줄에 카드가 하나인 모바일은 맞출 옆 카드가 없어 빈 자리를 두지 않는다. */}
                 <DestinationCover
                   destination={item.destination}
                   imageUrl={item.coverImage}
@@ -291,7 +293,8 @@ export default function ItineraryList({ itineraries }: Props) {
                   imageLicense={item.coverImageLicense}
                   imageSourceUrl={item.coverImageSourceUrl}
                   labelSize={30}
-                  className="h-[88px] w-full"
+                  onImageError={cover ? () => markCoverBroken(cover) : undefined}
+                  className={cover ? 'h-[88px] w-full' : 'hidden h-[88px] w-full sm:block'}
                 >
                   <span className="absolute right-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold text-[#14161c]">
                     <span className="tabular-nums">{ddayLabel(item.startDate)}</span>
@@ -309,7 +312,7 @@ export default function ItineraryList({ itineraries }: Props) {
                       {renderCardMenu(item, 'text-muted-2 hover:bg-surface-hover hover:text-foreground')}
                     </div>
                   </div>
-                  <div className="mb-2.5 line-clamp-2 text-[17px] font-extrabold leading-[1.35] tracking-[-0.02em] text-foreground">
+                  <div className="mb-2.5 line-clamp-2 text-balance text-[17px] font-extrabold leading-[1.35] tracking-[-0.02em] text-foreground">
                     {normalizeText(item.title) || item.destination}
                   </div>
                   {item.tags.length > 0 && (
