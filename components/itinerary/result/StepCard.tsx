@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, MapPinOff, Sparkles, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, MapPin, MapPinOff, Sparkles, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import type { AlternativeOption, ItineraryStep } from '@/lib/types/itinerary';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { getCategoryIcon } from '@/lib/constants/placeIcons';
@@ -82,7 +82,7 @@ export default function StepCard({
               <span className="shrink-0 text-[13px] font-extrabold tabular-nums text-accent-weak-fg">{step.startTime}</span>
             )}
             {IconComponent && React.createElement(IconComponent, { size: 14, className: 'shrink-0 translate-y-[2px] text-muted', 'aria-hidden': 'true' })}
-            <h3 className="truncate text-[15px] font-bold text-foreground">
+            <h3 className="min-w-0 truncate text-[15px] font-bold text-foreground">
               {place ? displayName(place) : '장소 정보 없음'}
             </h3>
             {rating != null && (
@@ -115,6 +115,12 @@ export default function StepCard({
             {(step.estimatedCost ?? 0) > 0 && (
               <span className="tabular-nums">
                 예상 <b className="font-bold text-text-2">{step.estimatedCost!.toLocaleString()}원</b>
+              </span>
+            )}
+            {place?.address && (
+              <span className="inline-flex min-w-0 max-w-full items-center gap-1" title={place.address}>
+                <MapPin size={10} className="shrink-0" aria-hidden="true" />
+                <span className="truncate">{place.address}</span>
               </span>
             )}
             {!readOnly && !editMode && step.alternatives.length > 0 && (

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { BedDouble, Car, Coffee, ArrowLeftRight, GripVertical, Plane, Train } from 'lucide-react';
 import {
   DndContext,
@@ -30,6 +31,7 @@ import TransitInfo, { MODE_LABEL } from './TransitInfo';
 import QualityNotices from './QualityNotices';
 
 const FREE_TIME_THRESHOLD_MIN = 90;
+const TAB_FADE = 'linear-gradient(to right, #000 calc(100% - 40px), transparent)';
 
 const DRAG_INSTRUCTIONS: ScreenReaderInstructions = {
   draggable: '스페이스나 엔터로 집고, 위아래 화살표로 옮긴 뒤 다시 스페이스나 엔터로 놓아요. Esc를 누르면 취소돼요.',
@@ -103,6 +105,25 @@ export default function TimelinePanel({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // 탭이 화면 밖으로 넘치면 잘린 끝만 보여서 뒤에 날이 더 있다는 걸 알 수 없다.
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const [moreTabsRight, setMoreTabsRight] = useState(false);
+  useEffect(() => {
+    const el = tabListRef.current;
+    if (!el) return;
+    const update = () => setMoreTabsRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    el.addEventListener('scroll', update, { passive: true });
+    // observe 직후 한 번 호출되므로 첫 판정도 여기서 한다.
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    // 웹폰트가 늦게 오면 목록 폭은 그대로이고 탭 폭만 바뀐다.
+    for (const tab of el.children) ro.observe(tab);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [dayGroups.length]);
+
   if (!currentGroup) return null;
 
   // 기본 안내는 영어이고 내부 id를 읽는다.
@@ -145,7 +166,12 @@ export default function TimelinePanel({
 
   return (
     <div className="p-4 sm:p-5">
-      <div className="mb-3.5 flex gap-2 overflow-x-auto" role="tablist">
+      <div
+        ref={tabListRef}
+        className="mb-3.5 flex gap-2 overflow-x-auto"
+        role="tablist"
+        style={moreTabsRight ? { maskImage: TAB_FADE, WebkitMaskImage: TAB_FADE } : undefined}
+      >
         {dayGroups.map((group) => {
           const active = group.dayNumber === selectedDay;
           const warned = warnDays.includes(group.dayNumber);
@@ -156,7 +182,7 @@ export default function TimelinePanel({
               aria-selected={active}
               onClick={() => onDayChange(group.dayNumber)}
               /* 활성에도 transparent border를 둬야 활성/비활성 높이가 1px 달라지지 않는다. */
-              className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border px-5 py-2 text-sm font-bold transition-colors ${
+              className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-[10px] border px-3.5 py-2 text-sm font-bold transition-colors sm:px-5 ${
                 active
                   ? 'border-transparent bg-accent text-accent-fg'
                   : 'border-card-border bg-card-bg text-text-2 hover:bg-surface-hover'
