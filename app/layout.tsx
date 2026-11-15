@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   verification: { other: { "naver-site-verification": "aad69b2112354204435c59619a34aa93b0c0ed31" } },
 };
 
+/* ThemeInitializer는 하이드레이션 뒤에 돌아서, 이 스크립트가 없으면 다크 사용자도 첫 화면을 라이트로 그린다.
+ * 판정 규칙은 ThemeInitializer와 같아야 한다. */
+const THEME_BOOT_SCRIPT = `(function(){try{var s=localStorage.getItem('theme');var t=s?(s==='dark'?'dark':'light'):(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var d=document.documentElement;if(t==='dark'){d.classList.add('dark')}d.style.colorScheme=t}catch(e){}})()`;
+
 /**
  * 없으면 다크 테마에서도 모바일 주소창이 흰색으로 남는다. 값은 globals.css --background와 같아야 한다.
  * meta는 .dark 클래스를 읽을 수 없어 OS 설정(media)으로 근사한다.
@@ -44,6 +48,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"

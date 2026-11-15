@@ -46,7 +46,7 @@ export default function MapPanel({ steps, selectedDay, selectedStepId, onMarkerC
     );
   }
 
-  // 모바일 부모가 h-[180px] + overflow-hidden이라 min-h를 두면 하단 어트리뷰션이 잘린다.
+  // 모바일 부모가 높이를 고정하고 overflow-hidden이라 min-h를 두면 하단 어트리뷰션이 잘린다.
   // 타일 약관(OSM·OpenFreeMap)이 저작자 표시 노출을 요구하므로 높이는 부모가 정한다.
   return (
     <div className="w-full h-full">

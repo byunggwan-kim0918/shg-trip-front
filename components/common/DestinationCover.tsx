@@ -14,7 +14,7 @@ interface Props {
   imageLicense?: string | null;
   imageSourceUrl?: string | null;
   showLabel?: boolean;
-  /** px (그리드 40 / 히어로 80). */
+  /** px. */
   labelSize?: number;
   scrim?: boolean;
   className?: string;

@@ -173,13 +173,18 @@ export default function ItineraryList({ itineraries }: Props) {
             {/* 커버 사진이 없으면 색 배너 대신 정보를 주역으로 둔다. */}
             {heroCover ? (
               <div className="relative h-[200px] w-full">
+                {/* 큰 도시 라벨은 왼쪽 아래 제목·날짜와 같은 자리를 써서 글자가 겹친다. */}
                 <DestinationCover
                   destination={hero.destination}
                   imageUrl={heroCover}
                   onImageError={() => markCoverBroken(heroCover)}
                   scrim
-                  labelSize={84}
+                  showLabel={false}
                   className="absolute inset-0 h-full w-full"
+                />
+                <div
+                  className="absolute inset-x-0 bottom-0 h-[60%]"
+                  style={{ background: 'linear-gradient(to top, rgba(6,8,12,0.7) 0%, rgba(6,8,12,0) 100%)' }}
                 />
                 <div className="absolute inset-0 flex flex-col justify-between p-6">
                   <div className="flex gap-2">
@@ -202,7 +207,7 @@ export default function ItineraryList({ itineraries }: Props) {
                         </span>
                       ))}
                       <span className="ml-1 text-[13px] font-medium text-white/85">
-                        <span className="tabular-nums">{dateRange(hero.startDate, hero.endDate)}</span> · <span className="tabular-nums">{nightsLabel(hero.startDate, hero.endDate)}</span>
+                        {hero.destination} · <span className="tabular-nums">{dateRange(hero.startDate, hero.endDate)}</span> · <span className="tabular-nums">{nightsLabel(hero.startDate, hero.endDate)}</span>
                       </span>
                     </div>
                   </div>
