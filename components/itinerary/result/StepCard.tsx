@@ -10,6 +10,7 @@ import ImageCredit from '@/components/common/ImageCredit';
 import PlaceFallbackArt from '@/components/common/PlaceFallbackArt';
 import { proxyImageUrl } from '@/lib/utils/imageUrl';
 import { formatOpeningHours } from '@/lib/utils/openingHours';
+import { placeDescription } from '@/lib/utils/placeDescription';
 import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
 
 interface StepCardProps {
@@ -53,6 +54,8 @@ export default function StepCard({
   const storyPendingFromStore = useItineraryStore((s) => s.storyPending);
   const storyPending = readOnly ? false : storyPendingFromStore;
   const hasStory = !!step.notes && step.notes.trim().length > 0;
+  // 서버가 한 줄 설명을 주지 않는 숙소·교통 거점은 소개가 홍보 문구이거나 국제선 기준이라 보이지 않게 한다.
+  const placeIntro = step.placeNote ? (placeDescription(place) ?? step.placeNote) : null;
   const missingCoords = !!place && (place.latitude == null || place.longitude == null
     || (place.latitude === 0 && place.longitude === 0));
   const rating = place?.rating;
@@ -66,6 +69,7 @@ export default function StepCard({
       className={`relative rounded-[10px] px-3.5 py-3 transition-colors ${editMode ? 'cursor-default' : 'cursor-pointer'} ${
         isExpanded ? 'bg-accent-soft' : 'bg-card-bg hover:bg-surface-hover'
       }`}
+      data-step-id={step.id}
       onClick={editMode ? undefined : onClick}
       role={editMode ? undefined : 'button'}
       tabIndex={editMode ? undefined : 0}
@@ -101,6 +105,8 @@ export default function StepCard({
             <p className="mt-1 flex items-center gap-1.5 text-xs italic text-muted-2 animate-pulse">
               <Sparkles size={11} aria-hidden="true" /> 가이드 스토리를 작성하고 있어요…
             </p>
+          ) : placeIntro ? (
+            <p className="mt-1 line-clamp-2 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{placeIntro}</p>
           ) : null}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-2">

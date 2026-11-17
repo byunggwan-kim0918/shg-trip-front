@@ -29,6 +29,7 @@ import StepCard from './StepCard';
 import SortableStepCard from './SortableStepCard';
 import TransitInfo, { MODE_LABEL } from './TransitInfo';
 import QualityNotices from './QualityNotices';
+import AlternativePreviewDialog from './AlternativePreviewDialog';
 
 const FREE_TIME_THRESHOLD_MIN = 90;
 const TAB_FADE = 'linear-gradient(to right, #000 calc(100% - 40px), transparent)';
@@ -95,7 +96,9 @@ export default function TimelinePanel({
 }: TimelinePanelProps) {
   // alternativeError는 ResultLayout의 Toast에서 표시하므로 여기선 구독하지 않는다.
   const { expandedStepId, toggleExpandStep, selectAlternativeStep, isSelectingAlternative,
-    clearAlternativeError, reorderStepsAction, isEditingSteps } = useItineraryStore();
+    clearAlternativeError, reportAlternativeError, reorderStepsAction, isEditingSteps } = useItineraryStore();
+  const [pendingSwap, setPendingSwap] = useState<{ stepId: number; alternativeId: number } | null>(null);
+  const swapStepCardRef = useRef<HTMLElement | null>(null);
   const dayGroups: DayGroup[] = groupStepsByDay(itinerary.steps);
   const currentGroup = dayGroups.find((g) => g.dayNumber === selectedDay) ?? dayGroups[0];
 
@@ -144,7 +147,14 @@ export default function TimelinePanel({
   const handleSelectAlternative = async (step: ItineraryStep, alt: AlternativeOption) => {
     clearAlternativeError();
     await selectAlternativeStep(itinerary.id, step.id, alt.id);
+    setPendingSwap(null);
   };
+
+  // 폴링·편집으로 스텝이나 대안이 사라지면 창도 닫힌다.
+  const swapGroup = pendingSwap && dayGroups.find((g) => g.steps.some((s) => s.id === pendingSwap.stepId));
+  const swapIndex = swapGroup ? swapGroup.steps.findIndex((s) => s.id === pendingSwap!.stepId) : -1;
+  const swapStep = swapGroup ? swapGroup.steps[swapIndex] : null;
+  const swapAlternative = swapStep?.alternatives.find((a) => a.id === pendingSwap!.alternativeId) ?? null;
 
   const handleDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
@@ -296,7 +306,11 @@ export default function TimelinePanel({
                   isExpanded={expandedStepId === step.id}
                   onToggleExpand={() => toggleExpandStep(step.id)}
                   onClick={() => onStepClick(step.id)}
-                  onSelectAlternative={readOnly || isSelectingAlternative ? undefined : (alt) => handleSelectAlternative(step, alt)}
+                  onSelectAlternative={readOnly || isSelectingAlternative ? undefined
+                    : (alt) => {
+                      swapStepCardRef.current = document.querySelector<HTMLElement>(`[data-step-id="${step.id}"]`);
+                      setPendingSwap({ stepId: step.id, alternativeId: alt.id });
+                    }}
                   readOnly={readOnly}
                 />
 
@@ -323,6 +337,27 @@ export default function TimelinePanel({
           );
         })}
       </div>
+      )}
+
+      {swapGroup && swapStep && swapAlternative && !readOnly && (
+        <AlternativePreviewDialog
+          key={`${swapStep.id}-${swapAlternative.id}`}
+          itineraryId={itinerary.id}
+          step={swapStep}
+          alternative={swapAlternative}
+          prevStep={swapGroup.steps[swapIndex - 1] ?? null}
+          nextStep={swapGroup.steps[swapIndex + 1] ?? null}
+          busy={isSelectingAlternative}
+          onConfirm={() => handleSelectAlternative(swapStep, swapAlternative)}
+          onCancel={() => setPendingSwap(null)}
+          onStale={async (e) => {
+            setPendingSwap(null);
+            await reportAlternativeError(e, itinerary.id);
+            // 다시 불러오면 대안 목록이 접혀 창을 연 카드가 사라진다.
+            if (swapStepCardRef.current?.isConnected) swapStepCardRef.current.focus();
+          }}
+          returnFocusRef={swapStepCardRef}
+        />
       )}
     </div>
   );

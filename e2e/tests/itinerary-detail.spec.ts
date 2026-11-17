@@ -21,7 +21,7 @@ test.describe('itinerary detail (read-only)', () => {
     }
 
     // 대안 패널 펼치기 (비변형 — 선택은 하지 않음)
-    const altToggle = page.locator('button', { hasText: /대안 \d+개 보기/ });
+    const altToggle = page.locator('button', { hasText: /대안 \d+개/ });
     if (await altToggle.count()) {
       await altToggle.first().scrollIntoViewIfNeeded();
       await altToggle.first().click();

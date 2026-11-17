@@ -27,6 +27,7 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
       <button
         type="button"
         onClick={onSelect}
+        aria-haspopup="dialog"
         className={`flex flex-1 items-center gap-2.5 rounded-[10px] border p-2.5 text-left transition-colors ${
           isSelected ? 'border-accent bg-accent-soft' : 'border-card-border bg-surface-2 hover:bg-surface-hover'
         }`}
@@ -42,6 +43,7 @@ export default function AlternativeCard({ alternative, isSelected, onSelect }: A
         <span className="min-w-0">
           <span className="block truncate text-[13px] font-bold text-foreground">{title}</span>
           {original && <span lang={originalNameLang(place)} className="block truncate text-xs text-muted-2">{original}</span>}
+          {alternative.notes && <span className="block text-xs text-text-2">{alternative.notes}</span>}
           <span className="block text-xs text-muted-2">
             {place.rating != null && (
               <span className="inline-flex items-center gap-0.5">

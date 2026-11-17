@@ -21,6 +21,8 @@ export interface Place {
   priceLevel: number | null;
   openingHours: string | null;
   imageUrl: string | null;
+  /** 보강 배치가 만든 짧은 소개. 화면 표시는 lib/utils/placeDescription을 거친다. */
+  description?: string | null;
   /** 위키미디어 공용 사진의 저작자·라이선스·원본 파일 페이지. TourAPI 사진과 과거 응답엔 없다. */
   imageCredit?: string | null;
   imageLicense?: string | null;
@@ -34,6 +36,7 @@ export interface AlternativeOption {
   id: number;
   optionOrder: number;
   place: Place;
+  /** 지금 스텝 장소와 견준 한 줄 설명("해산물 · 지금 장소에서 600m"). 서버가 응답할 때 만들고, 설명할 것이 없으면 null이다. */
   notes: string | null;
   estimatedCost: number | null;
 }
@@ -51,9 +54,38 @@ export interface ItineraryStep {
   transportationDistance: number | null;  // km
   transportationCost: number | null;
   notes: string | null;
+  /** 장소의 한 줄 설명(종류·알려진 정도). 숙소·교통 거점은 null이다. */
+  placeNote?: string | null;
   userNotes: string | null;
   estimatedCost: number | null;
   alternatives: AlternativeOption[];
+}
+
+/** 백엔드 AlternativePreviewResponse.Leg. 다시 잰 구간은 직선거리 기준 추정이다. */
+export interface PreviewLeg {
+  mode: TransportType | null;
+  durationMin: number | null;
+  distanceKm: number | null;
+  cost: number | null;
+}
+
+/** 백엔드 AlternativePreviewResponse. 대안으로 바꾸기 전에 보여 줄 변화이고 일정은 바뀌지 않는다. */
+export interface AlternativePreview {
+  /** 같은 날 앞 스텝에서 오는 구간. 앞 스텝이 없으면 null. */
+  incoming: { before: PreviewLeg; after: PreviewLeg } | null;
+  /** 같은 날 다음 스텝으로 가는 구간. 다음 스텝이 없으면 null. */
+  outgoing: { before: PreviewLeg; after: PreviewLeg } | null;
+  costBefore: number | null;
+  costAfter: number | null;
+  /** 이 스텝 시각에 영업하는지. 영업시간이나 날짜를 모르면 null. */
+  openAtTime: boolean | null;
+  closedThatDay: boolean;
+  /** 대안 장소가 이미 다른 스텝으로 들어 있는 날. 없으면 null. */
+  alreadyOnDay: number | null;
+  resolvedNotices: string[];
+  newNotices: string[];
+  /** 조정 필요인 일정이 바꾸면 기준을 채우는지. */
+  resolvesAdjustment: boolean;
 }
 
 /** 백엔드 ItineraryResponse */
