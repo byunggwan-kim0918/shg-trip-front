@@ -73,6 +73,10 @@ async function mockApis(page: Page, opts: { detail?: Json; list?: Json[] } = {})
     route.fulfill(ok(opts.detail ?? itinerary('NEEDS_ADJUSTMENT', PORK))));
   await page.route(`**/api/proxy/itineraries/${ID}/steps/4/select-alternative`, (route: Route) =>
     route.fulfill(ok(itinerary('OK', GALBI))));
+  await page.route(`**/api/proxy/itineraries/${ID}/steps/4/alternatives/41/preview`, (route: Route) => route.fulfill(ok({
+    incoming: null, outgoing: null, costBefore: 10000, costAfter: 30000, openAtTime: null, closedThatDay: false,
+    alreadyOnDay: null, resolvedNotices: [DAY2_NOTICE], newNotices: [], resolvesAdjustment: true,
+  })));
 }
 
 async function mockQuota(page: Page, unbilledUsed: number) {
@@ -128,6 +132,9 @@ test.describe('quality status', () => {
 
     await page.locator('button', { hasText: /대안 1개/ }).click();
     await page.locator('button', { hasText: '해운대 암소갈비' }).click();
+    const dialog = page.getByRole('dialog', { name: '이 장소로 바꿀까요?' });
+    await expect(dialog.getByText('기준을 채운 일정이 돼요.')).toBeVisible();
+    await dialog.getByRole('button', { name: '바꾸기' }).click();
 
     await expect(page.getByText(BANNER)).toHaveCount(0);
     await expect(page.getByText('조정이 필요한 부분이 모두 풀렸어요 · 이제 기준을 채운 일정이에요')).toBeVisible();

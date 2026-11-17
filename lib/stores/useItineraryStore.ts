@@ -104,6 +104,8 @@ interface ItineraryActions {
   toggleExpandStep: (stepId: number) => void;
   selectAlternativeStep: (itineraryId: number, stepId: number, alternativeId: number) => Promise<void>;
   clearAlternativeError: () => void;
+  /** 대안 미리보기 실패를 대안 선택 실패와 같은 알림으로 보이고, 화면이 낡았으면 다시 불러온다. */
+  reportAlternativeError: (e: unknown, itineraryId: number) => Promise<void>;
   /** 낙관 반영 후 서버 확정, 실패 시 스냅샷 롤백. */
   reorderStepsAction: (itineraryId: number, dayNumber: number, orderedStepIds: number[]) => Promise<void>;
   deleteStepAction: (itineraryId: number, stepId: number) => Promise<void>;
@@ -250,6 +252,10 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   setLoading: (loading) => set({ isLoading: loading }),
 
   clearAlternativeError: () => set({ alternativeError: null }),
+
+  reportAlternativeError: async (e, itineraryId) => {
+    set({ alternativeError: await refreshIfStale(e, itineraryId, '대안 정보를 불러오지 못했습니다.') });
+  },
 
   setLoadingProgress: (progress) => set({ loadingProgress: Math.max(0, Math.min(100, progress)) }),
 

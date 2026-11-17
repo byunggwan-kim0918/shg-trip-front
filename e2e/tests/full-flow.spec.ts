@@ -75,14 +75,20 @@ test.describe('@generation full user flow', () => {
     test.skip(!itineraryId, '생성 실패로 건너뜀');
     await page.goto(`/app/trips/${itineraryId}`);
     await expect(page.locator('h1').first()).toBeVisible(); // 타임라인 렌더 대기(생성 직후 로딩 회피)
-    const toggle = page.locator('button', { hasText: /대안 \d+개 보기/ });
+    const toggle = page.locator('button', { hasText: /대안 \d+개/ });
     await toggle.first().waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
     test.skip((await toggle.count()) === 0, '대안이 있는 스텝 없음');
     await toggle.first().scrollIntoViewIfNeeded();
     await toggle.first().click();
-    const cards = page.locator('div:has(> p:text-is("이 시간대 대안"))').locator('button');
+    const cards = page.locator('div:has(> p:text-is("이 시간대 대안")) button[aria-haspopup="dialog"]:not([aria-label="사진 출처 보기"])');
     await expect(cards.first()).toBeVisible();
     await cards.first().click();
+    const dialog = page.getByRole('dialog', { name: '이 장소로 바꿀까요?' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('바꾼 뒤 달라지는 점을 확인하고 있어요…')).toBeHidden();
+    await expect(dialog.getByText('달라지는 점을 불러오지 못했어요', { exact: false })).toHaveCount(0);
+    await dialog.getByRole('button', { name: '바꾸기' }).click();
+    await expect(dialog).toHaveCount(0);
     await expect(page.getByText('대안을 변경하지 못했어요')).toHaveCount(0);
   });
 

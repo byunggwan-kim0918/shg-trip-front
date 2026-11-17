@@ -1,5 +1,5 @@
 import { authFetch } from '@/lib/api/fetchClient';
-import type { Itinerary, ItinerarySummary } from '@/lib/types/itinerary';
+import type { AlternativePreview, Itinerary, ItinerarySummary } from '@/lib/types/itinerary';
 
 export interface PageResponse<T> {
   content: T[];
@@ -101,6 +101,19 @@ export async function selectAlternative(
   );
   if (!res.ok) throw await stepEditError(res, '대안 선택에 실패했습니다.');
   return parseJson<Itinerary>(res);
+}
+
+/** GET /api/itineraries/{id}/steps/{stepId}/alternatives/{alternativeId}/preview */
+export async function previewAlternative(
+  itineraryId: number,
+  stepId: number,
+  alternativeId: number,
+): Promise<AlternativePreview> {
+  const res = await authFetch(
+    `/api/itineraries/${itineraryId}/steps/${stepId}/alternatives/${alternativeId}/preview`,
+  );
+  if (!res.ok) throw await stepEditError(res, '바꾼 뒤 달라지는 점을 불러오지 못했습니다.');
+  return parseJson<AlternativePreview>(res);
 }
 
 /**
