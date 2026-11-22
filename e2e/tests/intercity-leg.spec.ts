@@ -26,7 +26,7 @@ function step(id: number, day: number, order: number, start: string, p: Json, le
 
 const ITINERARY: Json = {
   id: ID, title: '강릉 경주 서울 3일', destination: '강릉, 경주', startDate: '2026-12-15', endDate: '2026-12-17',
-  totalBudget: null, estimatedCost: null, coverImage: null, tags: [], status: 'DRAFT', qualityStatus: 'OK',
+  totalBudget: null, estimatedCost: null, coverImage: null, tags: [], status: 'DRAFT',
   qualityNotices: [],
   steps: [
     step(1, 1, 1, '10:00', place(11, '오죽헌', 'Gangneung', 37.779, 128.878), null),

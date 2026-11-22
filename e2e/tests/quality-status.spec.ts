@@ -2,14 +2,12 @@ import type { Page, Route } from '@playwright/test';
 import { test, expect } from '../fixtures/auth';
 
 /**
- * 저장 관문의 '조정 필요' 표시와 미차감 생성 한도. 일정·목록·대화·생성 API는 대역으로 바꿔 생성 없이 본다.
+ * 저장 관문의 판정 안내, 확정하지 않은 정보 표시, 미차감 생성 한도. 일정·목록·대화·생성 API는 대역으로 바꿔 생성 없이 본다.
  */
 
 type Json = Record<string, unknown>;
-type Quality = 'OK' | 'NEEDS_ADJUSTMENT' | undefined;
 
 const ID = 9001;
-const BANNER = '조정이 필요한 일정이에요';
 const DAY2_NOTICE = '2일차 점심과 저녁이 같은 종류예요(할매국밥·돼지국밥 본점). 한 곳을 대안으로 바꿔 보세요.';
 const TRIP_NOTICE = "꼭 가고 싶다고 한 '광안리해수욕장'을(를) 일정에 넣지 못했어요.";
 const KOREAN = 'Dining and Drinking > Restaurant > Korean Restaurant';
@@ -30,15 +28,15 @@ function step(id: number, day: number, order: number, start: string, end: string
     id, stepOrder: order, dayNumber: day, startTime: start, endTime: end, place: p,
     transportationMode: order === 1 ? null : 'CAR', transportationDuration: order === 1 ? null : 12,
     transportationDistance: order === 1 ? null : 4.2, transportationCost: null,
-    notes: '설명', userNotes: null, estimatedCost: 10000, alternatives,
+    notes: '설명', userNotes: null, estimatedCost: 10000, alternatives, travelEstimated: order !== 1,
   };
 }
 
-function itinerary(quality: Quality, dinner: Json, status = 'DRAFT'): Json {
-  const body: Json = {
+function itinerary(notices: string[], dinner: Json): Json {
+  return {
     id: ID, title: '부산 바다 2일', destination: '부산', startDate: '2026-12-04', endDate: '2026-12-05',
-    totalBudget: null, estimatedCost: null, coverImage: null, tags: [], status,
-    qualityNotices: quality === 'NEEDS_ADJUSTMENT' ? [DAY2_NOTICE, TRIP_NOTICE] : [],
+    totalBudget: null, estimatedCost: null, coverImage: null, tags: [], status: 'DRAFT',
+    qualityNotices: notices,
     steps: [
       step(1, 1, 1, '10:00', '11:30', place(11, '해운대해수욕장', BEACH, 35.159, 129.160)),
       step(2, 1, 2, '12:00', '13:00', place(12, '해운대 밀면', KOREAN, 35.163, 129.163)),
@@ -48,13 +46,11 @@ function itinerary(quality: Quality, dinner: Json, status = 'DRAFT'): Json {
       ]),
     ],
   };
-  if (quality) body.qualityStatus = quality;
-  return body;
 }
 
-function summary(id: number, title: string, startDate: string, status: string, quality: Quality): Json {
+function summary(id: number, title: string, startDate: string, status: string): Json {
   return {
-    id, title, destination: '부산', startDate, endDate: startDate, status, qualityStatus: quality,
+    id, title, destination: '부산', startDate, endDate: startDate, status,
     createdAt: '2026-11-14T10:00:00+09:00', coverImage: null, tags: [],
   };
 }
@@ -66,16 +62,16 @@ async function mockApis(page: Page, opts: { detail?: Json; list?: Json[] } = {})
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ data: { isAuthenticated: true, user: { id: 1, email: 'e2e@invalid', nickname: 'e2e', profileImage: null, provider: 'kakao' } } }),
   }));
-  const list = opts.list ?? [summary(ID, '부산 바다 2일', '2026-12-04', 'DRAFT', 'NEEDS_ADJUSTMENT')];
+  const list = opts.list ?? [summary(ID, '부산 바다 2일', '2026-12-04', 'DRAFT')];
   await page.route((url) => url.pathname === '/api/proxy/itineraries', (route: Route) =>
     route.fulfill(ok({ content: list, totalElements: list.length, totalPages: 1, number: 0, size: 20 })));
   await page.route(`**/api/proxy/itineraries/${ID}`, (route: Route) =>
-    route.fulfill(ok(opts.detail ?? itinerary('NEEDS_ADJUSTMENT', PORK))));
+    route.fulfill(ok(opts.detail ?? itinerary([DAY2_NOTICE, TRIP_NOTICE], PORK))));
   await page.route(`**/api/proxy/itineraries/${ID}/steps/4/select-alternative`, (route: Route) =>
-    route.fulfill(ok(itinerary('OK', GALBI))));
+    route.fulfill(ok(itinerary([TRIP_NOTICE], GALBI))));
   await page.route(`**/api/proxy/itineraries/${ID}/steps/4/alternatives/41/preview`, (route: Route) => route.fulfill(ok({
     incoming: null, outgoing: null, costBefore: 10000, costAfter: 30000, openAtTime: null, closedThatDay: false,
-    alreadyOnDay: null, resolvedNotices: [DAY2_NOTICE], newNotices: [], resolvesAdjustment: true,
+    alreadyOnDay: null, resolvedNotices: [DAY2_NOTICE], newNotices: [],
   })));
 }
 
@@ -116,16 +112,11 @@ async function openRejectedGeneration(page: Page) {
 }
 
 test.describe('quality status', () => {
-  test('조정 필요 일정은 안내와 일차 바로가기를 보이고, 대안으로 기준을 채우면 배너와 목록 표시가 내려가며 풀렸다고 알린다', async ({ page }) => {
+  test('판정 안내는 그날 탭에 보이고, 대안으로 바꾸면 해결되는 안내를 미리 알리고 사라진다', async ({ page }) => {
     await mockApis(page);
     await page.goto(`/app/trips/${ID}`);
 
-    await expect(page.getByText(BANNER)).toBeVisible();
-    await expect(page.getByText(/생성 횟수는 쓰지 않았어요/)).toBeVisible();
-    await expect(page.getByRole('link', { name: /부산 바다 2일/ })).toContainText('조정 필요');
-
-    await page.getByRole('button', { name: '2일차 안내 보기' }).click();
-    await expect(page.getByRole('tab', { name: /Day 2/ })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('tab', { name: /Day 2/ }).click();
     // 할 일 문장은 그 항목 바로 뒤에 붙는다.
     await expect(page.getByText('점심과 저녁이 같은 종류예요(할매국밥·돼지국밥 본점) · 한 곳을 대안으로 바꿔 보세요')).toBeVisible();
     await expect(page.getByText(TRIP_NOTICE.replace(/\.$/, ''))).toBeVisible();
@@ -133,57 +124,19 @@ test.describe('quality status', () => {
     await page.locator('button', { hasText: /대안 1개/ }).click();
     await page.locator('button', { hasText: '해운대 암소갈비' }).click();
     const dialog = page.getByRole('dialog', { name: '이 장소로 바꿀까요?' });
-    await expect(dialog.getByText('기준을 채운 일정이 돼요.')).toBeVisible();
+    await expect(dialog.getByText('바꾸면 해결돼요')).toBeVisible();
     await dialog.getByRole('button', { name: '바꾸기' }).click();
 
-    await expect(page.getByText(BANNER)).toHaveCount(0);
-    await expect(page.getByText('조정이 필요한 부분이 모두 풀렸어요 · 이제 기준을 채운 일정이에요')).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: /^조정이 필요한 부분이 모두 풀렸어요$/ })).toHaveCount(1);
     await expect(page.getByText('점심과 저녁이 같은 종류예요')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: /부산 바다 2일/ })).not.toContainText('조정 필요');
+    await expect(page.getByText(TRIP_NOTICE.replace(/\.$/, ''))).toBeVisible();
   });
 
-  test('확정하려 하면 조정이 남아 있다고 알린다', async ({ page }) => {
+  test('거리로 추정한 이동은 약으로, 공식 영업시간이 없는 곳은 미확인으로 보인다', async ({ page }) => {
     await mockApis(page);
     await page.goto(`/app/trips/${ID}`);
-    await page.getByRole('button', { name: '일정 확정' }).first().click();
 
-    await expect(page.getByText(/조정이 필요한 부분이 남아 있어요\. 확정은 되돌릴 수 없어요/)).toBeVisible();
-  });
-
-  test('확정된 일정은 조정 필요 상태여도 배너와 목록 표시가 없다', async ({ page }) => {
-    await mockApis(page, {
-      detail: itinerary('NEEDS_ADJUSTMENT', PORK, 'FINALIZED'),
-      list: [summary(ID, '부산 바다 2일', '2026-12-04', 'FINALIZED', 'NEEDS_ADJUSTMENT')],
-    });
-    await page.goto(`/app/trips/${ID}`);
-
-    await expect(page.getByText('확정됨')).toBeVisible();
-    await expect(page.getByText(BANNER)).toHaveCount(0);
-    await expect(page.getByRole('link', { name: /부산 바다 2일/ })).not.toContainText('조정 필요');
-  });
-
-  test('품질 상태가 없는 옛 응답은 조정 필요로 보지 않는다', async ({ page }) => {
-    await mockApis(page, { detail: itinerary(undefined, PORK) });
-    await page.goto(`/app/trips/${ID}`);
-
-    await expect(page.locator('h1').first()).toBeVisible();
-    await expect(page.getByText(BANNER)).toHaveCount(0);
-  });
-
-  test('목록은 초안인 조정 필요 일정에만 표시를 붙인다', async ({ page }) => {
-    await mockApis(page, {
-      list: [
-        summary(ID, '부산 바다 2일', '2026-12-04', 'DRAFT', 'NEEDS_ADJUSTMENT'),
-        summary(9002, '확정한 경주 여행', '2026-12-20', 'FINALIZED', 'NEEDS_ADJUSTMENT'),
-        summary(9003, '평범한 제주 여행', '2026-12-27', 'DRAFT', 'OK'),
-      ],
-    });
-    await page.goto('/app/trips');
-
-    const main = page.getByRole('main');
-    await expect(main.getByText('부산 바다 2일')).toBeVisible();
-    await expect(main.getByText('조정 필요', { exact: true })).toHaveCount(1);
+    await expect(page.getByText(/약 12분/).first()).toBeVisible();
+    await expect(page.getByText('영업시간 미확인').first()).toBeVisible();
   });
 
   test('이동 거리는 직선거리 기준 추정이라고 밝힌다', async ({ page }) => {
