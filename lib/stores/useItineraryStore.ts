@@ -18,9 +18,7 @@ async function refreshIfStale(e: unknown, itineraryId: number, fallback: string)
   try {
     const fresh = await fetchItinerary(itineraryId);
     if (useItineraryStore.getState().currentItinerary?.id === itineraryId) {
-      useItineraryStore.setState((s) => ({
-        currentItinerary: fresh, expandedStepId: null, itineraries: withQualityOf(s.itineraries, fresh),
-      }));
+      useItineraryStore.setState({ currentItinerary: fresh, expandedStepId: null });
     }
     return STALE_EDIT_MESSAGE;
   } catch {
@@ -64,11 +62,6 @@ function reorderStepsLocally(
 export type ListStatus = 'idle' | 'loading' | 'success' | 'error';
 
 let listRequest: Promise<void> | null = null;
-
-// 편집 응답의 품질 상태를 목록에도 옮겨야 편집으로 조정 필요가 풀린 일정에 목록 배지가 남지 않는다.
-function withQualityOf(list: ItinerarySummary[], updated: Itinerary): ItinerarySummary[] {
-  return list.map((it) => (it.id === updated.id ? { ...it, qualityStatus: updated.qualityStatus } : it));
-}
 
 interface ItineraryState {
   currentItinerary: Itinerary | null;
@@ -142,10 +135,10 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   storyPending: false,
 
   setCurrentItinerary: (itinerary) =>
-    set((s) => ({ currentItinerary: itinerary, selectedDay: 1, itineraries: withQualityOf(s.itineraries, itinerary) })),
+    set(() => ({ currentItinerary: itinerary, selectedDay: 1 })),
 
   refreshCurrentItinerary: (itinerary) =>
-    set((s) => ({ currentItinerary: itinerary, itineraries: withQualityOf(s.itineraries, itinerary) })),
+    set(() => ({ currentItinerary: itinerary })),
 
   applyAsyncFill: (fresh) =>
     set((state) => {
@@ -204,7 +197,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
     set({ isSelectingAlternative: true, alternativeError: null });
     try {
       const updated = await selectAlternative(itineraryId, stepId, alternativeId);
-      set((s) => ({ currentItinerary: updated, expandedStepId: null, itineraries: withQualityOf(s.itineraries, updated) }));
+      set(() => ({ currentItinerary: updated, expandedStepId: null }));
     } catch (e) {
       set({ alternativeError: await refreshIfStale(e, itineraryId, '대안 선택에 실패했습니다.') });
     } finally {
@@ -224,7 +217,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
     });
     try {
       const updated = await reorderSteps(itineraryId, dayNumber, orderedStepIds);
-      set((s) => ({ currentItinerary: updated, itineraries: withQualityOf(s.itineraries, updated) }));
+      set(() => ({ currentItinerary: updated }));
     } catch (e) {
       set({ currentItinerary: snapshot });
       set({ stepError: await refreshIfStale(e, itineraryId, '순서 변경에 실패했습니다.') });
@@ -239,7 +232,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
     set({ isEditingSteps: true, stepError: null });
     try {
       const updated = await deleteStep(itineraryId, stepId);
-      set((s) => ({ currentItinerary: updated, expandedStepId: null, itineraries: withQualityOf(s.itineraries, updated) }));
+      set(() => ({ currentItinerary: updated, expandedStepId: null }));
     } catch (e) {
       set({ stepError: await refreshIfStale(e, itineraryId, '일정 삭제에 실패했습니다.') });
     } finally {

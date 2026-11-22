@@ -13,6 +13,9 @@ import { formatOpeningHours } from '@/lib/utils/openingHours';
 import { placeDescription } from '@/lib/utils/placeDescription';
 import { displayName, originalName, originalNameLang } from '@/lib/utils/placeName';
 
+// 숙소와 공항·역은 드나드는 시각이 예약·운행에 묶여 영업시간을 따지지 않는다.
+const STAY_OR_HUB = /lodging|hotel|hostel|transport hub|airport|station|terminal/i;
+
 interface StepCardProps {
   step: ItineraryStep;
   isExpanded: boolean;
@@ -111,10 +114,16 @@ export default function StepCard({
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-2">
             {timeRange && <span className="tabular-nums">{timeRange}</span>}
-            {place?.openingHours && (
+            {place?.openingHours ? (
               <span className="inline-flex items-center gap-1 tabular-nums" title={place.openingHours}>
                 <Clock size={10} className="shrink-0" aria-hidden="true" />
                 {formatOpeningHours(place.openingHours)}
+                {!place.hoursConfirmed && <span className="text-warn-fg">· 미확인</span>}
+              </span>
+            ) : place && !STAY_OR_HUB.test(place.category) && (
+              <span className="inline-flex items-center gap-1 text-warn-fg" title="공식 영업시간 정보가 없어요. 가기 전에 확인해 주세요.">
+                <Clock size={10} className="shrink-0" aria-hidden="true" />
+                영업시간 미확인
               </span>
             )}
             {/* 0원은 공항·시장처럼 비용 정보가 없는 경우라 "무료"로도 단정할 수 없어 숨긴다. */}

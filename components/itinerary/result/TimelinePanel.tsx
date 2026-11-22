@@ -328,6 +328,7 @@ export default function TimelinePanel({
                         mode={next.transportationMode}
                         duration={next.transportationDuration}
                         distance={next.transportationDistance}
+                        estimated={next.travelEstimated}
                       />
                     )}
                   </>

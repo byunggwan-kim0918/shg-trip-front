@@ -44,7 +44,7 @@ function step(id: number, day: number, order: number, start: string, end: string
 function itinerary(lunch: Json): Json {
   return {
     id: ID, title: '부산 바다 2일', destination: '부산', startDate: '2026-12-04', endDate: '2026-12-05',
-    totalBudget: null, estimatedCost: null, coverImage: null, tags: [], status: 'DRAFT', qualityStatus: 'OK',
+    totalBudget: null, estimatedCost: null, coverImage: null, tags: [], status: 'DRAFT',
     qualityNotices: [],
     steps: [
       step(1, 1, 1, '10:00', '11:30', place(11, '해운대해수욕장', BEACH, 35.159, 129.160), { placeNote: '해변 · 널리 알려진 곳' }),
@@ -81,13 +81,13 @@ const PREVIEWS: Record<number, Json> = {
     incoming: { before: leg('CAR', 12, 4.2), after: leg('WALK', 18, 1.2) },
     outgoing: { before: leg('CAR', 8, 2.0), after: leg('CAR', 10, 2.9) },
     costBefore: 10000, costAfter: 9000, openAtTime: false, closedThatDay: false, alreadyOnDay: null,
-    resolvedNotices: [], newNotices: [NEW_NOTICE], resolvesAdjustment: false,
+    resolvedNotices: [], newNotices: [NEW_NOTICE],
   },
   142: {
     incoming: { before: leg('CAR', 12, 4.2), after: leg('CAR', 18, 7.9) },
     outgoing: { before: leg('CAR', 8, 2.0), after: leg('CAR', 8, 2.0) },
     costBefore: null, costAfter: 30000, openAtTime: false, closedThatDay: true, alreadyOnDay: 2,
-    resolvedNotices: [], newNotices: [], resolvesAdjustment: false,
+    resolvedNotices: [], newNotices: [],
   },
 };
 

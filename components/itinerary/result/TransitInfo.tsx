@@ -8,6 +8,8 @@ interface TransitInfoProps {
   mode: TransportType;
   duration: number | null;  // 분
   distance?: number | null; // km
+  /** 노선·시간표가 아니라 거리로 추정한 시간인지 */
+  estimated?: boolean;
 }
 
 export const MODE_LABEL: Record<TransportType, string> = {
@@ -22,7 +24,7 @@ export const MODE_LABEL: Record<TransportType, string> = {
   DRIVE: '차로',
 };
 
-export default function TransitInfo({ mode, duration, distance }: TransitInfoProps) {
+export default function TransitInfo({ mode, duration, distance, estimated = false }: TransitInfoProps) {
   const IconComponent = getTransportIcon(mode);
   const isUnrealistic = isUnrealisticLeg(mode, distance);
 
@@ -30,10 +32,12 @@ export default function TransitInfo({ mode, duration, distance }: TransitInfoPro
     <div className="flex items-center gap-2 py-2 pl-1 text-xs font-semibold text-muted-2">
       {React.createElement(IconComponent, { size: 15, 'aria-hidden': 'true' })}
       {duration != null && distance != null ? (
-        <span className="tabular-nums">{MODE_LABEL[mode] ?? '이동'} {formatDuration(duration)} · {distance.toFixed(1)}km</span>
+        <span className="tabular-nums" title={estimated ? '노선·시간표가 아닌 거리로 추정한 시간이에요' : undefined}>
+          {MODE_LABEL[mode] ?? '이동'} {estimated ? '약 ' : ''}{formatDuration(duration)} · {distance.toFixed(1)}km
+        </span>
       ) : (
         <>
-          {duration != null && <span>{formatDuration(duration)}</span>}
+          {duration != null && <span>{estimated ? '약 ' : ''}{formatDuration(duration)}</span>}
           {distance != null && <span className="tabular-nums">{distance.toFixed(1)}km</span>}
         </>
       )}

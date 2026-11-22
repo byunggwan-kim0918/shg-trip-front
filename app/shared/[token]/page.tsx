@@ -90,5 +90,5 @@ export default async function SharedPage({
   if (!itinerary) notFound();
 
   // 품질 안내에는 사용자가 적은 장소 이름이 들어 있어 공유 화면 페이로드에 싣지 않는다.
-  return <SharedItineraryView itinerary={{ ...itinerary, qualityStatus: undefined, qualityNotices: undefined }} />;
+  return <SharedItineraryView itinerary={{ ...itinerary, qualityNotices: undefined }} />;
 }

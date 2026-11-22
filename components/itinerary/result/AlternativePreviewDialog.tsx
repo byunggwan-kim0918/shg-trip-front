@@ -263,16 +263,10 @@ export default function AlternativePreviewDialog({
                   </ul>
                 )}
 
-                {(preview.resolvesAdjustment || preview.resolvedNotices.length > 0) && (
+                {preview.resolvedNotices.length > 0 && (
                   <section>
                     <h3 className="text-xs font-bold tracking-[0.03em] text-muted-2">바꾸면 해결돼요</h3>
                     <ul className="mt-1.5 space-y-1 text-xs">
-                      {preview.resolvesAdjustment && (
-                        <li className="flex items-start gap-1.5 font-semibold text-text-2">
-                          <CheckCircle2 size={12} className="mt-[2px] shrink-0 text-success" aria-hidden="true" />
-                          <span className="min-w-0">기준을 채운 일정이 돼요.</span>
-                        </li>
-                      )}
                       {preview.resolvedNotices.map((n) => (
                         <li key={n} className="flex items-start gap-1.5 text-text-2">
                           <CheckCircle2 size={12} className="mt-[2px] shrink-0 text-success" aria-hidden="true" />
