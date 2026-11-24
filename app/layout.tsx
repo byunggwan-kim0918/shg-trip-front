@@ -22,7 +22,11 @@ export const metadata: Metadata = {
     locale: "ko_KR",
   },
   twitter: { card: "summary_large_image" },
-  verification: { other: { "naver-site-verification": "aad69b2112354204435c59619a34aa93b0c0ed31" } },
+  // google-adsense-account는 public/ads.txt의 게시자 ID와 같아야 AdSense가 사이트 소유를 확인한다.
+  verification: { other: {
+    "naver-site-verification": "aad69b2112354204435c59619a34aa93b0c0ed31",
+    "google-adsense-account": "ca-pub-3821802479755830",
+  } },
 };
 
 /* ThemeInitializer는 하이드레이션 뒤에 돌아서, 이 스크립트가 없으면 다크 사용자도 첫 화면을 라이트로 그린다.

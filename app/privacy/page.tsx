@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="개인정보처리방침"
-      effectiveDate="2026-11-01"
+      effectiveDate="2026-12-01"
       intro="SHG trip(이하 “서비스”)은 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고, 관련 문의를 신속히 처리하기 위해 다음과 같이 개인정보처리방침을 둡니다."
       sections={[
         {
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
             <ul>
               <li><b>회원가입(소셜 로그인)</b> — 로그인 제공자(카카오·구글·네이버)의 회원 식별값, 이메일, 닉네임, 프로필 이미지 주소</li>
               <li><b>서비스 이용</b> — 여행지, 여행 기간, 예산, 선호 테마·카테고리, 직접 입력한 장소와 요청 문장, 생성·편집한 일정</li>
-              <li><b>자동 수집</b> — 접속 IP, 접속 시각, 요청 기록(서버 로그), 로그인 유지용 쿠키</li>
+              <li><b>자동 수집</b> — 접속 IP, 접속 시각, 요청 기록(서버 로그), 로그인 유지용 쿠키, 광고 쿠키(‘쿠키와 행태정보’ 참고)</li>
             </ul>
           ),
         },
@@ -31,6 +31,7 @@ export default function PrivacyPage() {
               <li>회원 식별, 로그인 유지</li>
               <li>여행 일정 생성·저장·공유</li>
               <li>생성 횟수 제한, 부정 이용 방지, 장애 대응</li>
+              <li>광고 게재(Google 애드센스)</li>
             </ul>
           ),
         },
@@ -62,11 +63,25 @@ export default function PrivacyPage() {
         },
         {
           title: '제3자 제공',
-          body: <p>서비스는 이용자의 개인정보를 제3자에게 제공하지 않습니다. 다만 법령에 따라 요구되는 경우는 예외로 합니다. 공유 링크로 공개되는 것은 일정 내용뿐이며 이메일·닉네임은 포함되지 않습니다.</p>,
+          body: <p>서비스는 이용자의 개인정보를 제3자에게 제공하지 않습니다. 다만 법령에 따라 요구되는 경우는 예외로 합니다. 공유 링크로 공개되는 것은 일정 내용뿐이며 이메일·닉네임은 포함되지 않습니다. 광고 사업자가 쿠키로 행태정보를 직접 수집하는 것은 아래 ‘쿠키와 행태정보’를 따릅니다.</p>,
         },
         {
-          title: '쿠키',
-          body: <p>로그인 상태 유지를 위해 암호화된 세션 쿠키를 사용합니다. 광고·추적 목적의 쿠키는 쓰지 않습니다. 브라우저 설정에서 쿠키를 막으면 로그인이 필요한 기능을 이용할 수 없습니다.</p>,
+          title: '쿠키와 행태정보',
+          body: (
+            <>
+              <p>로그인 상태 유지를 위해 암호화된 세션 쿠키를 사용합니다. 브라우저 설정에서 쿠키를 막으면 로그인이 필요한 기능을 이용할 수 없습니다.</p>
+              <p>서비스는 Google 애드센스로 광고를 게재하며, 광고 사업자가 이용자의 행태정보를 수집하도록 허용합니다.</p>
+              <ul>
+                <li><b>수집하는 사업자</b> — Google LLC(미국)와 Google이 광고를 함께 게재하는 제3자 광고 사업자</li>
+                <li><b>수집 항목</b> — 광고 쿠키 식별자, 방문한 페이지, 접속 IP, 브라우저·기기 정보, 광고 노출·클릭 기록</li>
+                <li><b>수집 방법</b> — 이용자가 서비스 화면을 열 때 광고 스크립트가 쿠키로 자동 수집</li>
+                <li><b>목적</b> — 광고 게재, 이용자가 이 사이트와 다른 사이트를 방문한 기록에 따른 맞춤 광고, 광고 성과 측정</li>
+                <li><b>보유 기간</b> — 각 광고 사업자의 정책에 따름</li>
+              </ul>
+              <p>Google과 파트너는 Google 광고 쿠키로 이용자의 이 사이트 및 다른 사이트 방문 기록을 바탕으로 광고를 게재합니다. Google이 아닌 제3자 광고 사업자도 쿠키를 쓸 수 있으며, 해당 사업자 목록은 <a className="underline" href="https://support.google.com/admanager/answer/9012903" target="_blank" rel="noopener noreferrer">Google 광고 기술 제공업체 목록</a>에서 확인할 수 있습니다.</p>
+              <p>맞춤 광고는 <a className="underline" href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">Google 광고 설정</a>에서 끌 수 있고, 제3자 광고 사업자의 맞춤 광고 쿠키는 <a className="underline" href="https://www.aboutads.info/choices" target="_blank" rel="noopener noreferrer">www.aboutads.info</a>에서 거부할 수 있습니다. 브라우저 설정에서 쿠키를 막아도 거부할 수 있습니다.</p>
+            </>
+          ),
         },
         {
           title: '이용자의 권리',
