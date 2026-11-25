@@ -79,6 +79,18 @@ function AttributionPrefix() {
   return null;
 }
 
+/** Leaflet은 창 resize만 감지하므로 사이드바 토글처럼 컨테이너만 변하면 직접 크기를 다시 재야 한다. */
+function ResizeSync() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [map]);
+  return null;
+}
+
 /** `className`을 주면 Leaflet 기본 `leaflet-div-icon`(흰 사각형 + 그림자)을 대체하므로 리셋 CSS가 필요 없다. */
 function stepIcon(fill: string, stroke: string, label: string, selected: boolean): L.DivIcon {
   const size = selected ? 34 : 28;
@@ -349,6 +361,7 @@ export default function MapPanelInner({
         )}
 
         <AttributionPrefix />
+        <ResizeSync />
         <MapController steps={steps} selectedStepId={selectedStepId} />
         <DayPolylines steps={steps} isDark={isDark} />
 
