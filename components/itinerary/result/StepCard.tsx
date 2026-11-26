@@ -59,6 +59,10 @@ export default function StepCard({
   const hasStory = !!step.notes && step.notes.trim().length > 0;
   // 서버가 한 줄 설명을 주지 않는 숙소·교통 거점은 소개가 홍보 문구이거나 국제선 기준이라 보이지 않게 한다.
   const placeIntro = step.placeNote ? (placeDescription(place) ?? step.placeNote) : null;
+  const enrichingIds = useItineraryStore((s) => s.currentItinerary?.enrichingPlaceIds);
+  // 보강 전 장소의 한 줄 설명은 종류 이름뿐이라, 소개가 곧 채워질 동안 그것으로 대신하지 않는다.
+  const introPending = !readOnly && !!place && !!step.placeNote && !placeDescription(place)
+    && !!enrichingIds?.includes(place.id);
   const missingCoords = !!place && (place.latitude == null || place.longitude == null
     || (place.latitude === 0 && place.longitude === 0));
   const rating = place?.rating;
@@ -107,6 +111,10 @@ export default function StepCard({
           ) : storyPending ? (
             <p className="mt-1 flex items-center gap-1.5 text-xs italic text-muted-2 animate-pulse">
               <Sparkles size={11} aria-hidden="true" /> 가이드 스토리를 작성하고 있어요…
+            </p>
+          ) : introPending ? (
+            <p className="mt-1 flex items-center gap-1.5 text-xs italic text-muted-2 animate-pulse">
+              <Sparkles size={11} aria-hidden="true" /> 장소 소개를 준비하고 있어요…
             </p>
           ) : placeIntro ? (
             <p className="mt-1 line-clamp-2 max-w-[560px] text-[13px] leading-[1.55] text-text-2">{placeIntro}</p>

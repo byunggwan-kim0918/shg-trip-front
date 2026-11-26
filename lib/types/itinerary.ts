@@ -106,6 +106,8 @@ export interface Itinerary {
   /** 해소하지 못한 품질 문제 안내("N일차 본문. 할 일."). 편집하면 서버가 지금 일정 기준으로 다시 만든다. */
   qualityNotices?: string[];
   steps: ItineraryStep[];
+  /** 곧 한국어 이름·소개가 채워질 스텝 장소 id. 공유 응답과 과거 응답엔 없다. */
+  enrichingPlaceIds?: number[];
 }
 
 /** 백엔드 ItinerarySummaryResponse (목록용) */
@@ -136,6 +138,11 @@ export interface DayGroup {
 export function hasPendingStory(itin: Itinerary): boolean {
   if (itin.status !== 'DRAFT' || itin.steps.length === 0) return false;
   return itin.steps.every((s) => !s.notes || s.notes.trim().length === 0);
+}
+
+/** 보강을 기다리는 장소가 있으면 결과 화면이 다시 조회해 그 장소의 이름·소개를 채운다. */
+export function hasEnrichingPlaces(itin: Itinerary): boolean {
+  return (itin.enrichingPlaceIds?.length ?? 0) > 0;
 }
 
 export function groupStepsByDay(steps: ItineraryStep[]): DayGroup[] {
