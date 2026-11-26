@@ -82,10 +82,14 @@ interface ItineraryState {
   loadingProgress: number; // 0-100
   /** story가 비동기로 채워지는 중인지. 상세 페이지 폴링이 제어한다. */
   storyPending: boolean;
+  /** 지금 보는 일정의 제목을 이 화면에서 고쳤는지. 고친 뒤에는 재조회 응답이 제목을 바꾸지 않는다. */
+  titleEdited: boolean;
 }
 
 interface ItineraryActions {
   setCurrentItinerary: (itinerary: Itinerary) => void;
+  /** 제목·태그 저장 응답을 반영한다. 제목을 바꿨으면 그 전에 읽은 재조회 응답이 늦게 와도 되돌리지 않는다. */
+  applyInfoEdit: (itinerary: Itinerary) => void;
   /** 보고 있는 day/확장 상태를 유지한 채 일정 데이터만 교체한다. */
   refreshCurrentItinerary: (itinerary: Itinerary) => void;
   /**
@@ -137,11 +141,6 @@ function fillPlace(cur: Place, fresh: Place): Place {
   };
 }
 
-/** 백엔드 buildDraftTitle이 만드는 임시 제목("서울 1박 2일", "서울 당일치기", "서울 여행")인지. */
-function isDraftTitle(title: string | null | undefined): boolean {
-  return !title || /(\d+박 \d+일|당일치기| 여행)$/.test(title);
-}
-
 export const useItineraryStore = create<ItineraryState & ItineraryActions>((set) => ({
   currentItinerary: null,
   itineraries: [],
@@ -157,9 +156,21 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
   stepError: null,
   loadingProgress: 0,
   storyPending: false,
+  titleEdited: false,
 
   setCurrentItinerary: (itinerary) =>
-    set(() => ({ currentItinerary: itinerary, selectedDay: 1 })),
+    set((state) => ({
+      currentItinerary: itinerary,
+      selectedDay: 1,
+      titleEdited: state.currentItinerary?.id === itinerary.id && state.titleEdited,
+    })),
+
+  applyInfoEdit: (itinerary) =>
+    set((state) => ({
+      currentItinerary: itinerary,
+      selectedDay: 1,
+      titleEdited: state.titleEdited || itinerary.title !== state.currentItinerary?.title,
+    })),
 
   refreshCurrentItinerary: (itinerary) =>
     set(() => ({ currentItinerary: itinerary })),
@@ -176,9 +187,9 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
         const place = s.place && f.place && f.place.id === s.place.id ? fillPlace(s.place, f.place) : s.place;
         return { ...s, notes: f.notes ?? s.notes, place };
       });
-      // 제목은 story가 끝나면 서버가 임시 제목을 교체한다. 화면 제목이 임시 제목일 때만 따라야
-      // 사용자가 고친 직후 도착한 이전 폴링 응답이 되돌리지 않는다.
-      const title = fresh.title && isDraftTitle(cur.title) ? fresh.title : cur.title;
+      // 서버는 이야기를 끝낼 때 임시 제목을 바꾸므로 화면이 끝남을 처음 볼 때만 제목을 따른다.
+      const storyFinished = cur.storyStatus === 'PENDING' && fresh.storyStatus !== 'PENDING';
+      const title = storyFinished && fresh.title && !state.titleEdited ? fresh.title : cur.title;
       const cover = fresh.coverImage
         ? {
             coverImage: fresh.coverImage,
@@ -194,7 +205,11 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
           ...cover,
           steps,
           enrichingPlaceIds: fresh.enrichingPlaceIds ?? [],
+          storyStatus: fresh.storyStatus,
         },
+        itineraries: title === cur.title
+          ? state.itineraries
+          : state.itineraries.map((it) => (it.id === cur.id ? { ...it, title } : it)),
       };
     }),
 

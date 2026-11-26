@@ -45,7 +45,7 @@ export default function ItineraryDetailPage() {
     if (!waiting) return;
 
     let attempts = 0;
-    let interval: ReturnType<typeof setInterval> | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;
 
     // 폴링을 끝내야 하면 true.
@@ -72,15 +72,15 @@ export default function ItineraryDetailPage() {
       return false;
     };
 
+    // 응답이 늦으면 앞선 조회가 나중에 도착해 끝난 이야기를 되돌리므로 한 번에 하나만 조회한다.
     // 이미 준비된 경우 사진·문장이 늦게 뜨지 않게 첫 회는 기다리지 않는다.
-    void poll().then((done) => {
-      if (done || cancelled) return;
-      interval = setInterval(async () => {
-        if (await poll()) clearInterval(interval);
-      }, STORY_POLL_INTERVAL_MS);
-    });
+    const run = async () => {
+      if (await poll() || cancelled) return;
+      timer = setTimeout(run, STORY_POLL_INTERVAL_MS);
+    };
+    void run();
 
-    return () => { cancelled = true; if (interval) clearInterval(interval); };
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
   }, [waiting, id, applyAsyncFill, setStoryPending, settleEnriching]);
 
   if (isLoading) {
