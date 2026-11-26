@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { Itinerary, ItinerarySummary } from '@/lib/types/itinerary';
+import type { Itinerary, ItinerarySummary, Place } from '@/lib/types/itinerary';
+import { placeDescription } from '@/lib/utils/placeDescription';
 import {
   fetchMyItineraries,
   fetchItinerary,
@@ -92,6 +93,8 @@ interface ItineraryActions {
    * stale 폴링 응답이 편집 결과를 되돌리지 못하게 한다.
    */
   applyAsyncFill: (fresh: Itinerary) => void;
+  /** 재조회를 끝낸 뒤 남은 보강 대기 표시를 거둔다. 보강이 늦어지면 소개 자리는 원래 설명으로 돌아간다. */
+  settleEnriching: () => void;
   setSelectedDay: (day: number) => void;
   setSelectedStep: (stepId: number | null) => void;
   toggleExpandStep: (stepId: number) => void;
@@ -111,6 +114,27 @@ interface ItineraryActions {
   removeItinerary: (id: number) => Promise<void>;
   /** 상세에서 바꾼 제목·태그·상태를 사이드바·목록용 요약에도 반영 */
   patchItinerarySummary: (id: number, patch: Partial<ItinerarySummary>) => void;
+}
+
+/**
+ * 재조회로 받은 장소의 비동기 채움 필드. 출처는 사진에 딸려 있어 사진이 바뀔 때만 함께 바꾼다.
+ * 이름·소개는 비어 있을 때만 채워 이미 읽고 있는 글이 바뀌지 않는다.
+ */
+function fillPlace(cur: Place, fresh: Place): Place {
+  const image = fresh.imageUrl
+    ? {
+        imageUrl: fresh.imageUrl,
+        imageCredit: fresh.imageCredit,
+        imageLicense: fresh.imageLicense,
+        imageSourceUrl: fresh.imageSourceUrl,
+      }
+    : {};
+  return {
+    ...cur,
+    ...image,
+    nameKo: cur.nameKo?.trim() ? cur.nameKo : fresh.nameKo ?? cur.nameKo,
+    description: placeDescription(cur) ? cur.description : fresh.description ?? cur.description,
+  };
 }
 
 /** 백엔드 buildDraftTitle이 만드는 임시 제목("서울 1박 2일", "서울 당일치기", "서울 여행")인지. */
@@ -149,16 +173,7 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
         const f = freshById.get(s.id);
         if (!f) return s; // 편집으로 삭제된/추가된 스텝은 현재 상태 유지
         // 순서(stepOrder)·시간·교통은 편집 반영 값을 보존하고 비동기 채움 필드만 덮어쓴다.
-        // 출처는 사진에 딸려 있어 사진이 바뀔 때만 함께 바꾼다.
-        const place = s.place && f.place?.imageUrl
-          ? {
-              ...s.place,
-              imageUrl: f.place.imageUrl,
-              imageCredit: f.place.imageCredit,
-              imageLicense: f.place.imageLicense,
-              imageSourceUrl: f.place.imageSourceUrl,
-            }
-          : s.place;
+        const place = s.place && f.place && f.place.id === s.place.id ? fillPlace(s.place, f.place) : s.place;
         return { ...s, notes: f.notes ?? s.notes, place };
       });
       // 제목은 story가 끝나면 서버가 임시 제목을 교체한다. 화면 제목이 임시 제목일 때만 따라야
@@ -178,9 +193,15 @@ export const useItineraryStore = create<ItineraryState & ItineraryActions>((set)
           title,
           ...cover,
           steps,
+          enrichingPlaceIds: fresh.enrichingPlaceIds ?? [],
         },
       };
     }),
+
+  settleEnriching: () =>
+    set((state) => (state.currentItinerary
+      ? { currentItinerary: { ...state.currentItinerary, enrichingPlaceIds: [] } }
+      : {})),
 
   setSelectedDay: (day) => set({ selectedDay: day, selectedStepId: null }),
 

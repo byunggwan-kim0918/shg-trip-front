@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useItineraryStore } from '@/lib/stores/useItineraryStore';
 import { fetchItinerary } from '@/lib/data/itineraryService';
-import { hasPendingStory } from '@/lib/types/itinerary';
+import { hasEnrichingPlaces, hasPendingStory } from '@/lib/types/itinerary';
 import ResultLayout from '@/components/itinerary/result/ResultLayout';
 import EmptyState from '@/components/common/EmptyState';
 import { MapPinOff } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 
-// story 문장은 생성 완료 뒤 비동기로 채워지므로 약 40초 동안 재조회한다.
+// story 문장과 승격 장소의 한국어 이름·소개는 생성 완료 뒤 비동기로 채워지므로 약 40초 동안 재조회한다.
 const STORY_POLL_INTERVAL_MS = 2500;
 const STORY_POLL_MAX_ATTEMPTS = 16;
 
@@ -18,7 +18,7 @@ export default function ItineraryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
-  const { currentItinerary, setCurrentItinerary, applyAsyncFill, setStoryPending } =
+  const { currentItinerary, setCurrentItinerary, applyAsyncFill, setStoryPending, settleEnriching } =
     useItineraryStore();
   const [notFound, setNotFound] = useState(false);
   // false로 시작하면 첫 렌더에 currentItinerary=null인 ResultLayout이 노출된다.
@@ -34,12 +34,15 @@ export default function ItineraryDetailPage() {
       .finally(() => setIsLoading(false));
   }, [id, currentItinerary?.id, setCurrentItinerary]);
 
-  // 사진은 장소 적재 때 정해져 생성 뒤에 채워지지 않으므로 story만 기다린다.
+  // 사진은 장소 적재 때 정해져 생성 뒤에 채워지지 않으므로 story와 장소 보강만 기다린다.
   const isTarget = currentItinerary?.id === id;
   const storyPending = isTarget && hasPendingStory(currentItinerary);
+  const waiting = storyPending || (isTarget && hasEnrichingPlaces(currentItinerary));
   useEffect(() => {
     setStoryPending(storyPending);
-    if (!storyPending) return;
+  }, [storyPending, setStoryPending]);
+  useEffect(() => {
+    if (!waiting) return;
 
     let attempts = 0;
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -53,15 +56,16 @@ export default function ItineraryDetailPage() {
         if (cancelled) return true;
         // 편집(재정렬/삭제) 결과를 되돌리지 않게 순서·집합은 두고 채움 필드만 머지한다.
         applyAsyncFill(fresh);
-        const stillPending = hasPendingStory(fresh);
-        setStoryPending(stillPending);
+        const stillPending = hasPendingStory(fresh) || hasEnrichingPlaces(fresh);
         if (!stillPending || attempts >= STORY_POLL_MAX_ATTEMPTS) {
           setStoryPending(false);
+          settleEnriching();
           return true;
         }
       } catch {
         if (attempts >= STORY_POLL_MAX_ATTEMPTS) {
           setStoryPending(false);
+          settleEnriching();
           return true;
         }
       }
@@ -77,7 +81,7 @@ export default function ItineraryDetailPage() {
     });
 
     return () => { cancelled = true; if (interval) clearInterval(interval); };
-  }, [storyPending, id, applyAsyncFill, setStoryPending]);
+  }, [waiting, id, applyAsyncFill, setStoryPending, settleEnriching]);
 
   if (isLoading) {
     return (
