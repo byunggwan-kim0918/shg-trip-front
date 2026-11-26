@@ -4,6 +4,9 @@ export type TransportType = 'WALK' | 'CAR' | 'BUS' | 'TRAIN' | 'SUBWAY' | 'TAXI'
 /** 백엔드 Itinerary status enum 값 */
 export type ItineraryStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 
+/** 백엔드 Itinerary.StoryStatus 값. 판별하지 못한 옛 일정은 null이다. */
+export type StoryStatus = 'PENDING' | 'DONE' | 'FAILED';
+
 /** 백엔드 PlaceResponse */
 export interface Place {
   id: number;
@@ -108,6 +111,7 @@ export interface Itinerary {
   steps: ItineraryStep[];
   /** 곧 한국어 이름·소개가 채워질 스텝 장소 id. 공유 응답과 과거 응답엔 없다. */
   enrichingPlaceIds?: number[];
+  storyStatus?: StoryStatus | null;
 }
 
 /** 백엔드 ItinerarySummaryResponse (목록용) */
@@ -131,13 +135,9 @@ export interface DayGroup {
   steps: ItineraryStep[];
 }
 
-/**
- * 구조 일정을 먼저 저장(notes=null)하고 story가 한 트랜잭션으로 모든 스텝의 notes를 채운다.
- * 그래서 하나라도 채워졌으면 story는 끝난 것이다. 대안으로 바꾼 스텝은 notes가 없어도 영영 채워지지 않는다.
- */
+/** 스텝 메모에는 이야기 전에 넣은 이유가 먼저 들어가므로, 메모가 아니라 서버의 이야기 상태로 판단한다. */
 export function hasPendingStory(itin: Itinerary): boolean {
-  if (itin.status !== 'DRAFT' || itin.steps.length === 0) return false;
-  return itin.steps.every((s) => !s.notes || s.notes.trim().length === 0);
+  return itin.storyStatus === 'PENDING';
 }
 
 /** 보강을 기다리는 장소가 있으면 결과 화면이 다시 조회해 그 장소의 이름·소개를 채운다. */

@@ -55,7 +55,7 @@ function hasTimeAnomaly(steps: ItineraryStep[]): boolean {
 export default function ResultLayout() {
   const router = useRouter();
   const { currentItinerary, selectedDay, selectedStepId, setSelectedDay, setSelectedStep, setCurrentItinerary,
-    alternativeError, clearAlternativeError,
+    applyInfoEdit, alternativeError, clearAlternativeError,
     deleteStepAction, isEditingSteps, stepError, clearStepError,
     patchItinerarySummary, removeItinerary, isDeleting } = useItineraryStore();
   const [showMap, setShowMap] = useState(true);
@@ -120,14 +120,14 @@ export default function ResultLayout() {
     setEditError(null);
     try {
       const updated = await updateItinerary(currentItinerary.id, payload);
-      setCurrentItinerary(updated);
+      applyInfoEdit(updated);
       patchItinerarySummary(updated.id, { title: updated.title, tags: updated.tags });
       setEditOpen(false);
     } catch (e) {
       setEditError(e instanceof Error ? e.message : '수정에 실패했어요. 새로고침 후 다시 시도해주세요.');
     }
     setEditBusy(false);
-  }, [currentItinerary, setCurrentItinerary, patchItinerarySummary]);
+  }, [currentItinerary, applyInfoEdit, patchItinerarySummary]);
 
   // 헤더 버튼과 모바일 고정 바가 확인 모달을 거쳐 같은 콜백을 쓴다.
   const handleFinalize = useCallback(async () => {
